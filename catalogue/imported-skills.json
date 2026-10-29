@@ -1,0 +1,2471 @@
+{
+  "schema_version": 1,
+  "skills": [
+    {
+      "name": "microsoft-agent-framework-agent-framework-builder-dotnet",
+      "source": "microsoft-agent-framework",
+      "url": "https://github.com/microsoft/agent-framework",
+      "commit": "4d28d0a4ba77b1a9906ba422a3737eaff3de814f",
+      "path": "skills/agent-framework-builder-dotnet",
+      "license": "MIT",
+      "local_path": "skills/microsoft-agent-framework-agent-framework-builder-dotnet"
+    },
+    {
+      "name": "microsoft-agent-framework-agent-framework-builder-python",
+      "source": "microsoft-agent-framework",
+      "url": "https://github.com/microsoft/agent-framework",
+      "commit": "4d28d0a4ba77b1a9906ba422a3737eaff3de814f",
+      "path": "skills/agent-framework-builder-python",
+      "license": "MIT",
+      "local_path": "skills/microsoft-agent-framework-agent-framework-builder-python"
+    },
+    {
+      "name": "obra-superpowers-brainstorming",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/brainstorming",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-brainstorming"
+    },
+    {
+      "name": "obra-superpowers-diagnosing-superpowers",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/diagnosing-superpowers",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-diagnosing-superpowers"
+    },
+    {
+      "name": "obra-superpowers-dispatching-parallel-agents",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/dispatching-parallel-agents",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-dispatching-parallel-agents"
+    },
+    {
+      "name": "obra-superpowers-executing-plans",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/executing-plans",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-executing-plans"
+    },
+    {
+      "name": "obra-superpowers-finishing-a-development-branch",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/finishing-a-development-branch",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-finishing-a-development-branch"
+    },
+    {
+      "name": "obra-superpowers-receiving-code-review",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/receiving-code-review",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-receiving-code-review"
+    },
+    {
+      "name": "obra-superpowers-requesting-code-review",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/requesting-code-review",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-requesting-code-review"
+    },
+    {
+      "name": "obra-superpowers-subagent-driven-development",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/subagent-driven-development",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-subagent-driven-development"
+    },
+    {
+      "name": "obra-superpowers-systematic-debugging",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/systematic-debugging",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-systematic-debugging"
+    },
+    {
+      "name": "obra-superpowers-test-driven-development",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/test-driven-development",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-test-driven-development"
+    },
+    {
+      "name": "obra-superpowers-using-git-worktrees",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/using-git-worktrees",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-using-git-worktrees"
+    },
+    {
+      "name": "obra-superpowers-using-superpowers",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/using-superpowers",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-using-superpowers"
+    },
+    {
+      "name": "obra-superpowers-verification-before-completion",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/verification-before-completion",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-verification-before-completion"
+    },
+    {
+      "name": "obra-superpowers-writing-plans",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/writing-plans",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-writing-plans"
+    },
+    {
+      "name": "obra-superpowers-writing-skills",
+      "source": "obra-superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "skills/writing-skills",
+      "license": "MIT",
+      "local_path": "skills/obra-superpowers-writing-skills"
+    },
+    {
+      "name": "ecc-agent-security-hardening",
+      "source": "ecc",
+      "url": "https://github.com/affaan-m/ECC",
+      "commit": "25278e7d7b6cf6e6a4e7a6c8e10f14ff22f0eb5b",
+      "path": "skills/agent-security-hardening",
+      "license": "MIT",
+      "local_path": "skills/ecc-agent-security-hardening"
+    },
+    {
+      "name": "ecc-api-design",
+      "source": "ecc",
+      "url": "https://github.com/affaan-m/ECC",
+      "commit": "25278e7d7b6cf6e6a4e7a6c8e10f14ff22f0eb5b",
+      "path": "skills/api-design",
+      "license": "MIT",
+      "local_path": "skills/ecc-api-design"
+    },
+    {
+      "name": "ecc-codebase-onboarding",
+      "source": "ecc",
+      "url": "https://github.com/affaan-m/ECC",
+      "commit": "25278e7d7b6cf6e6a4e7a6c8e10f14ff22f0eb5b",
+      "path": "skills/codebase-onboarding",
+      "license": "MIT",
+      "local_path": "skills/ecc-codebase-onboarding"
+    },
+    {
+      "name": "ecc-deep-research",
+      "source": "ecc",
+      "url": "https://github.com/affaan-m/ECC",
+      "commit": "25278e7d7b6cf6e6a4e7a6c8e10f14ff22f0eb5b",
+      "path": "skills/deep-research",
+      "license": "MIT",
+      "local_path": "skills/ecc-deep-research"
+    },
+    {
+      "name": "ecc-security-review",
+      "source": "ecc",
+      "url": "https://github.com/affaan-m/ECC",
+      "commit": "25278e7d7b6cf6e6a4e7a6c8e10f14ff22f0eb5b",
+      "path": "skills/security-review",
+      "license": "MIT",
+      "local_path": "skills/ecc-security-review"
+    },
+    {
+      "name": "ecc-security-scan",
+      "source": "ecc",
+      "url": "https://github.com/affaan-m/ECC",
+      "commit": "25278e7d7b6cf6e6a4e7a6c8e10f14ff22f0eb5b",
+      "path": "skills/security-scan",
+      "license": "MIT",
+      "local_path": "skills/ecc-security-scan"
+    },
+    {
+      "name": "ecc-tdd-workflow",
+      "source": "ecc",
+      "url": "https://github.com/affaan-m/ECC",
+      "commit": "25278e7d7b6cf6e6a4e7a6c8e10f14ff22f0eb5b",
+      "path": "skills/tdd-workflow",
+      "license": "MIT",
+      "local_path": "skills/ecc-tdd-workflow"
+    },
+    {
+      "name": "ecc-verification-loop",
+      "source": "ecc",
+      "url": "https://github.com/affaan-m/ECC",
+      "commit": "25278e7d7b6cf6e6a4e7a6c8e10f14ff22f0eb5b",
+      "path": "skills/verification-loop",
+      "license": "MIT",
+      "local_path": "skills/ecc-verification-loop"
+    },
+    {
+      "name": "anthropics-skills-academy-guide",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/academy-guide",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-academy-guide"
+    },
+    {
+      "name": "anthropics-skills-algorithmic-art",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/algorithmic-art",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-algorithmic-art"
+    },
+    {
+      "name": "anthropics-skills-brand-guidelines",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/brand-guidelines",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-brand-guidelines"
+    },
+    {
+      "name": "anthropics-skills-canvas-design",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/canvas-design",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-canvas-design"
+    },
+    {
+      "name": "anthropics-skills-frontend-design",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/frontend-design",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-frontend-design"
+    },
+    {
+      "name": "anthropics-skills-mcp-builder",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/mcp-builder",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-mcp-builder"
+    },
+    {
+      "name": "anthropics-skills-skill-creator",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/skill-creator",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-skill-creator"
+    },
+    {
+      "name": "anthropics-skills-slack-gif-creator",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/slack-gif-creator",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-slack-gif-creator"
+    },
+    {
+      "name": "anthropics-skills-theme-factory",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/theme-factory",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-theme-factory"
+    },
+    {
+      "name": "anthropics-skills-web-artifacts-builder",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/web-artifacts-builder",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-web-artifacts-builder"
+    },
+    {
+      "name": "anthropics-skills-webapp-testing",
+      "source": "anthropics-skills",
+      "url": "https://github.com/anthropics/skills",
+      "commit": "ca45fc496a3436251f191354091d557da31c15b5",
+      "path": "skills/webapp-testing",
+      "license": "Apache-2.0 per skill",
+      "local_path": "skills/anthropics-skills-webapp-testing"
+    },
+    {
+      "name": "awesome-llm-apps-advisor-orchestrator-worker",
+      "source": "awesome-llm-apps",
+      "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+      "commit": "6c16b23f1bacd0fdf240bb5141ef45e59e82c306",
+      "path": "agent_skills/advisor-orchestrator-worker",
+      "license": "Apache-2.0",
+      "local_path": "skills/awesome-llm-apps-advisor-orchestrator-worker"
+    },
+    {
+      "name": "awesome-llm-apps-commit-archaeologist",
+      "source": "awesome-llm-apps",
+      "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+      "commit": "6c16b23f1bacd0fdf240bb5141ef45e59e82c306",
+      "path": "agent_skills/commit-archaeologist",
+      "license": "Apache-2.0",
+      "local_path": "skills/awesome-llm-apps-commit-archaeologist"
+    },
+    {
+      "name": "awesome-llm-apps-dependency-doctor",
+      "source": "awesome-llm-apps",
+      "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+      "commit": "6c16b23f1bacd0fdf240bb5141ef45e59e82c306",
+      "path": "agent_skills/dependency-doctor",
+      "license": "Apache-2.0",
+      "local_path": "skills/awesome-llm-apps-dependency-doctor"
+    },
+    {
+      "name": "awesome-llm-apps-first-reader",
+      "source": "awesome-llm-apps",
+      "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+      "commit": "6c16b23f1bacd0fdf240bb5141ef45e59e82c306",
+      "path": "agent_skills/first-reader",
+      "license": "Apache-2.0",
+      "local_path": "skills/awesome-llm-apps-first-reader"
+    },
+    {
+      "name": "awesome-llm-apps-project-graveyard",
+      "source": "awesome-llm-apps",
+      "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+      "commit": "6c16b23f1bacd0fdf240bb5141ef45e59e82c306",
+      "path": "agent_skills/project-graveyard",
+      "license": "Apache-2.0",
+      "local_path": "skills/awesome-llm-apps-project-graveyard"
+    },
+    {
+      "name": "awesome-llm-apps-scope-creep-detector",
+      "source": "awesome-llm-apps",
+      "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+      "commit": "6c16b23f1bacd0fdf240bb5141ef45e59e82c306",
+      "path": "agent_skills/scope-creep-detector",
+      "license": "Apache-2.0",
+      "local_path": "skills/awesome-llm-apps-scope-creep-detector"
+    },
+    {
+      "name": "awesome-llm-apps-thinking-out-loud",
+      "source": "awesome-llm-apps",
+      "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+      "commit": "6c16b23f1bacd0fdf240bb5141ef45e59e82c306",
+      "path": "agent_skills/thinking-out-loud",
+      "license": "Apache-2.0",
+      "local_path": "skills/awesome-llm-apps-thinking-out-loud"
+    },
+    {
+      "name": "addy-agent-skills-api-and-interface-design",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/api-and-interface-design",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-api-and-interface-design"
+    },
+    {
+      "name": "addy-agent-skills-browser-testing-with-devtools",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/browser-testing-with-devtools",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-browser-testing-with-devtools"
+    },
+    {
+      "name": "addy-agent-skills-ci-cd-and-automation",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/ci-cd-and-automation",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-ci-cd-and-automation"
+    },
+    {
+      "name": "addy-agent-skills-code-review-and-quality",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/code-review-and-quality",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-code-review-and-quality"
+    },
+    {
+      "name": "addy-agent-skills-code-simplification",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/code-simplification",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-code-simplification"
+    },
+    {
+      "name": "addy-agent-skills-constraint-driven-development",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/constraint-driven-development",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-constraint-driven-development"
+    },
+    {
+      "name": "addy-agent-skills-context-engineering",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/context-engineering",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-context-engineering"
+    },
+    {
+      "name": "addy-agent-skills-debugging-and-error-recovery",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/debugging-and-error-recovery",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-debugging-and-error-recovery"
+    },
+    {
+      "name": "addy-agent-skills-deprecation-and-migration",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/deprecation-and-migration",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-deprecation-and-migration"
+    },
+    {
+      "name": "addy-agent-skills-documentation-and-adrs",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/documentation-and-adrs",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-documentation-and-adrs"
+    },
+    {
+      "name": "addy-agent-skills-doubt-driven-development",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/doubt-driven-development",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-doubt-driven-development"
+    },
+    {
+      "name": "addy-agent-skills-frontend-ui-engineering",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/frontend-ui-engineering",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-frontend-ui-engineering"
+    },
+    {
+      "name": "addy-agent-skills-git-workflow-and-versioning",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/git-workflow-and-versioning",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-git-workflow-and-versioning"
+    },
+    {
+      "name": "addy-agent-skills-idea-refine",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/idea-refine",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-idea-refine"
+    },
+    {
+      "name": "addy-agent-skills-incremental-implementation",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/incremental-implementation",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-incremental-implementation"
+    },
+    {
+      "name": "addy-agent-skills-interview-me",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/interview-me",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-interview-me"
+    },
+    {
+      "name": "addy-agent-skills-observability-and-instrumentation",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/observability-and-instrumentation",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-observability-and-instrumentation"
+    },
+    {
+      "name": "addy-agent-skills-performance-optimization",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/performance-optimization",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-performance-optimization"
+    },
+    {
+      "name": "addy-agent-skills-planning-and-task-breakdown",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/planning-and-task-breakdown",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-planning-and-task-breakdown"
+    },
+    {
+      "name": "addy-agent-skills-security-and-hardening",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/security-and-hardening",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-security-and-hardening"
+    },
+    {
+      "name": "addy-agent-skills-shipping-and-launch",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/shipping-and-launch",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-shipping-and-launch"
+    },
+    {
+      "name": "addy-agent-skills-source-driven-development",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/source-driven-development",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-source-driven-development"
+    },
+    {
+      "name": "addy-agent-skills-spec-driven-development",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/spec-driven-development",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-spec-driven-development"
+    },
+    {
+      "name": "addy-agent-skills-test-driven-development",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/test-driven-development",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-test-driven-development"
+    },
+    {
+      "name": "addy-agent-skills-using-agent-skills",
+      "source": "addy-agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "commit": "eb07f19f52c2669f2364897aaa293e2aaddd7b1c",
+      "path": "skills/using-agent-skills",
+      "license": "MIT",
+      "local_path": "skills/addy-agent-skills-using-agent-skills"
+    },
+    {
+      "name": "taste-skill-taste-skill",
+      "source": "taste-skill",
+      "url": "https://github.com/Leonxlnx/taste-skill",
+      "commit": "12af471f627f866411b4bd785b19646d3672784c",
+      "path": "skills/taste-skill",
+      "license": "MIT (repository-authored text only)",
+      "local_path": "skills/taste-skill-taste-skill"
+    },
+    {
+      "name": "deer-flow-academic-paper-review",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/academic-paper-review",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-academic-paper-review"
+    },
+    {
+      "name": "deer-flow-bootstrap",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/bootstrap",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-bootstrap"
+    },
+    {
+      "name": "deer-flow-chart-visualization",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/chart-visualization",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-chart-visualization"
+    },
+    {
+      "name": "deer-flow-claude-to-deerflow",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/claude-to-deerflow",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-claude-to-deerflow"
+    },
+    {
+      "name": "deer-flow-code-documentation",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/code-documentation",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-code-documentation"
+    },
+    {
+      "name": "deer-flow-consulting-analysis",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/consulting-analysis",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-consulting-analysis"
+    },
+    {
+      "name": "deer-flow-data-analysis",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/data-analysis",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-data-analysis"
+    },
+    {
+      "name": "deer-flow-deep-research",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/deep-research",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-deep-research"
+    },
+    {
+      "name": "deer-flow-find-skills",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/find-skills",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-find-skills"
+    },
+    {
+      "name": "deer-flow-frontend-design",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/frontend-design",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-frontend-design"
+    },
+    {
+      "name": "deer-flow-github-deep-research",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/github-deep-research",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-github-deep-research"
+    },
+    {
+      "name": "deer-flow-image-generation",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/image-generation",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-image-generation"
+    },
+    {
+      "name": "deer-flow-music-generation",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/music-generation",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-music-generation"
+    },
+    {
+      "name": "deer-flow-newsletter-generation",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/newsletter-generation",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-newsletter-generation"
+    },
+    {
+      "name": "deer-flow-podcast-generation",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/podcast-generation",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-podcast-generation"
+    },
+    {
+      "name": "deer-flow-ppt-generation",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/ppt-generation",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-ppt-generation"
+    },
+    {
+      "name": "deer-flow-skill-creator",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/skill-creator",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-skill-creator"
+    },
+    {
+      "name": "deer-flow-skill-reviewer",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/skill-reviewer",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-skill-reviewer"
+    },
+    {
+      "name": "deer-flow-surprise-me",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/surprise-me",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-surprise-me"
+    },
+    {
+      "name": "deer-flow-systematic-literature-review",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/systematic-literature-review",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-systematic-literature-review"
+    },
+    {
+      "name": "deer-flow-vercel-deploy",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/vercel-deploy",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-vercel-deploy"
+    },
+    {
+      "name": "deer-flow-video-generation",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/video-generation",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-video-generation"
+    },
+    {
+      "name": "deer-flow-web-design-guidelines",
+      "source": "deer-flow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "commit": "81e1ab8dcc86574cfac0ecdfe3636b775a08c567",
+      "path": "skills/public/web-design-guidelines",
+      "license": "MIT",
+      "local_path": "skills/deer-flow-web-design-guidelines"
+    },
+    {
+      "name": "scientific-agent-skills-13c-metabolic-flux",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/13c-metabolic-flux",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-13c-metabolic-flux"
+    },
+    {
+      "name": "scientific-agent-skills-adaptyv",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/adaptyv",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-adaptyv"
+    },
+    {
+      "name": "scientific-agent-skills-aeon",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/aeon",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-aeon"
+    },
+    {
+      "name": "scientific-agent-skills-alphagenome",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/alphagenome",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-alphagenome"
+    },
+    {
+      "name": "scientific-agent-skills-analytical-method-validation",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/analytical-method-validation",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-analytical-method-validation"
+    },
+    {
+      "name": "scientific-agent-skills-anndata",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/anndata",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-anndata"
+    },
+    {
+      "name": "scientific-agent-skills-arbor",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/arbor",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-arbor"
+    },
+    {
+      "name": "scientific-agent-skills-arboreto",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/arboreto",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-arboreto"
+    },
+    {
+      "name": "scientific-agent-skills-astropy",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/astropy",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-astropy"
+    },
+    {
+      "name": "scientific-agent-skills-autoskill",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/autoskill",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-autoskill"
+    },
+    {
+      "name": "scientific-agent-skills-benchling-integration",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/benchling-integration",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-benchling-integration"
+    },
+    {
+      "name": "scientific-agent-skills-bgpt-paper-search",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/bgpt-paper-search",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-bgpt-paper-search"
+    },
+    {
+      "name": "scientific-agent-skills-bids",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/bids",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-bids"
+    },
+    {
+      "name": "scientific-agent-skills-biopython",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/biopython",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-biopython"
+    },
+    {
+      "name": "scientific-agent-skills-bioservices",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/bioservices",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-bioservices"
+    },
+    {
+      "name": "scientific-agent-skills-bulk-rnaseq",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/bulk-rnaseq",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-bulk-rnaseq"
+    },
+    {
+      "name": "scientific-agent-skills-cantera",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/cantera",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-cantera"
+    },
+    {
+      "name": "scientific-agent-skills-cellprofiler",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/cellprofiler",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-cellprofiler"
+    },
+    {
+      "name": "scientific-agent-skills-cellxgene-census",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/cellxgene-census",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-cellxgene-census"
+    },
+    {
+      "name": "scientific-agent-skills-cirq",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/cirq",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-cirq"
+    },
+    {
+      "name": "scientific-agent-skills-citation-management",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/citation-management",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-citation-management"
+    },
+    {
+      "name": "scientific-agent-skills-clinical-decision-support",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/clinical-decision-support",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-clinical-decision-support"
+    },
+    {
+      "name": "scientific-agent-skills-clinical-reports",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/clinical-reports",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-clinical-reports"
+    },
+    {
+      "name": "scientific-agent-skills-cobrapy",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/cobrapy",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-cobrapy"
+    },
+    {
+      "name": "scientific-agent-skills-consciousness-council",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/consciousness-council",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-consciousness-council"
+    },
+    {
+      "name": "scientific-agent-skills-dask",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/dask",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-dask"
+    },
+    {
+      "name": "scientific-agent-skills-database-lookup",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/database-lookup",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-database-lookup"
+    },
+    {
+      "name": "scientific-agent-skills-datalad",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/datalad",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-datalad"
+    },
+    {
+      "name": "scientific-agent-skills-datamol",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/datamol",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-datamol"
+    },
+    {
+      "name": "scientific-agent-skills-deepchem",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/deepchem",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-deepchem"
+    },
+    {
+      "name": "scientific-agent-skills-deepspot-m",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/deepspot-m",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-deepspot-m"
+    },
+    {
+      "name": "scientific-agent-skills-deeptools",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/deeptools",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-deeptools"
+    },
+    {
+      "name": "scientific-agent-skills-depmap",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/depmap",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-depmap"
+    },
+    {
+      "name": "scientific-agent-skills-dhdna-profiler",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/dhdna-profiler",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-dhdna-profiler"
+    },
+    {
+      "name": "scientific-agent-skills-diffdock",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/diffdock",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-diffdock"
+    },
+    {
+      "name": "scientific-agent-skills-dnanexus-integration",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/dnanexus-integration",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-dnanexus-integration"
+    },
+    {
+      "name": "scientific-agent-skills-esm",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/esm",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-esm"
+    },
+    {
+      "name": "scientific-agent-skills-etetoolkit",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/etetoolkit",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-etetoolkit"
+    },
+    {
+      "name": "scientific-agent-skills-exa-search",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/exa-search",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-exa-search"
+    },
+    {
+      "name": "scientific-agent-skills-experimental-design",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/experimental-design",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-experimental-design"
+    },
+    {
+      "name": "scientific-agent-skills-exploratory-data-analysis",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/exploratory-data-analysis",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-exploratory-data-analysis"
+    },
+    {
+      "name": "scientific-agent-skills-fictiv",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/fictiv",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-fictiv"
+    },
+    {
+      "name": "scientific-agent-skills-flowio",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/flowio",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-flowio"
+    },
+    {
+      "name": "scientific-agent-skills-flowkit",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/flowkit",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-flowkit"
+    },
+    {
+      "name": "scientific-agent-skills-fluidsim",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/fluidsim",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-fluidsim"
+    },
+    {
+      "name": "scientific-agent-skills-folklore-variant-evidence",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/folklore-variant-evidence",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-folklore-variant-evidence"
+    },
+    {
+      "name": "scientific-agent-skills-generate-image",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/generate-image",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-generate-image"
+    },
+    {
+      "name": "scientific-agent-skills-geniml",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/geniml",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-geniml"
+    },
+    {
+      "name": "scientific-agent-skills-genomic-coordinates",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/genomic-coordinates",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-genomic-coordinates"
+    },
+    {
+      "name": "scientific-agent-skills-genomic-intelligence",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/genomic-intelligence",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-genomic-intelligence"
+    },
+    {
+      "name": "scientific-agent-skills-geomaster",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/geomaster",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-geomaster"
+    },
+    {
+      "name": "scientific-agent-skills-geopandas",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/geopandas",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-geopandas"
+    },
+    {
+      "name": "scientific-agent-skills-get-available-resources",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/get-available-resources",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-get-available-resources"
+    },
+    {
+      "name": "scientific-agent-skills-gget",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/gget",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-gget"
+    },
+    {
+      "name": "scientific-agent-skills-ginkgo-cloud-lab",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/ginkgo-cloud-lab",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-ginkgo-cloud-lab"
+    },
+    {
+      "name": "scientific-agent-skills-glycoengineering",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/glycoengineering",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-glycoengineering"
+    },
+    {
+      "name": "scientific-agent-skills-gtars",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/gtars",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-gtars"
+    },
+    {
+      "name": "scientific-agent-skills-histolab",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/histolab",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-histolab"
+    },
+    {
+      "name": "scientific-agent-skills-hugging-science",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/hugging-science",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-hugging-science"
+    },
+    {
+      "name": "scientific-agent-skills-hypogenic",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/hypogenic",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-hypogenic"
+    },
+    {
+      "name": "scientific-agent-skills-hypothesis-generation",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/hypothesis-generation",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-hypothesis-generation"
+    },
+    {
+      "name": "scientific-agent-skills-imaging-data-commons",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/imaging-data-commons",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-imaging-data-commons"
+    },
+    {
+      "name": "scientific-agent-skills-infographics",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/infographics",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-infographics"
+    },
+    {
+      "name": "scientific-agent-skills-iso-standards-readiness",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/iso-standards-readiness",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-iso-standards-readiness"
+    },
+    {
+      "name": "scientific-agent-skills-lab-hardware-cad",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/lab-hardware-cad",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-lab-hardware-cad"
+    },
+    {
+      "name": "scientific-agent-skills-labarchive-integration",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/labarchive-integration",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-labarchive-integration"
+    },
+    {
+      "name": "scientific-agent-skills-lamindb",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/lamindb",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-lamindb"
+    },
+    {
+      "name": "scientific-agent-skills-latchbio-integration",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/latchbio-integration",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-latchbio-integration"
+    },
+    {
+      "name": "scientific-agent-skills-latex-posters",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/latex-posters",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-latex-posters"
+    },
+    {
+      "name": "scientific-agent-skills-liteparse",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/liteparse",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-liteparse"
+    },
+    {
+      "name": "scientific-agent-skills-literature-review",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/literature-review",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-literature-review"
+    },
+    {
+      "name": "scientific-agent-skills-mageck",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/mageck",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-mageck"
+    },
+    {
+      "name": "scientific-agent-skills-marine-carbonate-chemistry",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/marine-carbonate-chemistry",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-marine-carbonate-chemistry"
+    },
+    {
+      "name": "scientific-agent-skills-markdown-mermaid-writing",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/markdown-mermaid-writing",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-markdown-mermaid-writing"
+    },
+    {
+      "name": "scientific-agent-skills-market-research-reports",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/market-research-reports",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-market-research-reports"
+    },
+    {
+      "name": "scientific-agent-skills-markitdown",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/markitdown",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-markitdown"
+    },
+    {
+      "name": "scientific-agent-skills-matchms",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/matchms",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-matchms"
+    },
+    {
+      "name": "scientific-agent-skills-matlab",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/matlab",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-matlab"
+    },
+    {
+      "name": "scientific-agent-skills-matplotlib",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/matplotlib",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-matplotlib"
+    },
+    {
+      "name": "scientific-agent-skills-medchem",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/medchem",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-medchem"
+    },
+    {
+      "name": "scientific-agent-skills-modal",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/modal",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-modal"
+    },
+    {
+      "name": "scientific-agent-skills-molecular-dynamics",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/molecular-dynamics",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-molecular-dynamics"
+    },
+    {
+      "name": "scientific-agent-skills-molfeat",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/molfeat",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-molfeat"
+    },
+    {
+      "name": "scientific-agent-skills-ncats-arax",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/ncats-arax",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-ncats-arax"
+    },
+    {
+      "name": "scientific-agent-skills-networkx",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/networkx",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-networkx"
+    },
+    {
+      "name": "scientific-agent-skills-neurokit2",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/neurokit2",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-neurokit2"
+    },
+    {
+      "name": "scientific-agent-skills-neuropixels-analysis",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/neuropixels-analysis",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-neuropixels-analysis"
+    },
+    {
+      "name": "scientific-agent-skills-nextflow",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/nextflow",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-nextflow"
+    },
+    {
+      "name": "scientific-agent-skills-nmrglue",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/nmrglue",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-nmrglue"
+    },
+    {
+      "name": "scientific-agent-skills-nwb-conversion",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/nwb-conversion",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-nwb-conversion"
+    },
+    {
+      "name": "scientific-agent-skills-omero-integration",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/omero-integration",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-omero-integration"
+    },
+    {
+      "name": "scientific-agent-skills-onekgpd",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/onekgpd",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-onekgpd"
+    },
+    {
+      "name": "scientific-agent-skills-ontology-term-resolution",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/ontology-term-resolution",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-ontology-term-resolution"
+    },
+    {
+      "name": "scientific-agent-skills-open-notebook",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/open-notebook",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-open-notebook"
+    },
+    {
+      "name": "scientific-agent-skills-openpiv",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/openpiv",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-openpiv"
+    },
+    {
+      "name": "scientific-agent-skills-opentrons-integration",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/opentrons-integration",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-opentrons-integration"
+    },
+    {
+      "name": "scientific-agent-skills-optimize-for-gpu",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/optimize-for-gpu",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-optimize-for-gpu"
+    },
+    {
+      "name": "scientific-agent-skills-pacsomatic",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pacsomatic",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pacsomatic"
+    },
+    {
+      "name": "scientific-agent-skills-paper-lookup",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/paper-lookup",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-paper-lookup"
+    },
+    {
+      "name": "scientific-agent-skills-paperclip",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/paperclip",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-paperclip"
+    },
+    {
+      "name": "scientific-agent-skills-paperzilla",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/paperzilla",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-paperzilla"
+    },
+    {
+      "name": "scientific-agent-skills-parallel-web",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/parallel-web",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-parallel-web"
+    },
+    {
+      "name": "scientific-agent-skills-pathml",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pathml",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pathml"
+    },
+    {
+      "name": "scientific-agent-skills-pathogen-variant-surveillance",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pathogen-variant-surveillance",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pathogen-variant-surveillance"
+    },
+    {
+      "name": "scientific-agent-skills-pathway-enrichment",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pathway-enrichment",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pathway-enrichment"
+    },
+    {
+      "name": "scientific-agent-skills-peer-review",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/peer-review",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-peer-review"
+    },
+    {
+      "name": "scientific-agent-skills-pennylane",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pennylane",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pennylane"
+    },
+    {
+      "name": "scientific-agent-skills-phylogenetics",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/phylogenetics",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-phylogenetics"
+    },
+    {
+      "name": "scientific-agent-skills-pi-agent",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pi-agent",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pi-agent"
+    },
+    {
+      "name": "scientific-agent-skills-pkpd-modeling",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pkpd-modeling",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pkpd-modeling"
+    },
+    {
+      "name": "scientific-agent-skills-polars",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/polars",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-polars"
+    },
+    {
+      "name": "scientific-agent-skills-polars-bio",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/polars-bio",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-polars-bio"
+    },
+    {
+      "name": "scientific-agent-skills-pptx-posters",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pptx-posters",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pptx-posters"
+    },
+    {
+      "name": "scientific-agent-skills-primekg",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/primekg",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-primekg"
+    },
+    {
+      "name": "scientific-agent-skills-primer-design",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/primer-design",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-primer-design"
+    },
+    {
+      "name": "scientific-agent-skills-protocolsio-integration",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/protocolsio-integration",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-protocolsio-integration"
+    },
+    {
+      "name": "scientific-agent-skills-pufferlib",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pufferlib",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pufferlib"
+    },
+    {
+      "name": "scientific-agent-skills-pybamm",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pybamm",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pybamm"
+    },
+    {
+      "name": "scientific-agent-skills-pycalphad",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pycalphad",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pycalphad"
+    },
+    {
+      "name": "scientific-agent-skills-pydeseq2",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pydeseq2",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pydeseq2"
+    },
+    {
+      "name": "scientific-agent-skills-pydicom",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pydicom",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pydicom"
+    },
+    {
+      "name": "scientific-agent-skills-pyhealth",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pyhealth",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pyhealth"
+    },
+    {
+      "name": "scientific-agent-skills-pylabrobot",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pylabrobot",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pylabrobot"
+    },
+    {
+      "name": "scientific-agent-skills-pymatgen",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pymatgen",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pymatgen"
+    },
+    {
+      "name": "scientific-agent-skills-pymc",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pymc",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pymc"
+    },
+    {
+      "name": "scientific-agent-skills-pymoo",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pymoo",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pymoo"
+    },
+    {
+      "name": "scientific-agent-skills-pyopenms",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pyopenms",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pyopenms"
+    },
+    {
+      "name": "scientific-agent-skills-pysam",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pysam",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pysam"
+    },
+    {
+      "name": "scientific-agent-skills-pytdc",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pytdc",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pytdc"
+    },
+    {
+      "name": "scientific-agent-skills-pytorch-lightning",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pytorch-lightning",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pytorch-lightning"
+    },
+    {
+      "name": "scientific-agent-skills-pyzotero",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/pyzotero",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-pyzotero"
+    },
+    {
+      "name": "scientific-agent-skills-qiime2-amplicon",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/qiime2-amplicon",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-qiime2-amplicon"
+    },
+    {
+      "name": "scientific-agent-skills-qiskit",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/qiskit",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-qiskit"
+    },
+    {
+      "name": "scientific-agent-skills-qutip",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/qutip",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-qutip"
+    },
+    {
+      "name": "scientific-agent-skills-rdkit",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/rdkit",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-rdkit"
+    },
+    {
+      "name": "scientific-agent-skills-relion",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/relion",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-relion"
+    },
+    {
+      "name": "scientific-agent-skills-relsa-severity-assessment",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/relsa-severity-assessment",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-relsa-severity-assessment"
+    },
+    {
+      "name": "scientific-agent-skills-research-grants",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/research-grants",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-research-grants"
+    },
+    {
+      "name": "scientific-agent-skills-research-lookup",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/research-lookup",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-research-lookup"
+    },
+    {
+      "name": "scientific-agent-skills-rowan",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/rowan",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-rowan"
+    },
+    {
+      "name": "scientific-agent-skills-scanpy",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scanpy",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scanpy"
+    },
+    {
+      "name": "scientific-agent-skills-scholar-evaluation",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scholar-evaluation",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scholar-evaluation"
+    },
+    {
+      "name": "scientific-agent-skills-scientific-brainstorming",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scientific-brainstorming",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scientific-brainstorming"
+    },
+    {
+      "name": "scientific-agent-skills-scientific-critical-thinking",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scientific-critical-thinking",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scientific-critical-thinking"
+    },
+    {
+      "name": "scientific-agent-skills-scientific-schematics",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scientific-schematics",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scientific-schematics"
+    },
+    {
+      "name": "scientific-agent-skills-scientific-slides",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scientific-slides",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scientific-slides"
+    },
+    {
+      "name": "scientific-agent-skills-scientific-visualization",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scientific-visualization",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scientific-visualization"
+    },
+    {
+      "name": "scientific-agent-skills-scientific-writing",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scientific-writing",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scientific-writing"
+    },
+    {
+      "name": "scientific-agent-skills-scikit-bio",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scikit-bio",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scikit-bio"
+    },
+    {
+      "name": "scientific-agent-skills-scikit-learn",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scikit-learn",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scikit-learn"
+    },
+    {
+      "name": "scientific-agent-skills-scikit-survival",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scikit-survival",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scikit-survival"
+    },
+    {
+      "name": "scientific-agent-skills-scvelo",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scvelo",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scvelo"
+    },
+    {
+      "name": "scientific-agent-skills-scvi-tools",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/scvi-tools",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-scvi-tools"
+    },
+    {
+      "name": "scientific-agent-skills-seaborn",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/seaborn",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-seaborn"
+    },
+    {
+      "name": "scientific-agent-skills-shap",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/shap",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-shap"
+    },
+    {
+      "name": "scientific-agent-skills-simpy",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/simpy",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-simpy"
+    },
+    {
+      "name": "scientific-agent-skills-stable-baselines3",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/stable-baselines3",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-stable-baselines3"
+    },
+    {
+      "name": "scientific-agent-skills-statistical-analysis",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/statistical-analysis",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-statistical-analysis"
+    },
+    {
+      "name": "scientific-agent-skills-statistical-power",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/statistical-power",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-statistical-power"
+    },
+    {
+      "name": "scientific-agent-skills-statsmodels",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/statsmodels",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-statsmodels"
+    },
+    {
+      "name": "scientific-agent-skills-sympy",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/sympy",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-sympy"
+    },
+    {
+      "name": "scientific-agent-skills-tamarind",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/tamarind",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-tamarind"
+    },
+    {
+      "name": "scientific-agent-skills-tellurium",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/tellurium",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-tellurium"
+    },
+    {
+      "name": "scientific-agent-skills-tiledbvcf",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/tiledbvcf",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-tiledbvcf"
+    },
+    {
+      "name": "scientific-agent-skills-timesfm-forecasting",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/timesfm-forecasting",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-timesfm-forecasting"
+    },
+    {
+      "name": "scientific-agent-skills-torch-geometric",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/torch-geometric",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-torch-geometric"
+    },
+    {
+      "name": "scientific-agent-skills-torchdrug",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/torchdrug",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-torchdrug"
+    },
+    {
+      "name": "scientific-agent-skills-transformers",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/transformers",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-transformers"
+    },
+    {
+      "name": "scientific-agent-skills-treatment-plans",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/treatment-plans",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-treatment-plans"
+    },
+    {
+      "name": "scientific-agent-skills-umap-learn",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/umap-learn",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-umap-learn"
+    },
+    {
+      "name": "scientific-agent-skills-uncertainty-and-units",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/uncertainty-and-units",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-uncertainty-and-units"
+    },
+    {
+      "name": "scientific-agent-skills-usfiscaldata",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/usfiscaldata",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-usfiscaldata"
+    },
+    {
+      "name": "scientific-agent-skills-vaex",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/vaex",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-vaex"
+    },
+    {
+      "name": "scientific-agent-skills-venue-templates",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/venue-templates",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-venue-templates"
+    },
+    {
+      "name": "scientific-agent-skills-waypoint-bio",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/waypoint-bio",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-waypoint-bio"
+    },
+    {
+      "name": "scientific-agent-skills-what-if-oracle",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/what-if-oracle",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-what-if-oracle"
+    },
+    {
+      "name": "scientific-agent-skills-zarr-python",
+      "source": "scientific-agent-skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "commit": "5f2bc0341354fd5590aef76a533ada1e1e5b4e62",
+      "path": "skills/zarr-python",
+      "license": "MIT (third-party terms may apply)",
+      "local_path": "skills/scientific-agent-skills-zarr-python"
+    },
+    {
+      "name": "cloudflare-security-audit-security-audit",
+      "source": "cloudflare-security-audit",
+      "url": "https://github.com/cloudflare/security-audit-skill",
+      "commit": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+      "path": "skills/security-audit",
+      "license": "MIT",
+      "local_path": "skills/cloudflare-security-audit-security-audit"
+    },
+    {
+      "name": "librechat-codebase-design",
+      "source": "librechat",
+      "url": "https://github.com/LibreChat-AI/LibreChat",
+      "commit": "8d3da9bbb220a0a96be9330a2e1cbd385fb786d5",
+      "path": ".claude/skills/codebase-design",
+      "license": "MIT",
+      "local_path": "skills/librechat-codebase-design"
+    },
+    {
+      "name": "librechat-improve-codebase-architecture",
+      "source": "librechat",
+      "url": "https://github.com/LibreChat-AI/LibreChat",
+      "commit": "8d3da9bbb220a0a96be9330a2e1cbd385fb786d5",
+      "path": ".claude/skills/improve-codebase-architecture",
+      "license": "MIT",
+      "local_path": "skills/librechat-improve-codebase-architecture"
+    },
+    {
+      "name": "nvidia-skillspector-skill-inspector",
+      "source": "nvidia-skillspector",
+      "url": "https://github.com/NVIDIA/SkillSpector",
+      "commit": "54921c8c7c23008c8af2328d5ab492a904b6ece4",
+      "path": "skills/skill-inspector",
+      "license": "Apache-2.0",
+      "local_path": "skills/nvidia-skillspector-skill-inspector"
+    },
+    {
+      "name": "rebelytics-observer-rebelytics-observer",
+      "source": "rebelytics-observer",
+      "url": "https://github.com/rebelytics/one-skill-to-rule-them-all",
+      "commit": "ba696b2c2673be959dcd4a1dbdbc92085df8b41a",
+      "path": ".",
+      "license": "CC BY 4.0",
+      "local_path": "skills/rebelytics-observer-rebelytics-observer"
+    }
+  ]
+}

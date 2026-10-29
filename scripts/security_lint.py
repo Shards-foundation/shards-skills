@@ -17,7 +17,14 @@ for folder in (ROOT/'skills').glob('*'):
    except (UnicodeError,OSError): continue
    for label,pat in patterns.items():
     for m in pat.finditer(data): issues.append((p.relative_to(ROOT),label,data.count('\n',0,m.start())+1))
+baseline=[]
+imported=[]
+for item in issues:
+    rel=item[0]
+    skill_dir=ROOT / rel.parts[0] / rel.parts[1] if len(rel.parts) > 1 else ROOT
+    (imported if (skill_dir / 'UPSTREAM.md').exists() else baseline).append(item)
 for p,label,line in issues: print(f"REVIEW {p}:{line}: {label}")
-print(f"Security lint scanned skills; {len(issues)} finding(s) require contextual review.")
-# Baseline skills must have no scanner findings; imported skills should use review-only mode in future.
-raise SystemExit(1 if issues else 0)
+print(f"Security lint scanned skills; {len(issues)} finding(s) require contextual review ({len(imported)} imported, {len(baseline)} baseline).")
+# Imported packages are explicitly review-stage: findings are a queue, not a release blocker.
+# Baseline Shards-authored packages must remain clean.
+raise SystemExit(1 if baseline else 0)

@@ -2,7 +2,7 @@
 
 **A security-aware, cross-agent skills library for engineering, research, design, security, data, AI agents, blockchain, and operations.**
 
-> Status: bootstrap release candidate. First-party skills in this repository are original Shards-authored material. Third-party catalogues are tracked as upstream sources; their contents are not silently copied into this repository.
+> Status: curated mega-library release candidate. Shards-authored and imported packages are clearly separated by provenance and review status; third-party content is not silently treated as first-party.
 
 ## Goals
 
@@ -83,3 +83,20 @@ See [`catalogue/upstreams.json`](catalogue/upstreams.json) for the user-supplied
 ## Licence
 
 Original first-party content is licensed under MIT unless a file states otherwise. Third-party materials, when later added, retain their own licence and attribution requirements; see `THIRD_PARTY_NOTICES.md`.
+
+## Curated mega-library
+
+The bootstrap collection has been expanded into a curated catalogue of **293 skill packages** across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 13 audited upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
+
+Imported packages are not silently treated as first-party. Each one is marked `review`, includes its immutable upstream commit and original path in frontmatter, and contains an `UPSTREAM.md` record. Package-level provenance is indexed in [`catalogue/imported-skills.json`](catalogue/imported-skills.json), with preserved source notices under [`third_party/`](third_party/).
+
+The selection deliberately excludes whole application frameworks, mutable installers, licensing-ambiguous packages, unreviewed hooks, credential automation, and offensive-security dumps. See the [catalogue guide](docs/catalogue-guide.md) for lifecycle, selection, and safety rules.
+
+Run the complete local gate with:
+
+```bash
+python scripts/build_catalogue.py
+python scripts/validate_skills.py
+python scripts/security_lint.py
+python -m unittest discover -s tests -v
+```

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "skill": "test-driven-development",
+      "should_trigger": true,
+      "prompt": "Implement a regression fix and add tests before changing the implementation."
+    },
+    {
+      "skill": "test-driven-development",
+      "should_trigger": false,
+      "prompt": "Explain the difference between a list and a tuple without changing code."
+    },
+    {
+      "skill": "skill-supply-chain-audit",
+      "should_trigger": true,
+      "prompt": "Review this third-party skill before installing it and check licence, scripts and exfiltration risks."
+    },
+    {
+      "skill": "skill-supply-chain-audit",
+      "should_trigger": false,
+      "prompt": "Write an original welcome message for a community event."
+    },
+    {
+      "skill": "smart-contract-review",
+      "should_trigger": true,
+      "prompt": "Review this Solidity contract for access control, reentrancy and economic attack paths."
+    },
+    {
+      "skill": "smart-contract-review",
+      "should_trigger": false,
+      "prompt": "Explain what a blockchain is to a beginner."
+    },
+    {
+      "skill": "evidence-based-research",
+      "should_trigger": true,
+      "prompt": "Compare current official documentation and independent evidence for this technical decision."
+    },
+    {
+      "skill": "incident-runbook",
+      "should_trigger": true,
+      "prompt": "Production API error rates just spiked after deployment; establish incident status and safe diagnosis."
+    }
+  ]
+}

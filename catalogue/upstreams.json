@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "policy": "Reference-only until licence and content review are completed",
+  "sources": [
+    {
+      "name": "Microsoft Agent Framework",
+      "url": "https://github.com/microsoft/agent-framework",
+      "role": "agent orchestration and framework patterns",
+      "integration": "adapter examples and architecture notes; do not vendor framework source by default"
+    },
+    {
+      "name": "Superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "role": "software development workflow and disciplined execution",
+      "integration": "compare workflow stages; import only with licence and attribution review"
+    },
+    {
+      "name": "Everything Claude Code (ECC)",
+      "url": "https://github.com/affaan-m/ECC",
+      "role": "coding-agent workflows, rules and skills",
+      "integration": "map useful concepts to portable first-party skills; review each file's licence"
+    },
+    {
+      "name": "Andrej Karpathy Skills",
+      "url": "https://github.com/multica-ai/andrej-karpathy-skills",
+      "role": "research and learning workflow patterns",
+      "integration": "evaluate patterns; preserve original authorship and licence"
+    },
+    {
+      "name": "Anthropic Skills",
+      "url": "https://github.com/anthropics/skills",
+      "role": "official skill packaging examples and task-specific skills",
+      "integration": "format and quality reference; respect repository and directory licences"
+    },
+    {
+      "name": "Awesome LLM Apps",
+      "url": "https://github.com/Shubhamsaboo/awesome-llm-apps",
+      "role": "LLM application examples and integration patterns",
+      "integration": "reference for application recipes; examples may have separate licences"
+    },
+    {
+      "name": "Graphify",
+      "url": "https://github.com/Graphify-Labs/graphify",
+      "role": "codebase knowledge graph and retrieval patterns",
+      "integration": "optional integration guide; pin version and test supported runtimes"
+    },
+    {
+      "name": "Addy Osmani Agent Skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "role": "engineering and web development skills",
+      "integration": "compare against first-party engineering skills; license review required"
+    },
+    {
+      "name": "Taste Skill",
+      "url": "https://github.com/Leonxlnx/taste-skill",
+      "role": "design taste and visual quality guidance",
+      "integration": "use as design-evaluation reference after licence review"
+    },
+    {
+      "name": "DeerFlow",
+      "url": "https://github.com/bytedance/deer-flow",
+      "role": "open-source deep research agent architecture",
+      "integration": "architecture reference, not a skill dump; assess dependencies and licence"
+    },
+    {
+      "name": "Scientific Agent Skills",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "role": "scientific research and reproducibility",
+      "integration": "research workflows and domain skill reference"
+    },
+    {
+      "name": "Cloudflare Security Audit Skill",
+      "url": "https://github.com/cloudflare/security-audit-skill",
+      "role": "security review methodology",
+      "integration": "compare audit checks; preserve license/attribution if adapted"
+    },
+    {
+      "name": "LibreChat",
+      "url": "https://github.com/LibreChat-AI/LibreChat",
+      "role": "multi-provider chat application and tool integration",
+      "integration": "integration reference, not part of the skills content corpus by default"
+    },
+    {
+      "name": "OpenViking",
+      "url": "https://github.com/volcengine/OpenViking",
+      "role": "context database and agent memory architecture",
+      "integration": "context retrieval reference, evaluate independently"
+    },
+    {
+      "name": "Anthropic Cybersecurity Skills",
+      "url": "https://github.com/mukul975/Anthropic-Cybersecurity-Skills",
+      "role": "cybersecurity skill examples",
+      "integration": "untrusted third-party catalogue; scan and verify each skill before use"
+    },
+    {
+      "name": "Vercel Agent Skills",
+      "url": "https://github.com/vercel-labs/agent-skills",
+      "role": "React, Next.js and web engineering quality practices",
+      "integration": "compatibility and performance skill reference; preserve upstream licence"
+    },
+    {
+      "name": "NVIDIA SkillSpector",
+      "url": "https://github.com/NVIDIA/SkillSpector",
+      "role": "skill inspection and safety evaluation",
+      "integration": "evaluate as a complementary scanner; pin version and validate outputs"
+    },
+    {
+      "name": "One Skill to Rule Them All",
+      "url": "https://github.com/rebelytics/one-skill-to-rule-them-all",
+      "role": "skill composition and cross-agent management patterns",
+      "integration": "architecture reference; review licence and security model"
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "name": "Shards Skills",
+  "version": "0.1.0",
+  "status": "bootstrap",
+  "skill_count": 19,
+  "categories": [
+    "agents",
+    "blockchain",
+    "data",
+    "design",
+    "engineering",
+    "operations",
+    "research",
+    "security"
+  ],
+  "skill_paths": [
+    "skills/agent-system-design",
+    "skills/code-review",
+    "skills/evidence-based-research",
+    "skills/frontend-accessibility-review",
+    "skills/implementation-planning",
+    "skills/incident-runbook",
+    "skills/problem-framing",
+    "skills/release-readiness",
+    "skills/reproducible-data-analysis",
+    "skills/scientific-research",
+    "skills/secure-code-review",
+    "skills/skill-supply-chain-audit",
+    "skills/smart-contract-review",
+    "skills/systematic-debugging",
+    "skills/test-driven-development",
+    "skills/threat-modeling",
+    "skills/tool-contract-design",
+    "skills/web-application-testing",
+    "skills/writing-skill-packages"
+  ],
+  "skills": [
+    {
+      "name": "agent-system-design",
+      "path": "skills/agent-system-design",
+      "description": "Use when designing a multi-agent system, tool-using assistant, orchestrator, worker fleet or autonomous workflow.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "code-review",
+      "path": "skills/code-review",
+      "description": "Use when reviewing a diff, pull request, patch, or proposed implementation for correctness, security, maintainability and regression risk.",
+      "category": "engineering",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "evidence-based-research",
+      "path": "skills/evidence-based-research",
+      "description": "Use when answering a complex factual question that needs source comparison, current evidence, traceable claims or a decision brief.",
+      "category": "research",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "frontend-accessibility-review",
+      "path": "skills/frontend-accessibility-review",
+      "description": "Use when reviewing a web interface for usability, visual hierarchy, responsive behaviour and accessibility before shipping.",
+      "category": "design",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "implementation-planning",
+      "path": "skills/implementation-planning",
+      "description": "Use when a change spans multiple files, components or stages and needs a sequenced plan with explicit verification before execution.",
+      "category": "engineering",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "incident-runbook",
+      "path": "skills/incident-runbook",
+      "description": "Use when diagnosing a production incident, service degradation, agent failure or operational event requiring coordinated response.",
+      "category": "operations",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "problem-framing",
+      "path": "skills/problem-framing",
+      "description": "Use when a request is ambiguous, multi-stage, high-impact, or likely to fail because the objective and acceptance criteria are underspecified.",
+      "category": "engineering",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "release-readiness",
+      "path": "skills/release-readiness",
+      "description": "Use before releasing a library, application, agent, API, or infrastructure change to determine whether evidence supports handover.",
+      "category": "engineering",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "reproducible-data-analysis",
+      "path": "skills/reproducible-data-analysis",
+      "description": "Use when analysing a dataset and producing results that need to be reproducible, auditable and resistant to silent data-quality errors.",
+      "category": "data",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "scientific-research",
+      "path": "skills/scientific-research",
+      "description": "Use for scientific or technical research that requires reproducible methods, source-quality appraisal, uncertainty handling and separation of evidence from interpretation.",
+      "category": "research",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "secure-code-review",
+      "path": "skills/secure-code-review",
+      "description": "Use when reviewing code for vulnerabilities, unsafe input handling, authorisation errors, secrets exposure or insecure defaults.",
+      "category": "security",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "skill-supply-chain-audit",
+      "path": "skills/skill-supply-chain-audit",
+      "description": "Use before adopting, copying, installing or executing a third-party agent skill, plugin, prompt package or tool bundle.",
+      "category": "security",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "smart-contract-review",
+      "path": "skills/smart-contract-review",
+      "description": "Use when reviewing Solidity or other smart-contract code for security, economic correctness, upgradeability and operational risks.",
+      "category": "blockchain",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "systematic-debugging",
+      "path": "skills/systematic-debugging",
+      "description": "Use when a system fails, behaves inconsistently, or reports an error whose root cause is not yet established.",
+      "category": "engineering",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "test-driven-development",
+      "path": "skills/test-driven-development",
+      "description": "Use when implementing a behaviour change or bug fix where automated tests can express the expected result.",
+      "category": "engineering",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "threat-modeling",
+      "path": "skills/threat-modeling",
+      "description": "Use when designing a new service, agent, integration, data flow, smart contract or significant architectural change.",
+      "category": "security",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "tool-contract-design",
+      "path": "skills/tool-contract-design",
+      "description": "Use when creating an agent tool, MCP tool, API action or automation interface that an LLM will call.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "web-application-testing",
+      "path": "skills/web-application-testing",
+      "description": "Use when validating a web application or browser workflow across functional states, navigation, forms, accessibility and regressions.",
+      "category": "engineering",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "writing-skill-packages",
+      "path": "skills/writing-skill-packages",
+      "description": "Use when authoring or improving an agent skill so it is discoverable, portable, testable and safe to maintain.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    }
+  ]
+}

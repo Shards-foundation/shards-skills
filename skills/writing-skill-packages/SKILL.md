@@ -20,6 +20,16 @@ author: Shards Foundation
 6. Add positive and negative trigger examples plus task-specific evaluation cases.
 7. Run metadata, link, security and compatibility checks; record version and provenance.
 
+## Runnable local preflight
+
+Validate an existing candidate package before publication. This is one stage, not a full skill authoring or behavioral evaluation.
+
+Prerequisite: full Shards Skills checkout with the curated plugins/shards-core runner and Python 3.11+. From repository root:
+
+    python skills/writing-skill-packages/scripts/run.py --path skills/release-readiness
+
+The [adapter script](scripts/run.py) delegates to the curated Python runner and returns machine-readable JSON. This is a bounded, repeatable preflight, not a substitute for the remaining human or agent-guided Workflow steps.
+
 ## Output contract
 Return a skill directory with `SKILL.md`, optional references/scripts, test/eval cases, licence/provenance and a short compatibility statement.
 

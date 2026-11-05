@@ -97,5 +97,20 @@ class PluginRuntimeTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(json.loads(proc.stdout)["count"], 4)
 
+    def test_first_party_workflow_adapters(self):
+        cases = (
+            ("release-readiness", "--repo", ".", 1),
+            ("skill-supply-chain-audit", "--path", "skills/release-readiness", 0),
+            ("writing-skill-packages", "--path", "skills/release-readiness", 0),
+        )
+        for name, switch, value, expected in cases:
+            path = ROOT / "skills" / name / "scripts" / "run.py"
+            with self.subTest(name=name):
+                result = subprocess.run(
+                    [sys.executable, str(path), switch, value],
+                    cwd=ROOT, text=True, capture_output=True, timeout=30)
+                self.assertEqual(result.returncode, expected, result.stderr)
+                self.assertIn("workflow", json.loads(result.stdout))
+
 if __name__ == "__main__":
     unittest.main()

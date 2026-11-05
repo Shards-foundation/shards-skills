@@ -97,7 +97,7 @@ class PluginRuntimeTests(unittest.TestCase):
         proc = subprocess.run([sys.executable, str(RUNNER), "catalogue"],
                               text=True, capture_output=True, timeout=15)
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(json.loads(proc.stdout)["count"], 6)
+        self.assertEqual(json.loads(proc.stdout)["count"], 7)
 
     def test_first_party_workflow_adapters(self):
         cases = (

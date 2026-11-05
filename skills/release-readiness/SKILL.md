@@ -19,6 +19,16 @@ author: Shards Foundation
 5. Confirm deployment evidence and smoke tests for the actual target environment; distinguish local from production verification.
 6. Record blockers with severity, owner, mitigation and release decision.
 
+## Runnable local preflight
+
+Local release evidence preflight. Default result is HOLD until tests are explicitly approved and run. Even a local READY is not production authorization.
+
+Prerequisite: full Shards Skills checkout with the curated plugins/shards-core runner and Python 3.11+. From repository root:
+
+    python skills/release-readiness/scripts/run.py --repo .
+
+The [adapter script](scripts/run.py) delegates to the curated Python runner and returns machine-readable JSON. This is a bounded, repeatable preflight, not a substitute for the remaining human or agent-guided Workflow steps.
+
 ## Output contract
 Return a release gate table with status, evidence, timestamp/commit where available, risk and go/no-go recommendation.
 

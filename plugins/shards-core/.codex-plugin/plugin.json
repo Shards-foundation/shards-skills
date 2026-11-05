@@ -1,0 +1,6 @@
+{
+  "name": "shards-agent-core",
+  "version": "0.1.0",
+  "description": "Curated operational skill workflows.",
+  "skills": "./skills/"
+}

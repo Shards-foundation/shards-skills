@@ -1,0 +1,31 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "shards-agent-core",
+  "version": "0.1.0",
+  "description": "Curated, security-aware agent governance and repeatable local engineering workflows.",
+  "author": {
+    "name": "Shards Foundation"
+  },
+  "repository": "https://github.com/Shards-foundation/shards-skills",
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "governance",
+    "engineering",
+    "workflows"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Shards Agent Core",
+        "shortDescription": "Reviewed agent workflows and governance",
+        "developerName": "Shards Foundation",
+        "category": "Productivity",
+        "defaultPrompt": [
+          "Audit an installed agent skill for safety and provenance.",
+          "Run a local repository health review and report evidence."
+        ]
+      }
+    }
+  }
+}

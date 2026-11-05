@@ -20,6 +20,16 @@ author: Shards Foundation
 6. Behaviour-test only in a disposable sandbox without secrets, with restricted egress and explicit command approval.
 7. Record reviewer, findings, evidence, disposition and re-review trigger.
 
+## Runnable local preflight
+
+Initial structural/provenance preflight only. A METADATA_PASS does not complete source, licence, script or sandbox review.
+
+Prerequisite: full Shards Skills checkout with the curated plugins/shards-core runner and Python 3.11+. From repository root:
+
+    python skills/skill-supply-chain-audit/scripts/run.py --path skills/release-readiness
+
+The [adapter script](scripts/run.py) delegates to the curated Python runner and returns machine-readable JSON. This is a bounded, repeatable preflight, not a substitute for the remaining human or agent-guided Workflow steps.
+
 ## Output contract
 Return provenance, licence decision, capability inventory, risk findings, scanner limitations, sandbox results and status (`draft`, `review`, `verified`, `rejected`).
 

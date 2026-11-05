@@ -100,3 +100,8 @@ python scripts/validate_skills.py
 python scripts/security_lint.py
 python -m unittest discover -s tests -v
 ```
+
+
+## Agent operating contract and runnable core plugin
+
+Agents should start with [AGENTS.md](AGENTS.md) and [agent.md](agent.md). The curated, installable [Shards Agent Core plugin](plugins/shards-core/README.md) provides four runnable local workflows for repository health, skill auditing, release-gate evidence and structured handoffs. Installations are opt-in via the [local plugin marketplace](.agents/plugins/marketplace.json). Existing imported catalogue skills are **not** automatically trusted, executed or bundled into the curated plugin. See [runtime compatibility](docs/agent-runtime.md).

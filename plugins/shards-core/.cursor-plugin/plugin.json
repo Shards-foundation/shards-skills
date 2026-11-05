@@ -1,0 +1,8 @@
+{
+  "name": "shards-agent-core",
+  "version": "0.1.0",
+  "description": "Curated and tested engineering workflows for coding agents.",
+  "author": {
+    "name": "Shards Foundation"
+  }
+}

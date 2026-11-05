@@ -1,0 +1,43 @@
+name: Agent Core Plugin Gates
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plugins/shards-core/**'
+      - 'tests/test_plugin_runtime.py'
+      - 'scripts/run_workflow.py'
+      - '.agents/plugins/**'
+      - 'skills/rebelytics-observer-rebelytics-observer/**'
+      - '.github/workflows/agent-core-plugin.yml'
+  pull_request:
+    paths:
+      - 'plugins/shards-core/**'
+      - 'tests/test_plugin_runtime.py'
+      - 'scripts/run_workflow.py'
+      - '.agents/plugins/**'
+      - 'skills/rebelytics-observer-rebelytics-observer/**'
+      - '.github/workflows/agent-core-plugin.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile Python entry points
+        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py
+      - name: Validate existing skill metadata
+        run: python scripts/validate_skills.py
+      - name: Heuristic skill security lint
+        run: python scripts/security_lint.py
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Exercise skill audit
+        run: python plugins/shards-core/scripts/run.py audit-skill --path plugins/shards-core/skills/shards-skill-audit
+      - name: Exercise repository health
+        run: python plugins/shards-core/scripts/run.py repository-health --repo .

@@ -38,3 +38,6 @@ AGENTS.md and this file are versioned professional instructions, not dynamic mem
 
 ## Quality standard
 Every completed task must distinguish: intended result, actual files/tools changed, tests observed, known gaps, permission boundaries and next safe step.
+
+## Governed execution
+The trusted entry point is scripts/dispatch_skills.py. Discover registered skills using list, inspect exact command/source hash using plan, then use run --execute only within delegated permissions. Only curated plugin identifiers can be executed. Imported catalogue skills may be read by the audit skill but never invoked as scripts. JSON receipts are evidence, not a substitute for enforcement by the host.

@@ -47,3 +47,6 @@ Portfolio OBSERVED: inventory was collected, not security-certified. FAIL: missi
 The import catalogue includes third-party review-stage content. Enumerating its scripts is not executing them. Heuristic warning counts are a triage queue, not confirmed vulnerabilities. Host-specific plugin installation, live MCP tool use, service availability and production-readiness checks remain separate.
 
 Never schedule automatic repair or trust promotion without independent provenance validation and narrow approval.
+
+## Curated skill dispatch
+Use scripts/dispatch_skills.py list, plan --skill shards-repository-health, and run --skill shards-repository-health --execute. All commands are fixed trusted mappings, with exit-code and source-hash evidence. See skill-dispatch.md for the permission model. The new plugin-integrity step runs in quick, weekly and verify maintenance profiles.

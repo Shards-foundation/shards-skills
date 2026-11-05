@@ -17,3 +17,14 @@ Skill instructions are in skills/<name>/SKILL.md; root AGENTS.md and agent.md de
 Release-check remains HOLD until real tests are run with both --run-tests and --trusted-local-code (requires authorization to execute local repository tests). Even a READY status refers only to local metadata and unit tests; it is NOT production certification, publication approval or deployment authorization.
 
 Imported/unreviewed skills and third-party scripts are not auto-executed. Review package source, licences, required permissions and side effects before any host installation or runtime execution.
+
+## Additional automation skills
+
+This curated plugin now also provides shards-automation-operator and shards-catalogue-sync. Both require the full Shards Skills checkout and Python 3.11+; standalone plugin installation is insufficient for the root scripts.
+
+    python scripts/automate.py plan --workflow weekly
+    python scripts/automate.py run --workflow verify --output-dir reports/automation
+    python scripts/catalogue_sync.py --check
+    python scripts/catalogue_sync.py --write --approve-write
+
+See docs/automation.md for security boundaries and the scheduled workflow.

@@ -105,3 +105,7 @@ python -m unittest discover -s tests -v
 ## Agent operating contract and runnable core plugin
 
 Agents should start with [AGENTS.md](AGENTS.md) and [agent.md](agent.md). The curated, installable [Shards Agent Core plugin](plugins/shards-core/README.md) provides four runnable local workflows for repository health, skill auditing, release-gate evidence and structured handoffs. Installations are opt-in via the [local plugin marketplace](.agents/plugins/marketplace.json). Existing imported catalogue skills are **not** automatically trusted, executed or bundled into the curated plugin. See [runtime compatibility](docs/agent-runtime.md).
+
+## Automated skill maintenance
+
+Use the [automation operations guide](docs/automation.md) to plan and run bounded maintenance workflows, generate skill-portfolio reports, and explicitly reconcile catalogue metadata. A GitHub Actions audit runs every Monday at 05:17 UTC and retains JSON/Markdown artifacts for 14 days. Imported skill scripts are never auto-executed; catalogue write mode is deliberately excluded from unattended schedules.

@@ -6,3 +6,6 @@ __pycache__/
 .coverage
 htmlcov/
 reports/
+
+# Local agent checkpoints and runtime artifacts
+.shards/

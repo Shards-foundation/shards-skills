@@ -1,0 +1,8 @@
+{
+  "name": "shards-agent-core",
+  "version": "0.1.0",
+  "description": "Reviewed Shards Foundation agent workflows and safety policy.",
+  "author": {
+    "name": "Shards Foundation"
+  }
+}

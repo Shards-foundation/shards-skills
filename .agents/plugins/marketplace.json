@@ -1,0 +1,20 @@
+{
+  "name": "shards-foundation-local",
+  "interface": {
+    "displayName": "Shards Foundation Plugins"
+  },
+  "plugins": [
+    {
+      "name": "shards-agent-core",
+      "source": {
+        "source": "local",
+        "path": "./plugins/shards-core"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

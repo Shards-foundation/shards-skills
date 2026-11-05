@@ -7,12 +7,16 @@ on:
       - 'tests/test_plugin_runtime.py'
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
+      - 'skills/rebelytics-observer-rebelytics-observer/**'
+      - '.github/workflows/agent-core-plugin.yml'
   pull_request:
     paths:
       - 'plugins/shards-core/**'
       - 'tests/test_plugin_runtime.py'
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
+      - 'skills/rebelytics-observer-rebelytics-observer/**'
+      - '.github/workflows/agent-core-plugin.yml'
   workflow_dispatch:
 permissions:
   contents: read

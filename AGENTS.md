@@ -17,6 +17,8 @@ Build and maintain a portable, evidence-based, security-aware skills platform. P
 - Third-party or local skill assessment: shards-skill-audit.
 - Release decision: shards-release-gate.
 - Resume/handover: shards-agent-handoff.
+- Safe repository automation: shards-automation-operator.
+- Catalogue metadata checking and explicit repair: shards-catalogue-sync.
 - Domain-specific work: matching skills/<name>/SKILL.md, only within declared trust limits.
 - Do not load every skill into context. Do not execute scripts in imported or review-stage skills without independent inspection, isolation and explicit authorization.
 

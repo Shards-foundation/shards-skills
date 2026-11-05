@@ -1,0 +1,53 @@
+name: Scheduled Skill Automation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/automate.py'
+      - 'scripts/catalogue_sync.py'
+      - 'scripts/audit_portfolio.py'
+      - 'tests/test_automation.py'
+      - '.github/workflows/scheduled-skill-automation.yml'
+  pull_request:
+    paths:
+      - 'scripts/automate.py'
+      - 'scripts/catalogue_sync.py'
+      - 'scripts/audit_portfolio.py'
+      - 'tests/test_automation.py'
+      - '.github/workflows/scheduled-skill-automation.yml'
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    name: Automation and portfolio review
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile automation scripts
+        run: python -m py_compile scripts/automate.py scripts/catalogue_sync.py scripts/audit_portfolio.py
+      - name: Run automation regression suite
+        run: python -m unittest discover -s tests -v
+      - name: Execute bounded weekly workflow
+        run: python scripts/automate.py run --workflow weekly --output-dir reports/automation
+      - name: Produce full portfolio JSON and Markdown
+        if: always()
+        run: |
+          python scripts/audit_portfolio.py --json-output reports/automation/portfolio.json --markdown-output reports/automation/portfolio.md
+      - name: Upload report artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shards-skill-audit-report
+          path: reports/automation/
+          if-no-files-found: warn
+          retention-days: 14

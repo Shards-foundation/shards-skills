@@ -20,4 +20,4 @@ Commands: catalogue, repository-health, audit-skill, release-check, handoff.
 All default operations are read-only except an explicit handoff output file. A release check is HOLD unless its approved test evidence is present. Running untrusted repository tests is opt-in.
 
 ## Coverage and readiness
-The existing 293 top-level packages were not converted wholesale. The curated plugin contains four initial executable workflow wrappers. Imported packages stay review-stage, are not auto-executed, and are not auto-loaded into the curated plugin. Extend by adding new reviewed wrappers with tests and matching output contracts. Host compatibility must be demonstrated, not inferred from file extensions.
+The existing 293 top-level packages were not converted wholesale. The curated plugin contains six curated skill packages: four core executable workflows and two root-repository automation workflows. Imported packages stay review-stage, are not auto-executed, and are not auto-loaded into the curated plugin. Extend by adding new reviewed wrappers with tests and matching output contracts. Host compatibility must be demonstrated, not inferred from file extensions.

@@ -67,7 +67,7 @@ class AutomationTests(unittest.TestCase):
             return subprocess.CompletedProcess(argv, 0, stdout="checked", stderr="")
         data = automate.run_workflow("quick", execute=True, run_command=fake)
         self.assertEqual(data["status"], "pass")
-        self.assertEqual(len(seen), 3)
+        self.assertEqual(len(seen), len(automate.WORKFLOWS["quick"]))
         self.assertTrue(all(cmd[0] == sys.executable for cmd in seen))
         self.assertTrue(all("untrusted.py" not in " ".join(cmd) for cmd in seen))
 

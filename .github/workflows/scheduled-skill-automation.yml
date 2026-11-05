@@ -8,6 +8,9 @@ on:
       - 'scripts/catalogue_sync.py'
       - 'scripts/audit_portfolio.py'
       - 'tests/test_automation.py'
+      - 'tests/test_dispatch.py'
+      - 'scripts/dispatch_skills.py'
+      - 'scripts/verify_plugins.py'
       - '.github/workflows/scheduled-skill-automation.yml'
   pull_request:
     paths:
@@ -15,6 +18,9 @@ on:
       - 'scripts/catalogue_sync.py'
       - 'scripts/audit_portfolio.py'
       - 'tests/test_automation.py'
+      - 'tests/test_dispatch.py'
+      - 'scripts/dispatch_skills.py'
+      - 'scripts/verify_plugins.py'
       - '.github/workflows/scheduled-skill-automation.yml'
   schedule:
     - cron: '17 5 * * 1'
@@ -34,7 +40,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile automation scripts
-        run: python -m py_compile scripts/automate.py scripts/catalogue_sync.py scripts/audit_portfolio.py
+        run: python -m py_compile scripts/automate.py scripts/catalogue_sync.py scripts/audit_portfolio.py scripts/dispatch_skills.py scripts/verify_plugins.py
       - name: Run automation regression suite
         run: python -m unittest discover -s tests -v
       - name: Execute bounded weekly workflow

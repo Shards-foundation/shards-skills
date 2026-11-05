@@ -28,3 +28,6 @@ This curated plugin now also provides shards-automation-operator and shards-cata
     python scripts/catalogue_sync.py --write --approve-write
 
 See docs/automation.md for security boundaries and the scheduled workflow.
+
+## Governed execution
+A seventh curated skill, shards-skill-dispatch, provides a policy-bounded entry point through scripts/dispatch_skills.py in the full repository checkout. Run plan before run --execute; no imported skill script is directly executable. See docs/skill-dispatch.md at repository root.

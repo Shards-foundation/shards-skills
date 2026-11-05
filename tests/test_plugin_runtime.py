@@ -17,11 +17,12 @@ spec.loader.exec_module(runner)
 class PluginRuntimeTests(unittest.TestCase):
     def test_allowlisted_catalogue(self):
         data = runner.catalogue()
-        self.assertEqual(data["count"], 6)
+        self.assertEqual(data["count"], 7)
         self.assertEqual({x["name"] for x in data["skills"]}, {
             "shards-repository-health", "shards-skill-audit",
             "shards-release-gate", "shards-agent-handoff",
-            "shards-automation-operator", "shards-catalogue-sync"})
+            "shards-automation-operator", "shards-catalogue-sync",
+            "shards-skill-dispatch"})
 
     def test_manifests(self):
         for name in ("plugin.json", ".claude-plugin/plugin.json",

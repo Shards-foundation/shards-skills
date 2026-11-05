@@ -123,7 +123,7 @@ def run(plan: dict, *, executor=None) -> dict:
     if executor is None:
         executor = subprocess.run
     env = {key: value for key, value in os.environ.items() if key in
-           ("PATH", "HOME", "SYSTEMROOT", "WINDIR", "TMP", "TEMP", "TMPDIR", "LANG", "LC_ALL", "PYTHONPATH")}
+           ("PATH", "HOME", "SYSTEMROOT", "WINDIR", "TMP", "TEMP", "TMPDIR", "LANG", "LC_ALL")}
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTHONUTF8"] = "1"
     started = timestamp()

@@ -5,6 +5,9 @@ on:
     paths:
       - 'plugins/shards-core/**'
       - 'tests/test_plugin_runtime.py'
+      - 'tests/test_dispatch.py'
+      - 'scripts/dispatch_skills.py'
+      - 'scripts/verify_plugins.py'
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
       - 'skills/rebelytics-observer-rebelytics-observer/**'
@@ -13,6 +16,9 @@ on:
     paths:
       - 'plugins/shards-core/**'
       - 'tests/test_plugin_runtime.py'
+      - 'tests/test_dispatch.py'
+      - 'scripts/dispatch_skills.py'
+      - 'scripts/verify_plugins.py'
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
       - 'skills/rebelytics-observer-rebelytics-observer/**'
@@ -30,7 +36,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile Python entry points
-        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py
+        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/verify_plugins.py
       - name: Validate existing skill metadata
         run: python scripts/validate_skills.py
       - name: Heuristic skill security lint
@@ -39,5 +45,12 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Exercise skill audit
         run: python plugins/shards-core/scripts/run.py audit-skill --path plugins/shards-core/skills/shards-skill-audit
+      - name: Verify plugin and registry
+        run: python scripts/verify_plugins.py --check
+      - name: Smoke test governed dispatcher
+        run: |
+          python scripts/dispatch_skills.py list
+          python scripts/dispatch_skills.py plan --skill shards-repository-health
+          python scripts/dispatch_skills.py run --skill shards-repository-health --execute
       - name: Exercise repository health
         run: python plugins/shards-core/scripts/run.py repository-health --repo .

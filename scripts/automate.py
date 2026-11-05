@@ -16,14 +16,15 @@ STEPS = {
     "skill-metadata": (["scripts/validate_skills.py"], 90),
     "security-lint": (["scripts/security_lint.py"], 90),
     "portfolio-audit": (["scripts/audit_portfolio.py"], 90),
+    "plugin-integrity": (["scripts/verify_plugins.py", "--check"], 45),
     "plugin-audit": (["plugins/shards-core/scripts/run.py", "audit-skill", "--path",
                       "plugins/shards-core/skills/shards-skill-audit"], 30),
     "unit-tests": (["-m", "unittest", "discover", "-s", "tests", "-v"], 150),
 }
 WORKFLOWS = {
-    "quick": ("catalogue-check", "skill-metadata", "plugin-audit"),
-    "weekly": ("catalogue-check", "skill-metadata", "security-lint", "portfolio-audit"),
-    "verify": ("catalogue-check", "skill-metadata", "security-lint", "plugin-audit", "unit-tests"),
+    "quick": ("catalogue-check", "skill-metadata", "plugin-integrity", "plugin-audit"),
+    "weekly": ("catalogue-check", "skill-metadata", "security-lint", "portfolio-audit", "plugin-integrity"),
+    "verify": ("catalogue-check", "skill-metadata", "security-lint", "plugin-integrity", "plugin-audit", "unit-tests"),
 }
 CREDENTIAL = re.compile(r"(gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16})")
 

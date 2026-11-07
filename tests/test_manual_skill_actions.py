@@ -10,7 +10,11 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import dispatch_skills as dispatcher
 
 WORKFLOW = ROOT / ".github/workflows/run-curated-skill.yml"
-ALLOWED = {"shards-repository-health", "shards-catalogue-sync", "shards-skill-dispatch"}
+ALLOWED = {
+    "shards-repository-health", "shards-catalogue-sync", "shards-skill-dispatch",
+    "shards-a2a-harness", "shards-dual-channel",
+    "shards-subagents", "shards-parallel-swarm",
+}
 
 
 class ManualSkillActionTests(unittest.TestCase):
@@ -26,11 +30,11 @@ class ManualSkillActionTests(unittest.TestCase):
     def test_ui_choices_equal_shell_allowlist(self):
         content = WORKFLOW.read_text(encoding="utf-8")
         match = re.search(
-            r"^\s+options:\n(?P<options>(?:\s+- shards-[a-z-]+\n)+)",
+            r"^\s+options:\n(?P<options>(?:\s+- shards-[a-z0-9-]+\n)+)",
             content, re.MULTILINE)
         self.assertIsNotNone(match)
-        choices = set(re.findall(r"shards-[a-z-]+", match.group("options")))
-        guard = re.search(r"^\s+(shards-[a-z-]+(?:\|shards-[a-z-]+)+)\) ;;",
+        choices = set(re.findall(r"shards-[a-z0-9-]+", match.group("options")))
+        guard = re.search(r"^\s+(shards-[a-z0-9-]+(?:\|shards-[a-z0-9-]+)+)\) ;;",
                           content, re.MULTILINE)
         self.assertIsNotNone(guard)
         guarded = set(guard.group(1).split("|"))

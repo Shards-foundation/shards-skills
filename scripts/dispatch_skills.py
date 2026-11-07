@@ -100,11 +100,40 @@ def _check_plan_integrity(plan: dict) -> None:
     if skill not in REGISTRY:
         raise ValueError("Unknown curated skill in execution plan")
     _check_descriptor(skill)
-    _, script_path, operation = REGISTRY[skill]
+    effect, script_path, operation = REGISTRY[skill]
+    if plan.get("effect") != effect:
+        raise ValueError("Execution plan effect differs from curated registry")
+    expected_timeout = 420 if skill == "shards-automation-operator" else (
+        30 if skill == "shards-skill-dispatch" else 180)
+    if type(plan.get("timeout_seconds")) is not int or plan["timeout_seconds"] != expected_timeout:
+        raise ValueError("Execution plan timeout differs from curated registry")
+    if plan.get("approved_by") != "host-required" or plan.get("executed") is not False:
+        raise ValueError("Execution plan authorization metadata is invalid")
     script = _repository_path(script_path)
     command = plan.get("command")
     if (not isinstance(command, list) or len(command) < 3 or
-            command[:3] != [sys.executable, str(script), operation]):
+            not all(isinstance(arg, str) for arg in command)):
+        raise ValueError("Execution plan command is invalid")
+    args = command[3:]
+    if skill in ("shards-repository-health", "shards-release-gate"):
+        expected_args = ["--repo", str(ROOT)]
+    elif skill == "shards-skill-audit":
+        if len(args) != 2 or args[0] != "--path":
+            raise ValueError("Audit command shape is invalid")
+        expected_args = ["--path", str(_selected_skill(Path(args[1]).name))]
+    elif skill == "shards-agent-handoff":
+        if len(args) != 4 or args[0] != "--input" or args[2] != "--output":
+            raise ValueError("Handoff command shape is invalid")
+        expected_args = ["--input", str(_state_file(args[1], must_exist=True)),
+                         "--output", str(_state_file(args[3], must_exist=False))]
+    elif skill == "shards-automation-operator":
+        if len(args) != 2 or args[0] != "--workflow" or args[1] not in (
+                "quick", "weekly", "verify"):
+            raise ValueError("Maintenance command shape is invalid")
+        expected_args = ["--workflow", args[1]]
+    else:
+        expected_args = []
+    if command != [sys.executable, str(script), operation] + expected_args:
         raise ValueError("Execution plan command differs from curated registry")
     digest = hashlib.sha256(script.read_bytes()).hexdigest()
     expected_script = plan.get("script_sha256")

@@ -131,16 +131,16 @@ class SkillSearchTests(unittest.TestCase):
             descriptor = root / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
             descriptor.parent.mkdir(parents=True)
             with mock.patch.object(discovery, "REGISTRY", {name: object()}):
-                valid = "---\\nname: " + name + "\\ndescription: Healthy\\n---\\n"
+                valid = "---\nname: " + name + "\ndescription: Healthy\n---\n"
                 descriptor.write_text(valid, encoding="utf-8")
                 self.assertEqual(discovery.curated_entries(root)[0]["description"], "Healthy")
                 invalid = [
-                    "---\\nname: " + name + "\\nname: " + name +
-                    "\\ndescription: Duplicate\\n---\\n",
-                    "---\\nname: " + name + "\\ndescription: " +
-                    "x" * 8200 + "\\n---\\n",
-                    "---\\nname: " + name + "\\ndescription: Healthy\\n" +
-                    ("# filler\\n" * 99) + "---\\n",
+                    "---\nname: " + name + "\nname: " + name +
+                    "\ndescription: Duplicate\n---\n",
+                    "---\nname: " + name + "\ndescription: " +
+                    "x" * 8200 + "\n---\n",
+                    "---\nname: " + name + "\ndescription: Healthy\n" +
+                    ("# filler\n" * 99) + "---\n",
                 ]
                 for content in invalid:
                     with self.subTest(length=len(content)):
@@ -149,8 +149,8 @@ class SkillSearchTests(unittest.TestCase):
                             discovery.curated_entries(root)
                 # Exactly 100 lines before the closing delimiter remains accepted.
                 descriptor.write_text(
-                    "---\\nname: " + name + "\\ndescription: Healthy\\n" +
-                    ("# filler\\n" * 97) + "---\\n", encoding="utf-8")
+                    "---\nname: " + name + "\ndescription: Healthy\n" +
+                    ("# filler\n" * 97) + "---\n", encoding="utf-8")
                 self.assertEqual(len(discovery.curated_entries(root)), 1)
 
     def test_bad_query_limit_rejected(self):

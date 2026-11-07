@@ -112,3 +112,17 @@ Use the [automation operations guide](docs/automation.md) to plan and run bounde
 
 ## Governed skill execution
 The seven curated plugin skills are exposed through a bounded, JSON-reporting dispatcher. Use scripts/dispatch_skills.py list and plan first, then explicitly run approved read-only or scoped local workflows. Details: [Governed skill execution](docs/skill-dispatch.md). Imported catalogue skills are not executable by discovery alone.
+
+## Deterministic skill discovery
+
+Use the [metadata-only skill finder](docs/skill-discovery.md) to locate relevant
+packages without loading or executing third-party skill code:
+
+```bash
+python scripts/search_skills.py --query "code review" --limit 10
+python scripts/search_skills.py --query "repository health" --status curated
+python scripts/search_skills.py --query "blockchain" --category blockchain
+```
+
+The JSON response distinguishes catalogue-only skill descriptions from curated
+dispatcher allowlist entries. Search results are **not** execution permissions.

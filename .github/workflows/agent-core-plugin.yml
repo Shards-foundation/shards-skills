@@ -7,6 +7,9 @@ on:
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'
       - 'scripts/dispatch_skills.py'
+      - 'scripts/search_skills.py'
+      - 'tests/test_skill_search.py'
+      - 'docs/skill-discovery.md'
       - 'scripts/verify_plugins.py'
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
@@ -18,6 +21,9 @@ on:
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'
       - 'scripts/dispatch_skills.py'
+      - 'scripts/search_skills.py'
+      - 'tests/test_skill_search.py'
+      - 'docs/skill-discovery.md'
       - 'scripts/verify_plugins.py'
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
@@ -36,7 +42,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile Python entry points
-        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/verify_plugins.py
+        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/search_skills.py scripts/verify_plugins.py
       - name: Validate existing skill metadata
         run: python scripts/validate_skills.py
       - name: Heuristic skill security lint
@@ -53,5 +59,7 @@ jobs:
           python scripts/dispatch_skills.py plan --skill shards-repository-health
           PLAN_SHA=$(python scripts/dispatch_skills.py plan --skill shards-repository-health | python -c 'import json,sys; print(json.load(sys.stdin)["plan_sha256"])')
           python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 "$PLAN_SHA"
+      - name: Smoke test metadata-only skill discovery
+        run: python scripts/search_skills.py --query "repository health" --status curated --limit 3
       - name: Exercise repository health
         run: python plugins/shards-core/scripts/run.py repository-health --repo .

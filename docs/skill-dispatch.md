@@ -19,9 +19,9 @@ For a **plan-pinned run**, inspect the full JSON returned by `plan`, retain its
     python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 <reviewed-64-character-sha256> --save-receipt
 
 The digest covers the exact argv, effect classification, timeout, script SHA-256
-and checkout revision. The dispatcher rechecks the script bytes, registry
-mapping and Git revision immediately before execution; a changed plan fails
-without running the subprocess. A mismatched supplied digest exits with status
+and checkout revision. The dispatcher rechecks the script bytes, exact allowlisted argv shape,
+effect classification, timeout, descriptor, and Git revision immediately
+before execution; a changed plan fails without running the subprocess. A mismatched supplied digest exits with status
 2. Existing unpinned `run --execute` calls remain supported for compatibility.
 For high-assurance integrations, require `--expect-plan-sha256` in the host
 workflow instead of trusting an agent to approve its own newly generated plan.

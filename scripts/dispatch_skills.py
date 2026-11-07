@@ -30,7 +30,16 @@ REGISTRY = {
     "shards-automation-operator": ("local-tests", "scripts/automate.py", "run"),
     "shards-catalogue-sync": ("read-only", "scripts/catalogue_sync.py", "--check"),
     "shards-skill-dispatch": ("read-only", "scripts/verify_plugins.py", "--check"),
+    "shards-a2a-harness": ("read-only", "scripts/shards_agent_harness.py", "a2a-check"),
+    "shards-dual-channel": ("read-only", "scripts/shards_agent_harness.py", "dual-channel-check"),
+    "shards-subagents": ("read-only", "scripts/shards_agent_harness.py", "subagent-check"),
+    "shards-parallel-swarm": ("read-only", "scripts/shards_agent_harness.py", "swarm-check"),
 }
+
+HARNESS_SKILLS = frozenset({
+    "shards-a2a-harness", "shards-dual-channel",
+    "shards-subagents", "shards-parallel-swarm",
+})
 
 def timestamp() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -103,7 +112,7 @@ def _check_plan_integrity(plan: dict) -> None:
     effect, script_path, operation = REGISTRY[skill]
     if plan.get("effect") != effect:
         raise ValueError("Execution plan effect differs from curated registry")
-    expected_timeout = 420 if skill == "shards-automation-operator" else (
+    expected_timeout = 420 if skill in HARNESS_SKILLS or skill == "shards-automation-operator" else (
         30 if skill == "shards-skill-dispatch" else 180)
     if type(plan.get("timeout_seconds")) is not int or plan["timeout_seconds"] != expected_timeout:
         raise ValueError("Execution plan timeout differs from curated registry")
@@ -131,6 +140,8 @@ def _check_plan_integrity(plan: dict) -> None:
                 "quick", "weekly", "verify"):
             raise ValueError("Maintenance command shape is invalid")
         expected_args = ["--workflow", args[1]]
+    elif skill in HARNESS_SKILLS:
+        expected_args = ["--execute"]
     else:
         expected_args = []
     if command != [sys.executable, str(script), operation] + expected_args:
@@ -174,6 +185,9 @@ def describe(skill_id: str, *, target_skill: str | None = None,
         timeout = 420
     elif skill_id == "shards-skill-dispatch":
         timeout = 30
+    elif skill_id in HARNESS_SKILLS:
+        cmd.append("--execute")
+        timeout = 420
     plan = {"skill": skill_id, "effect": effect, "command": cmd,
             "script_sha256": hashlib.sha256(script.read_bytes()).hexdigest(),
             "commit": _source_revision(), "timeout_seconds": timeout,

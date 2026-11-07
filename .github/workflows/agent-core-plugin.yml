@@ -7,6 +7,9 @@ on:
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'
       - 'scripts/dispatch_skills.py'
+      - 'scripts/shards_agent_harness.py'
+      - 'tests/test_agent_harness.py'
+      - 'docs/agent-harness.md'
       - 'scripts/search_skills.py'
       - 'tests/test_skill_search.py'
       - 'tests/test_manual_skill_search_actions.py'
@@ -23,6 +26,9 @@ on:
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'
       - 'scripts/dispatch_skills.py'
+      - 'scripts/shards_agent_harness.py'
+      - 'tests/test_agent_harness.py'
+      - 'docs/agent-harness.md'
       - 'scripts/search_skills.py'
       - 'tests/test_skill_search.py'
       - 'tests/test_manual_skill_search_actions.py'
@@ -46,7 +52,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile Python entry points
-        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/search_skills.py scripts/verify_plugins.py
+        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/shards_agent_harness.py scripts/search_skills.py scripts/verify_plugins.py
       - name: Validate existing skill metadata
         run: python scripts/validate_skills.py
       - name: Heuristic skill security lint
@@ -63,6 +69,10 @@ jobs:
           python scripts/dispatch_skills.py plan --skill shards-repository-health
           PLAN_SHA=$(python scripts/dispatch_skills.py plan --skill shards-repository-health | python -c 'import json,sys; print(json.load(sys.stdin)["plan_sha256"])')
           python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 "$PLAN_SHA"
+      - name: Smoke test bounded three-agent read-only swarm
+        run: |
+          python scripts/shards_agent_harness.py plan --profile swarm
+          python scripts/shards_agent_harness.py run --profile swarm --execute
       - name: Smoke test metadata-only skill discovery
         run: python scripts/search_skills.py --query "repository health" --status curated --limit 3
       - name: Exercise repository health

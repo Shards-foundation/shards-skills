@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import subprocess
 import sys
@@ -9,6 +10,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from contextlib import redirect_stdout
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -163,6 +165,37 @@ class AgentHarnessTests(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text())["run_id"], record["run_id"])
             with self.assertRaises(FileExistsError):
                 harness.persist(record, Path(temp))
+
+    def test_cli_saved_receipt_matches_stdout_and_checksum(self):
+        record = harness.execute(harness.build_plan("a2a"), runner=fake_receipt)
+        with tempfile.TemporaryDirectory() as temp:
+            output = io.StringIO()
+            with patch.object(harness, "execute", return_value=record), \
+                 patch.object(harness, "REPORTS", Path(temp)), \
+                 redirect_stdout(output):
+                self.assertEqual(harness.main([
+                    "run", "--profile", "a2a", "--execute", "--save-receipt"
+                ]), 0)
+            printed = json.loads(output.getvalue())
+            saved = json.loads((Path(temp) / (record["run_id"] + ".json")).read_text())
+            self.assertEqual(printed, saved)
+            self.assertNotIn("report_path", printed)
+            digest = printed.pop("receipt_sha256")
+            self.assertEqual(digest, harness.fingerprint(printed))
+
+    def test_cli_failed_receipt_is_still_saved_consistently(self):
+        record = harness.execute(harness.build_plan("a2a"),
+                                 runner=lambda plan: fake_receipt(plan, "fail"))
+        with tempfile.TemporaryDirectory() as temp:
+            output = io.StringIO()
+            with patch.object(harness, "execute", return_value=record), \
+                 patch.object(harness, "REPORTS", Path(temp)), \
+                 redirect_stdout(output):
+                self.assertEqual(harness.main([
+                    "run", "--profile", "a2a", "--execute", "--save-receipt"
+                ]), 1)
+            self.assertEqual(json.loads(output.getvalue()),
+                             json.loads((Path(temp) / (record["run_id"] + ".json")).read_text()))
 
     def test_cli_is_dry_by_default(self):
         script = str(ROOT / "scripts/shards_agent_harness.py")

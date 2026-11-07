@@ -12,6 +12,10 @@ on:
           - shards-repository-health
           - shards-catalogue-sync
           - shards-skill-dispatch
+          - shards-a2a-harness
+          - shards-dual-channel
+          - shards-subagents
+          - shards-parallel-swarm
 
 permissions:
   contents: read
@@ -35,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           case "$SHARDS_SKILL" in
-            shards-repository-health|shards-catalogue-sync|shards-skill-dispatch) ;;
+            shards-repository-health|shards-catalogue-sync|shards-skill-dispatch|shards-a2a-harness|shards-dual-channel|shards-subagents|shards-parallel-swarm) ;;
             *) echo "Unsupported manual skill: $SHARDS_SKILL" >&2; exit 2 ;;
           esac
           mkdir -p reports/manual

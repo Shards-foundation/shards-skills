@@ -145,6 +145,34 @@ class AgentHarnessTests(unittest.TestCase):
         self.assertTrue(all(entry["artifact"]["error_type"] == "ValueError"
                             for entry in record["data_channel"]))
 
+    def test_delegate_receipt_rejects_false_success_and_digest_mismatch(self):
+        plan = harness.build_plan("a2a")
+        def invalid(delegate, mode):
+            receipt = fake_receipt(delegate)
+            if mode == "digest":
+                receipt["script_sha256"] = "0" * 64
+            elif mode == "nonzero":
+                receipt["observation"]["exit_code"] = 17
+            elif mode == "missing":
+                receipt["observation"].pop("exit_code")
+            elif mode == "false_failure":
+                receipt["observation"]["status"] = "fail"
+            return receipt
+        for mode in ("digest", "nonzero", "missing", "false_failure"):
+            with self.subTest(mode=mode):
+                result = harness.execute(plan, runner=lambda p: invalid(p, mode))
+                self.assertEqual(result["status"], "fail")
+                self.assertEqual(result["summary"]["failed"], 2)
+                self.assertTrue(all(entry["artifact"]["error_type"] == "ValueError"
+                                    for entry in result["data_channel"]))
+
+    def test_delegate_receipt_accepts_consistent_nonzero_failure(self):
+        result = harness.execute(harness.build_plan("a2a"),
+                                 runner=lambda p: fake_receipt(p, "fail"))
+        self.assertEqual(result["status"], "fail")
+        self.assertTrue(all(entry["artifact"]["status"] == "fail"
+                            for entry in result["data_channel"]))
+
     def test_tampered_plan_and_regenerated_digest_denied(self):
         plan = harness.build_plan("swarm")
         tasks = [dict(task) for task in plan["tasks"]]

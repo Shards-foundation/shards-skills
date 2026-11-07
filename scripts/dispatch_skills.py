@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -86,6 +87,36 @@ def _source_revision() -> str | None:
     except (OSError, subprocess.TimeoutExpired):
         return None
 
+def _plan_fingerprint(plan: dict) -> str:
+    """Stable digest of the command and effects the operator actually reviewed."""
+    fields = ("skill", "effect", "command", "script_sha256", "commit", "timeout_seconds")
+    payload = {key: plan[key] for key in fields}
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+def _check_plan_integrity(plan: dict) -> None:
+    """Fail closed if a reviewed plan, trusted script or checkout changed."""
+    skill = plan.get("skill")
+    if skill not in REGISTRY:
+        raise ValueError("Unknown curated skill in execution plan")
+    _check_descriptor(skill)
+    _, script_path, operation = REGISTRY[skill]
+    script = _repository_path(script_path)
+    command = plan.get("command")
+    if (not isinstance(command, list) or len(command) < 3 or
+            command[:3] != [sys.executable, str(script), operation]):
+        raise ValueError("Execution plan command differs from curated registry")
+    digest = hashlib.sha256(script.read_bytes()).hexdigest()
+    expected_script = plan.get("script_sha256")
+    if not isinstance(expected_script, str) or not hmac.compare_digest(digest, expected_script):
+        raise ValueError("Trusted executable changed since planning")
+    if plan.get("commit") != _source_revision():
+        raise ValueError("Repository revision changed since planning")
+    claimed = plan.get("plan_sha256")
+    actual = _plan_fingerprint(plan)
+    if not isinstance(claimed, str) or not hmac.compare_digest(actual, claimed):
+        raise ValueError("Execution plan changed since planning")
+
 def describe(skill_id: str, *, target_skill: str | None = None,
              profile: str = "quick", input_file: str | None = None,
              output_file: str | None = None, allow_local_write: bool = False) -> dict:
@@ -114,12 +145,15 @@ def describe(skill_id: str, *, target_skill: str | None = None,
         timeout = 420
     elif skill_id == "shards-skill-dispatch":
         timeout = 30
-    return {"skill": skill_id, "effect": effect, "command": cmd,
+    plan = {"skill": skill_id, "effect": effect, "command": cmd,
             "script_sha256": hashlib.sha256(script.read_bytes()).hexdigest(),
             "commit": _source_revision(), "timeout_seconds": timeout,
             "approved_by": "host-required", "executed": False}
+    plan["plan_sha256"] = _plan_fingerprint(plan)
+    return plan
 
 def run(plan: dict, *, executor=None) -> dict:
+    _check_plan_integrity(plan)
     if executor is None:
         executor = subprocess.run
     env = {key: value for key, value in os.environ.items() if key in
@@ -148,6 +182,7 @@ def run(plan: dict, *, executor=None) -> dict:
         observed = {"status": "error", "exit_code": None, "error": type(exc).__name__}
     return {"receipt_id": str(uuid.uuid4()), "skill": plan["skill"],
             "effect": plan["effect"], "commit": plan["commit"],
+            "plan_sha256": plan["plan_sha256"],
             "script_sha256": plan["script_sha256"], "command": plan["command"],
             "started_at": started, "finished_at": timestamp(), "executed": True,
             "observation": observed, "production_verified": False}
@@ -174,6 +209,8 @@ def main(argv=None) -> int:
         s.add_argument("--allow-local-write", action="store_true")
         if action == "run":
             s.add_argument("--execute", action="store_true", help="Explicitly authorize execution")
+            s.add_argument("--expect-plan-sha256", metavar="SHA256",
+                           help="Fail unless the reviewed plan matches this digest")
             s.add_argument("--save-receipt", action="store_true", help="Write JSON receipt under reports/dispatch")
     args = p.parse_args(argv)
     if args.action == "list":
@@ -189,6 +226,11 @@ def main(argv=None) -> int:
             return 0
         if not args.execute:
             raise ValueError("Run requires --execute; use plan first")
+        if args.expect_plan_sha256 is not None:
+            expected = args.expect_plan_sha256.lower()
+            if not re.fullmatch(r"[0-9a-f]{64}", expected) or not hmac.compare_digest(
+                    expected, plan["plan_sha256"]):
+                raise ValueError("Reviewed plan SHA-256 does not match current execution plan")
         receipt = run(plan)
         if args.save_receipt:
             receipt["report_path"] = str(persist(receipt))

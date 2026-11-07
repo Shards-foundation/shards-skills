@@ -250,7 +250,7 @@ def main(argv=None) -> int:
             plan = build_plan(args.profile, skills=args.skill, workers=args.workers)
             record = execute(plan)
             if args.save_receipt:
-                record["report_path"] = str(persist(record))
+                persist(record)
         print(json.dumps(record, indent=2, sort_keys=True))
         return 0 if record["status"] == "pass" else 1
     except (ValueError, KeyError, TypeError, OSError, UnicodeError) as exc:

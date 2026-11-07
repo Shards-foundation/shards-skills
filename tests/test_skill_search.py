@@ -98,8 +98,8 @@ class SkillSearchTests(unittest.TestCase):
             descriptor = root / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
             descriptor.parent.mkdir(parents=True)
             descriptor.write_text(
-                "---\\nname: " + name + "\\ndescription: Trusted description\\n---\\n"
-                "description: Body text must not override metadata\\n", encoding="utf-8")
+                "---\nname: " + name + "\ndescription: Trusted description\n---\n"
+                "description: Body text must not override metadata\n", encoding="utf-8")
             with mock.patch.object(discovery, "REGISTRY", {name: object()}):
                 entries = discovery.curated_entries(root)
                 self.assertEqual(entries[0]["description"], "Trusted description")
@@ -111,13 +111,13 @@ class SkillSearchTests(unittest.TestCase):
             descriptor = root / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
             descriptor.parent.mkdir(parents=True)
             invalid = (
-                "Some body\\nname: " + name + "\\ndescription: Spoofed\\n",
-                "---\\nname: " + name + "\\ndescription: First\\n"
-                "description: Second\\n---\\n",
-                "---\\nname: " + name + "\\ndescription: Missing close\\n",
-                "---\\nname: other\\ndescription: Wrong\\n---\\n",
+                "Some body\nname: " + name + "\ndescription: Spoofed\n",
+                "---\nname: " + name + "\ndescription: First\n"
+                "description: Second\n---\n",
+                "---\nname: " + name + "\ndescription: Missing close\n",
+                "---\nname: other\ndescription: Wrong\n---\n",
             )
-            with unittest.mock.patch.object(discovery, "REGISTRY", {name: object()}):
+            with mock.patch.object(discovery, "REGISTRY", {name: object()}):
                 for content in invalid:
                     with self.subTest(content=content):
                         descriptor.write_text(content, encoding="utf-8")

@@ -30,7 +30,7 @@ CREDENTIAL = re.compile(
     r"(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|"
     r"sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16})", re.I)
 PRIVATE_KEY_BLOCK = re.compile(
-    r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?(?:-----END [A-Z ]*PRIVATE KEY-----|\\Z)",
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?(?:-----END [A-Z ]*PRIVATE KEY-----|\Z)",
     re.DOTALL)
 # Deliberately narrow: do not send runner credentials or Python import overrides
 # into maintenance subprocesses. This is environment minimisation, not sandboxing.

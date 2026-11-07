@@ -42,7 +42,7 @@ descriptors, makes no network calls and does not invoke a shell or subprocess.
 ## Verification
 
 ```bash
-python -m unittest tests.test_skill_search -v
+python -m unittest discover -s tests -p 'test_skill_search.py' -v
 python scripts/search_skills.py --query "repository health" --status curated
 python scripts/validate_skills.py
 ```

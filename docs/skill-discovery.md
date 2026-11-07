@@ -17,7 +17,9 @@ The command emits JSON with candidate count, match count, ranked results,
 descriptions, categories, status, relative descriptor paths, and the
 execution boundary. Exit code 0 means a valid search, even with zero matches.
 Invalid metadata, unsupported catalogue schema, traversal paths, duplicate
-names, invalid query terms or limit values fail with exit code 2.
+names, invalid query terms or limit values fail with exit code 2. Catalogue
+status values must be recognised strings; malformed JSON types (including
+arrays and objects) are rejected as metadata errors, not Python tracebacks.
 
 ## Matching and trust
 

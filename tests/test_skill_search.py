@@ -49,6 +49,10 @@ class SkillSearchTests(unittest.TestCase):
             [dict(self._entry("code-review"), path="../secrets")],
             [self._entry("code-review"), self._entry("code-review")],
             [dict(self._entry("code-review"), status="curated")],
+            [dict(self._entry("code-review"), status=[])],
+            [dict(self._entry("code-review"), status={})],
+            [dict(self._entry("code-review"), status=None)],
+            [dict(self._entry("code-review"), status=42)],
         ):
             with self.subTest(records=records):
                 with tempfile.TemporaryDirectory() as directory:

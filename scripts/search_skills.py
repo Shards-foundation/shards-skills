@@ -45,7 +45,7 @@ def catalogue_entries(root: Path = ROOT) -> list[dict]:
                 path != "skills/" + name or
                 not isinstance(description, str) or not description.strip() or
                 not isinstance(category, str) or not category.strip() or
-                status not in VALID_STATUSES):
+                not isinstance(status, str) or status not in VALID_STATUSES):
             raise ValueError("Malformed, duplicate or unsafe catalogue entry")
         seen.add(name)
         results.append({"name": name, "path": path, "description": description,

@@ -1,11 +1,13 @@
 """Regression coverage for safe, automated skill maintenance."""
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -85,6 +87,56 @@ class AutomationTests(unittest.TestCase):
         secret = "ghp_" + "a" * 30
         self.assertNotIn(secret, automate.safe_tail(secret + " found"))
         self.assertIn("[REDACTED]", automate.safe_tail(secret))
+
+    def test_subprocess_environment_is_minimal(self):
+        observed = []
+        secret = "ghp_" + "s" * 28
+        def fake(argv, **kwargs):
+            observed.append(kwargs["env"])
+            return subprocess.CompletedProcess(argv, 0, stdout="ok", stderr="")
+        with patch.dict(os.environ, {
+                "GITHUB_TOKEN": secret, "AWS_SECRET_ACCESS_KEY": secret,
+                "PYTHONPATH": "/tmp/attacker", "LD_PRELOAD": "/tmp/inject",
+                "PATH": os.environ.get("PATH", ""), "CI": "true"}):
+            result = automate.run_workflow("quick", execute=True, run_command=fake)
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(len(observed), len(automate.WORKFLOWS["quick"]))
+        for env in observed:
+            self.assertNotIn("GITHUB_TOKEN", env)
+            self.assertNotIn("AWS_SECRET_ACCESS_KEY", env)
+            self.assertNotIn("PYTHONPATH", env)
+            self.assertNotIn("LD_PRELOAD", env)
+            self.assertEqual(env["PYTHONNOUSERSITE"], "1")
+            self.assertEqual(env["PYTHONDONTWRITEBYTECODE"], "1")
+            self.assertEqual(env["CI"], "true")
+
+    def test_missing_or_symlinked_trusted_script_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            checkout = Path(directory) / "checkout"
+            scripts = checkout / "scripts"
+            scripts.mkdir(parents=True)
+            external = Path(directory) / "external.py"
+            external.write_text("raise RuntimeError('should never run')", encoding="utf-8")
+            with patch.object(automate, "ROOT", checkout):
+                with self.assertRaisesRegex(ValueError, "missing, symlinked"):
+                    automate.command_for("catalogue-check")
+                target = scripts / "catalogue_sync.py"
+                target.symlink_to(external)
+                with self.assertRaisesRegex(ValueError, "missing, symlinked"):
+                    automate.command_for("catalogue-check")
+                target.unlink()
+                target.write_text("print('trusted fixture')", encoding="utf-8")
+                cmd, limit = automate.command_for("catalogue-check")
+                self.assertEqual(cmd[1], str(target))
+                self.assertEqual(limit, 45)
+
+    def test_log_redaction_covers_pats_and_private_keys(self):
+        token = "github_pat_" + "x" * 40
+        pem = "-----BEGIN PRIVATE KEY-----\nSENSITIVE_MATERIAL\n-----END PRIVATE KEY-----"
+        self.assertNotIn(token, automate.safe_tail(token))
+        self.assertNotIn("SENSITIVE_MATERIAL", automate.safe_tail(pem))
+        unterminated = "-----BEGIN PRIVATE KEY-----\nSECRET_UNTERMINATED"
+        self.assertNotIn("SECRET_UNTERMINATED", automate.safe_tail(unterminated))
 
     def test_report_writes_create_only(self):
         with tempfile.TemporaryDirectory() as temp:

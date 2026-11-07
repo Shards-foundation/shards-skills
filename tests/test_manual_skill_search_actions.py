@@ -15,6 +15,8 @@ def choices(content: str, field: str, next_field: str | None = None) -> set[str]
     part = content.split(start, 1)[1]
     if next_field:
         part = part.split(f"      {next_field}:\n", 1)[0]
+    else:
+        part = part.split("\npermissions:", 1)[0]
     return {line.strip()[2:].strip("'") for line in part.splitlines()
             if line.strip().startswith("- ")}
 

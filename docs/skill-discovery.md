@@ -49,3 +49,21 @@ python scripts/validate_skills.py
 
 The Agent Core Plugin GitHub Actions workflow compiles and smoke-tests the
 finder and runs the repository unit test suite on matching pull requests.
+
+## Search directly from GitHub (no local Python)
+
+Repository collaborators can open **Actions → Search Shards Skill Catalogue**
+and select **Run workflow**. Enter ordinary task terms, choose optional
+category/status filters, and select a result limit. The run's summary links to
+matching checked-out `SKILL.md` descriptors at the exact commit. A JSON
+results artifact is retained for **7 days**.
+
+The workflow passes input as quoted, environment-bound CLI arguments rather
+than evaluating it as shell commands. It requests only `contents: read`
+permission and disables checkout credential persistence. Search results expose
+metadata from imported or review-stage skills; the workflow never executes
+those packages or automatically installs them. GitHub workflow permissions
+govern who can dispatch the action.
+
+For executable, first-party repository checks, use the separate
+[Run Curated Shards Skill](manual-skill-runs.md) manual workflow.

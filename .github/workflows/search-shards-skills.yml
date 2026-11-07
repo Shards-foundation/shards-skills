@@ -1,0 +1,126 @@
+name: Search Shards Skill Catalogue
+
+# GitHub-hosted, metadata-only discovery; never executes imported skill scripts.
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: "Task or skill you want to find"
+        type: string
+        required: true
+      category:
+        description: "Filter by category"
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - agents
+          - blockchain
+          - data
+          - design
+          - engineering
+          - operations
+          - research
+          - science
+          - security
+          - curated
+      status:
+        description: "Filter by review status"
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - draft
+          - review
+          - verified
+          - deprecated
+          - curated
+      limit:
+        description: "Maximum matching results"
+        type: choice
+        required: true
+        default: '10'
+        options:
+          - '5'
+          - '10'
+          - '20'
+          - '50'
+
+permissions:
+  contents: read
+
+jobs:
+  search-catalogue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Search metadata without executing skill code
+        shell: bash
+        env:
+          SHARDS_QUERY: ${{ inputs.query }}
+          SHARDS_CATEGORY: ${{ inputs.category }}
+          SHARDS_STATUS: ${{ inputs.status }}
+          SHARDS_LIMIT: ${{ inputs.limit }}
+        run: |
+          set -euo pipefail
+          mkdir -p reports/search
+          args=(--query "$SHARDS_QUERY" --limit "$SHARDS_LIMIT")
+          if [[ "$SHARDS_CATEGORY" != all ]]; then
+            args+=(--category "$SHARDS_CATEGORY")
+          fi
+          if [[ "$SHARDS_STATUS" != all ]]; then
+            args+=(--status "$SHARDS_STATUS")
+          fi
+          python scripts/search_skills.py "${args[@]}" > reports/search/results.json
+      - name: Summarise matching skill descriptors
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("reports/search/results.json")
+          lines = ["# Shards skill search", ""]
+          try:
+              result = json.loads(path.read_text(encoding="utf-8"))
+          except (OSError, ValueError):
+              result = None
+          if result is None:
+              lines.append("Search failed before a valid JSON result was available. Check job logs.")
+          else:
+              query = str(result["query"]).replace("\n", " ").replace("\r", " ")
+              lines.append("**Query:** " + query.replace("<", "&lt;").replace(">", "&gt;"))
+              lines.append("**Matching candidates:** " + str(result["match_count"]))
+              lines.append("")
+              for item in result["results"]:
+                  name = item["name"]
+                  path = item["path"]
+                  source = item["source"]
+                  status = item["status"]
+                  score = item["score"]
+                  url = (f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/"
+                         f"blob/{os.environ['GITHUB_SHA']}/{path}/SKILL.md")
+                  lines.append(f"- [`{name}`]({url}) — {status} · {source} · score {score}")
+              if not result["results"]:
+                  lines.append("No matching metadata. Try a shorter search term or broader filter.")
+              lines.extend(["", "Discovery does not authorise execution. Catalogue skills are not on the curated execution allowlist."])
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write("\n".join(lines) + "\n")
+          PY
+      - name: Upload search results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shards-skill-search-results
+          path: reports/search/
+          if-no-files-found: warn
+          retention-days: 7

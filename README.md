@@ -137,3 +137,12 @@ execution receipt, and a downloadable evidence artifact. This cannot execute
 third-party imported skills or deploy anything.
 
 See the [manual Actions runner guide](docs/manual-skill-runs.md).
+
+## Search skills from GitHub
+
+Use **Actions → Search Shards Skill Catalogue** to search the repository's
+metadata catalogue remotely, filter by category/status and open ranked
+`SKILL.md` links. The workflow is manually triggered, read-only and emits
+a downloadable JSON results artifact; no imported skill code runs.
+
+See the [skill discovery guide](docs/skill-discovery.md).

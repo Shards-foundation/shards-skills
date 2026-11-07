@@ -26,7 +26,27 @@ WORKFLOWS = {
     "weekly": ("catalogue-check", "skill-metadata", "security-lint", "portfolio-audit", "plugin-integrity"),
     "verify": ("catalogue-check", "skill-metadata", "security-lint", "plugin-integrity", "plugin-audit", "unit-tests"),
 }
-CREDENTIAL = re.compile(r"(gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16})")
+CREDENTIAL = re.compile(
+    r"(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|"
+    r"sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16})", re.I)
+PRIVATE_KEY_BLOCK = re.compile(
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?(?:-----END [A-Z ]*PRIVATE KEY-----|\\Z)",
+    re.DOTALL)
+# Deliberately narrow: do not send runner credentials or Python import overrides
+# into maintenance subprocesses. This is environment minimisation, not sandboxing.
+SAFE_ENV_KEYS = frozenset({
+    "PATH", "HOME", "USERPROFILE", "SYSTEMROOT", "WINDIR",
+    "TMP", "TEMP", "TMPDIR", "LANG", "LC_ALL", "TZ", "CI", "GITHUB_ACTIONS",
+})
+
+
+def execution_environment(source=None) -> dict[str, str]:
+    if source is None:
+        source = os.environ
+    env = {key: value for key, value in source.items() if key in SAFE_ENV_KEYS}
+    env.update(PYTHONDONTWRITEBYTECODE="1", PYTHONUTF8="1", PYTHONNOUSERSITE="1")
+    return env
+
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -37,7 +57,10 @@ def command_for(step: str) -> tuple[list[str], int]:
     args, timeout = STEPS[step]
     if args[0] == "-m":
         return [sys.executable, *args], timeout
-    return [sys.executable, str(ROOT / args[0]), *args[1:]], timeout
+    script = ROOT / args[0]
+    if script.is_symlink() or not script.is_file() or not script.resolve().is_relative_to(ROOT.resolve()):
+        raise ValueError("Trusted maintenance script missing, symlinked or outside checkout: " + args[0])
+    return [sys.executable, str(script), *args[1:]], timeout
 
 def plan(workflow: str) -> dict:
     if workflow not in WORKFLOWS:
@@ -47,7 +70,7 @@ def plan(workflow: str) -> dict:
         for name in WORKFLOWS[workflow]], "executed": False}
 
 def safe_tail(data: str) -> str:
-    return CREDENTIAL.sub("[REDACTED]", data)[-2400:]
+    return CREDENTIAL.sub("[REDACTED]", PRIVATE_KEY_BLOCK.sub("[REDACTED]", data))[-2400:]
 
 def run_workflow(workflow: str, *, execute: bool, fail_fast: bool = False,
                  run_command=None) -> dict:
@@ -60,8 +83,7 @@ def run_workflow(workflow: str, *, execute: bool, fail_fast: bool = False,
     entries = []
     for name in WORKFLOWS[workflow]:
         argv, limit = command_for(name)
-        env = dict(os.environ)
-        env.update(PYTHONDONTWRITEBYTECODE="1", PYTHONUTF8="1")
+        env = execution_environment()
         started = now()
         try:
             proc = run_command(argv, cwd=str(ROOT), capture_output=True, text=True,
@@ -106,16 +128,21 @@ def main(argv=None) -> int:
     r.add_argument("--output-dir", type=Path)
     r.add_argument("--fail-fast", action="store_true")
     args = parser.parse_args(argv)
-    if args.action == "list":
-        report = {"workflows": {k: list(v) for k, v in WORKFLOWS.items()}}
-    elif args.action == "plan":
-        report = plan(args.workflow)
-    else:
-        report = run_workflow(args.workflow, execute=True, fail_fast=args.fail_fast)
-        if args.output_dir:
-            report["report_path"] = str(write_report(args.output_dir, report))
-    print(json.dumps(report, indent=2, sort_keys=True))
-    return int(args.action == "run" and report["status"] != "pass")
+    try:
+        if args.action == "list":
+            report = {"workflows": {k: list(v) for k, v in WORKFLOWS.items()}}
+        elif args.action == "plan":
+            report = plan(args.workflow)
+        else:
+            report = run_workflow(args.workflow, execute=True, fail_fast=args.fail_fast)
+            if args.output_dir:
+                report["report_path"] = str(write_report(args.output_dir, report))
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return int(args.action == "run" and report["status"] != "pass")
+    except (ValueError, OSError, UnicodeError) as exc:
+        print(json.dumps({"status": "ERROR", "error": str(exc)}, sort_keys=True),
+              file=sys.stderr)
+        return 2
 
 if __name__ == "__main__":
     raise SystemExit(main())

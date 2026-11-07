@@ -35,7 +35,7 @@ Ranks are relevant candidates, not guarantees of suitability.
 - A metadata `status=verified` is not proof of platform compatibility or
   operational readiness. Recheck source revision and provenance before use.
 
-The finder requires Python 3.11+, the full checkout and no third-party
+Curated descriptors are parsed from their opening, bounded YAML frontmatter only.\nA missing closing delimiter, duplicate name/description field, mismatched name,\nor oversized header fails closed; text in the Markdown body cannot impersonate\nsearch metadata. This is a narrow metadata boundary, not a full YAML parser.\n\nThe finder requires Python 3.11+, the full checkout and no third-party
 dependencies. It reads a bounded JSON catalogue plus curated first-party
 descriptors, makes no network calls and does not invoke a shell or subprocess.
 

@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,6 +90,68 @@ class SkillSearchTests(unittest.TestCase):
         self.assertIn("shards-repository-health",
                       [item["name"] for item in result["results"]])
         self.assertIn("metadata-only", result["trust_boundary"])
+
+    def test_curated_metadata_comes_only_from_frontmatter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            name = "shards-repository-health"
+            descriptor = root / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
+            descriptor.parent.mkdir(parents=True)
+            descriptor.write_text(
+                "---\nname: " + name + "\ndescription: Trusted description\n---\n"
+                "description: Body text must not override metadata\n", encoding="utf-8")
+            with mock.patch.object(discovery, "REGISTRY", {name: object()}):
+                entries = discovery.curated_entries(root)
+                self.assertEqual(entries[0]["description"], "Trusted description")
+
+    def test_curated_rejects_missing_duplicate_and_unclosed_frontmatter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            name = "shards-repository-health"
+            descriptor = root / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
+            descriptor.parent.mkdir(parents=True)
+            invalid = (
+                "Some body\nname: " + name + "\ndescription: Spoofed\n",
+                "---\nname: " + name + "\ndescription: First\n"
+                "description: Second\n---\n",
+                "---\nname: " + name + "\ndescription: Missing close\n",
+                "---\nname: other\ndescription: Wrong\n---\n",
+            )
+            with mock.patch.object(discovery, "REGISTRY", {name: object()}):
+                for content in invalid:
+                    with self.subTest(content=content):
+                        descriptor.write_text(content, encoding="utf-8")
+                        with self.assertRaises(ValueError):
+                            discovery.curated_entries(root)
+
+    def test_curated_rejects_duplicate_name_and_frontmatter_limits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            name = "shards-repository-health"
+            descriptor = root / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
+            descriptor.parent.mkdir(parents=True)
+            with mock.patch.object(discovery, "REGISTRY", {name: object()}):
+                valid = "---\nname: " + name + "\ndescription: Healthy\n---\n"
+                descriptor.write_text(valid, encoding="utf-8")
+                self.assertEqual(discovery.curated_entries(root)[0]["description"], "Healthy")
+                invalid = [
+                    "---\nname: " + name + "\nname: " + name +
+                    "\ndescription: Duplicate\n---\n",
+                    "---\nname: " + name + "\ndescription: " +
+                    "x" * 8200 + "\n---\n",
+                    "---\nname: " + name + "\ndescription: Healthy\n" +
+                    ("# filler\n" * 99) + "---\n",
+                ]
+                for content in invalid:
+                    with self.subTest(length=len(content)):
+                        descriptor.write_text(content, encoding="utf-8")
+                        with self.assertRaises(ValueError):
+                            discovery.curated_entries(root)
+                # Exactly 100 lines before the closing delimiter remains accepted.
+                descriptor.write_text(
+                    "---\nname: " + name + "\ndescription: Healthy\n" +
+                    ("# filler\n" * 97) + "---\n", encoding="utf-8")
+                self.assertEqual(len(discovery.curated_entries(root)), 1)
 
     def test_bad_query_limit_rejected(self):
         with self.assertRaises(ValueError):

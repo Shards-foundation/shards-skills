@@ -61,16 +61,30 @@ def curated_entries(root: Path = ROOT) -> list[dict]:
         descriptor = Path(root) / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
         if descriptor.is_symlink() or not descriptor.is_file():
             raise ValueError("Curated descriptor missing or symlinked: " + name)
+        # Only the bounded YAML frontmatter is authoritative. Body text must
+        # never masquerade as metadata or override the trust-labelled listing.
         content = descriptor.read_text(encoding="utf-8")
-        if not content.startswith("---\n") or ("\nname: " + name + "\n") not in content[:1000]:
+        lines = content.splitlines()
+        if not lines or lines[0] != "---":
+            raise ValueError("Curated descriptor missing frontmatter: " + name)
+        try:
+            closing = lines.index("---", 1)
+        except ValueError as exc:
+            raise ValueError("Curated descriptor unclosed frontmatter: " + name) from exc
+        if closing > 100 or sum(len(line) + 1 for line in lines[:closing + 1]) > 8192:
+            raise ValueError("Curated descriptor frontmatter too large: " + name)
+        metadata = lines[1:closing]
+        names = [line.split(":", 1)[1].strip().strip("\\\"'")
+                 for line in metadata if line.startswith("name:")]
+        descriptions = [line.split(":", 1)[1].strip().strip("\\\"'")
+                        for line in metadata if line.startswith("description:")]
+        if names != [name]:
             raise ValueError("Curated descriptor metadata mismatch: " + name)
-        lines = [line.split(":", 1)[1].strip().strip("\\\"'") for line in content.splitlines()
-                 if line.startswith("description:")]
-        if len(lines) != 1 or not lines[0]:
+        if len(descriptions) != 1 or not descriptions[0]:
             raise ValueError("Curated descriptor lacks a unique description: " + name)
         results.append({"name": name,
                         "path": "plugins/shards-core/skills/" + name,
-                        "description": lines[0], "category": "curated",
+                        "description": descriptions[0], "category": "curated",
                         "status": "curated", "source": "curated",
                         "execution": "dispatcher-plan-required"})
     return results

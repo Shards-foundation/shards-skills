@@ -164,7 +164,7 @@ class SkillDispatchTests(unittest.TestCase):
         listing = subprocess.run([sys.executable, script, "list"],
                                  capture_output=True, text=True, timeout=15)
         self.assertEqual(listing.returncode, 0, listing.stderr)
-        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 7)
+        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 11)
         plan = subprocess.run([sys.executable, script, "plan", "--skill", "shards-repository-health"],
                               capture_output=True, text=True, timeout=15)
         self.assertEqual(plan.returncode, 0, plan.stderr)

@@ -1,0 +1,184 @@
+"""Adversarial and functional tests for bounded local multi-agent delegation."""
+from __future__ import annotations
+
+import hashlib
+import json
+import subprocess
+import sys
+import tempfile
+import threading
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+import dispatch_skills
+import shards_agent_harness as harness
+
+
+def fake_receipt(plan: dict, outcome: str = "pass") -> dict:
+    return {
+        "observation": {"status": outcome, "exit_code": 0 if outcome == "pass" else 1,
+                        "stdout_tail": '{"checked":true}', "stderr_tail": ""},
+        "receipt_id": "mock-" + plan["skill"],
+        "script_sha256": plan["script_sha256"],
+    }
+
+
+class AgentHarnessTests(unittest.TestCase):
+    def test_four_curated_skills_have_distinct_fixed_actions(self):
+        self.assertEqual(set(harness.FIXED_ACTIONS), {
+            "a2a-check", "dual-channel-check", "subagent-check", "swarm-check"})
+        for name, (effect, script, operation) in dispatch_skills.REGISTRY.items():
+            if name not in dispatch_skills.HARNESS_SKILLS:
+                continue
+            self.assertEqual(effect, "read-only")
+            self.assertEqual(script, "scripts/shards_agent_harness.py")
+            self.assertIn(operation, harness.FIXED_ACTIONS)
+            plan = dispatch_skills.describe(name)
+            self.assertEqual(plan["command"][-2:], [operation, "--execute"])
+            self.assertEqual(plan["timeout_seconds"], 420)
+            dispatch_skills._check_plan_integrity(plan)
+
+    def test_profile_plan_contains_bounded_unique_subagents(self):
+        for profile in harness.PRESETS:
+            with self.subTest(profile=profile):
+                plan = harness.build_plan(profile)
+                self.assertFalse(plan["executed"])
+                self.assertFalse(plan["a2a_network_compatible"])
+                self.assertEqual(plan["channels"], ["control", "data"])
+                self.assertEqual(len({task["task_id"] for task in plan["tasks"]}),
+                                 len(plan["tasks"]))
+                self.assertEqual(len({task["agent_id"] for task in plan["tasks"]}),
+                                 len(plan["tasks"]))
+                self.assertLessEqual(plan["workers"], harness.MAX_WORKERS)
+                self.assertTrue(all(task["skill"] in harness.ALLOWED
+                                    for task in plan["tasks"]))
+
+    def test_custom_plan_accepts_only_allowlisted_targets(self):
+        p = harness.build_plan("custom", skills=[
+            "shards-skill-dispatch", "shards-catalogue-sync"], workers=2)
+        self.assertEqual(p["workers"], 2)
+        with self.assertRaisesRegex(ValueError, "requires at least"):
+            harness.build_plan("custom")
+        for bad in ("shards-agent-handoff", "shards-automation-operator",
+                    "rebelytics-observer-rebelytics-observer",
+                    "shards-parallel-swarm", "../escape", "unknown"):
+            with self.subTest(skill=bad):
+                with self.assertRaises(ValueError):
+                    harness.build_plan("custom", skills=[bad])
+
+    def test_concurrency_and_task_limits_fail_closed(self):
+        with self.assertRaisesRegex(ValueError, "Workers must"):
+            harness.build_plan("swarm", workers=0)
+        with self.assertRaisesRegex(ValueError, "Workers must"):
+            harness.build_plan("swarm", workers=5)
+        with self.assertRaisesRegex(ValueError, "sequentially"):
+            harness.build_plan("subagents", workers=2)
+        with self.assertRaisesRegex(ValueError, "bounded agent limit"):
+            harness.build_plan("custom", skills=[
+                "shards-catalogue-sync"] * (harness.MAX_TASKS + 1))
+        with self.assertRaisesRegex(ValueError, "does not accept"):
+            harness.build_plan("swarm", skills=["shards-skill-dispatch"])
+
+    def test_control_and_data_are_disjoint_with_stable_task_mapping(self):
+        plan = harness.build_plan("subagents")
+        record = harness.execute(plan, runner=fake_receipt)
+        self.assertEqual(record["status"], "pass")
+        self.assertEqual(record["summary"], {"total": 2, "passed": 2, "failed": 0})
+        control, data = record["control_channel"], record["data_channel"]
+        self.assertTrue(all(entry["channel"] == "control" for entry in control))
+        self.assertTrue(all("artifact" not in entry for entry in control))
+        self.assertTrue(all(entry["channel"] == "data" for entry in data))
+        self.assertTrue(all("event" not in entry for entry in data))
+        self.assertEqual([e["task_id"] for e in data],
+                         [e["task_id"] for e in plan["tasks"]])
+        self.assertEqual([e["agent_id"] for e in data],
+                         [e["agent_id"] for e in plan["tasks"]])
+        self.assertEqual([entry["sequence"] for entry in control],
+                         list(range(len(control))))
+        checksum = dict(record)
+        checksum.pop("receipt_sha256")
+        self.assertEqual(record["receipt_sha256"], harness.fingerprint(checksum))
+
+    def test_swarm_actually_runs_in_parallel_and_joins_ordered_results(self):
+        barrier = threading.Barrier(3)
+        seen: list[str] = []
+        lock = threading.Lock()
+
+        def parallel_worker(plan):
+            with lock:
+                seen.append(plan["skill"])
+            barrier.wait(timeout=5)
+            return fake_receipt(plan)
+
+        plan = harness.build_plan("swarm")
+        self.assertEqual(plan["workers"], 3)
+        record = harness.execute(plan, runner=parallel_worker)
+        self.assertEqual(record["status"], "pass")
+        self.assertEqual(len(seen), 3)
+        self.assertEqual([item["skill"] for item in record["data_channel"]],
+                         list(harness.PRESETS["swarm"]))
+
+    def test_failing_delegate_makes_entire_swarm_fail(self):
+        def worker(plan):
+            result = "fail" if plan["skill"] == "shards-catalogue-sync" else "pass"
+            return fake_receipt(plan, result)
+        record = harness.execute(harness.build_plan("swarm"), runner=worker)
+        self.assertEqual(record["status"], "fail")
+        self.assertEqual(record["summary"], {"total": 3, "passed": 2, "failed": 1})
+        failed = [event for event in record["control_channel"]
+                  if event.get("event") == "failed"]
+        self.assertEqual(len(failed), 1)
+        self.assertEqual(failed[0]["task_id"], "task-002")
+
+    def test_delegate_validation_error_is_attributed_not_silently_ignored(self):
+        def broken(_):
+            raise ValueError("script hash changed")
+        record = harness.execute(harness.build_plan("dual-channel"), runner=broken)
+        self.assertEqual(record["status"], "fail")
+        self.assertEqual(record["summary"]["failed"], 2)
+        self.assertTrue(all(entry["artifact"]["error_type"] == "ValueError"
+                            for entry in record["data_channel"]))
+
+    def test_tampered_plan_and_regenerated_digest_denied(self):
+        plan = harness.build_plan("swarm")
+        changed = dict(plan, workers=1)
+        changed["plan_sha256"] = harness.fingerprint(
+            {k: v for k, v in changed.items() if k != "plan_sha256"})
+        with self.assertRaisesRegex(ValueError, "changed"):
+            harness.execute(changed, runner=fake_receipt)
+        changed = dict(plan, plan_sha256="f" * 64)
+        with self.assertRaisesRegex(ValueError, "fingerprint"):
+            harness.execute(changed, runner=fake_receipt)
+
+    def test_receipt_saved_exclusively(self):
+        record = harness.execute(harness.build_plan("a2a"), runner=fake_receipt)
+        with tempfile.TemporaryDirectory() as temp:
+            path = harness.persist(record, Path(temp))
+            self.assertEqual(json.loads(path.read_text())["run_id"], record["run_id"])
+            with self.assertRaises(FileExistsError):
+                harness.persist(record, Path(temp))
+
+    def test_cli_is_dry_by_default(self):
+        script = str(ROOT / "scripts/shards_agent_harness.py")
+        listing = subprocess.run([sys.executable, script, "list"],
+                                 capture_output=True, text=True, timeout=15)
+        self.assertEqual(listing.returncode, 0, listing.stderr)
+        self.assertIn("swarm", json.loads(listing.stdout)["profiles"])
+        plan = subprocess.run([sys.executable, script, "plan", "--profile", "swarm"],
+                              capture_output=True, text=True, timeout=20)
+        self.assertEqual(plan.returncode, 0, plan.stderr)
+        self.assertFalse(json.loads(plan.stdout)["executed"])
+        denied = subprocess.run([sys.executable, script, "run", "--profile", "swarm"],
+                                capture_output=True, text=True, timeout=20)
+        self.assertEqual(denied.returncode, 2)
+        denied = subprocess.run([sys.executable, script, "swarm-check"],
+                                capture_output=True, text=True, timeout=20)
+        self.assertEqual(denied.returncode, 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -89,6 +90,39 @@ class SkillSearchTests(unittest.TestCase):
         self.assertIn("shards-repository-health",
                       [item["name"] for item in result["results"]])
         self.assertIn("metadata-only", result["trust_boundary"])
+
+    def test_curated_metadata_comes_only_from_frontmatter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            name = "shards-repository-health"
+            descriptor = root / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
+            descriptor.parent.mkdir(parents=True)
+            descriptor.write_text(
+                "---\\nname: " + name + "\\ndescription: Trusted description\\n---\\n"
+                "description: Body text must not override metadata\\n", encoding="utf-8")
+            with mock.patch.object(discovery, "REGISTRY", {name: object()}):
+                entries = discovery.curated_entries(root)
+                self.assertEqual(entries[0]["description"], "Trusted description")
+
+    def test_curated_rejects_missing_duplicate_and_unclosed_frontmatter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            name = "shards-repository-health"
+            descriptor = root / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
+            descriptor.parent.mkdir(parents=True)
+            invalid = (
+                "Some body\\nname: " + name + "\\ndescription: Spoofed\\n",
+                "---\\nname: " + name + "\\ndescription: First\\n"
+                "description: Second\\n---\\n",
+                "---\\nname: " + name + "\\ndescription: Missing close\\n",
+                "---\\nname: other\\ndescription: Wrong\\n---\\n",
+            )
+            with unittest.mock.patch.object(discovery, "REGISTRY", {name: object()}):
+                for content in invalid:
+                    with self.subTest(content=content):
+                        descriptor.write_text(content, encoding="utf-8")
+                        with self.assertRaises(ValueError):
+                            discovery.curated_entries(root)
 
     def test_bad_query_limit_rejected(self):
         with self.assertRaises(ValueError):

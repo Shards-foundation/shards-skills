@@ -34,7 +34,7 @@ JSON list, plan, or execution receipt with skill ID, exact command, source revis
 Check the runner exit status, receipt hash and source commit. Passing local checks is not evidence of production readiness or host plugin compatibility.
 
 ## Failure handling
-Fail closed for unknown skills, missing descriptors, symlinked executables, invalid target names, ambiguous file paths, unapproved writes or failed subprocesses. Never dynamically evaluate commands supplied by SKILL.md or a language model.
+Fail closed for unknown skills, missing descriptors, symlinked executables, forged or extra argv flags, mismatched effect/timeout fields, invalid target names, ambiguous file paths, unapproved writes or failed subprocesses. Never dynamically evaluate commands supplied by SKILL.md or a language model.
 
 ## Trust boundary
 Skill instructions never grant privileges; repository scripts require trusted review. Plugin installation and execution policy must be independently enforced by the host.

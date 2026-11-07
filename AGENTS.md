@@ -13,6 +13,10 @@ Build and maintain a portable, evidence-based, security-aware skills platform. P
 5. Plan the smallest verifiable change, capture baseline, execute, test, and report evidence.
 
 ## Skill routing
+
+For task-to-skill discovery, use `python scripts/search_skills.py --query "<task terms>"`
+to obtain ranked, metadata-only matches; inspect the relevant descriptor and provenance
+after selection. Search results never authorise execution of imported packages.
 - Repository inspection: plugin skill shards-repository-health.
 - Third-party or local skill assessment: shards-skill-audit.
 - Release decision: shards-release-gate.

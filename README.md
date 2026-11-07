@@ -111,7 +111,7 @@ Agents should start with [AGENTS.md](AGENTS.md) and [agent.md](agent.md). The cu
 Use the [automation operations guide](docs/automation.md) to plan and run bounded maintenance workflows, generate skill-portfolio reports, and explicitly reconcile catalogue metadata. A GitHub Actions audit runs every Monday at 05:17 UTC and retains JSON/Markdown artifacts for 14 days. Imported skill scripts are never auto-executed; catalogue write mode is deliberately excluded from unattended schedules.
 
 ## Governed skill execution
-The seven curated plugin skills are exposed through a bounded, JSON-reporting dispatcher. Use scripts/dispatch_skills.py list and plan first, then explicitly run approved read-only or scoped local workflows. Details: [Governed skill execution](docs/skill-dispatch.md). Imported catalogue skills are not executable by discovery alone.
+The eleven curated plugin skills are exposed through a bounded, JSON-reporting dispatcher. Use scripts/dispatch_skills.py list and plan first, then explicitly run approved read-only or scoped local workflows. Details: [Governed skill execution](docs/skill-dispatch.md). Imported catalogue skills are not executable by discovery alone.
 
 ## Deterministic skill discovery
 
@@ -146,3 +146,20 @@ metadata catalogue remotely, filter by category/status and open ranked
 a downloadable JSON results artifact; no imported skill code runs.
 
 See the [skill discovery guide](docs/skill-discovery.md).
+
+
+## Dual-channel, sub-agent and parallel swarm skills
+
+Four runnable curated skills now use the local [Shards multi-agent harness](docs/agent-harness.md):
+shards-a2a-harness, shards-dual-channel, shards-subagents and
+shards-parallel-swarm. They delegate real, allowlisted read-only checks with
+stable sub-agent IDs, separate control/data results, bounded concurrency,
+and JSON receipts.
+
+~~~bash
+python scripts/shards_agent_harness.py plan --profile swarm
+python scripts/shards_agent_harness.py run --profile swarm --execute --save-receipt
+~~~
+
+These are useful local orchestration primitives. They do not yet implement
+the network Agent2Agent protocol or spawn independent AI models.

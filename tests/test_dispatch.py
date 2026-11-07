@@ -52,11 +52,40 @@ class SkillDispatchTests(unittest.TestCase):
     def test_mutated_plan_or_revision_fails_before_subprocess(self):
         plan = dispatcher.describe("shards-repository-health")
         changed = dict(plan, timeout_seconds=9000)
-        with self.assertRaisesRegex(ValueError, "plan changed"):
+        with self.assertRaisesRegex(ValueError, "timeout differs"):
             dispatcher.run(changed, executor=lambda *a, **k: self.fail("executed"))
         with patch.object(dispatcher, "_source_revision", return_value="other-revision"):
             with self.assertRaisesRegex(ValueError, "revision changed"):
                 dispatcher.run(plan, executor=lambda *a, **k: self.fail("executed"))
+
+    def test_forged_arguments_rejected_even_with_recomputed_digest(self):
+        plan = dispatcher.describe("shards-repository-health")
+        altered = dict(plan, command=plan["command"] + ["--unsafe-override"])
+        altered["plan_sha256"] = dispatcher._plan_fingerprint(altered)
+        with patch("dispatch_skills.subprocess.run") as executor:
+            with self.assertRaisesRegex(ValueError, "command differs"):
+                dispatcher.run(altered, executor=executor)
+            executor.assert_not_called()
+
+    def test_effect_and_authorization_metadata_are_immutable(self):
+        plan = dispatcher.describe("shards-repository-health")
+        for change, message in (
+                ({"effect": "local-write"}, "effect differs"),
+                ({"approved_by": "agent-approved"}, "authorization metadata"),
+                ({"executed": True}, "authorization metadata")):
+            altered = dict(plan, **change)
+            altered["plan_sha256"] = dispatcher._plan_fingerprint(altered)
+            with self.subTest(change=change):
+                with self.assertRaisesRegex(ValueError, message):
+                    dispatcher.run(altered, executor=lambda *a, **k: self.fail("executed"))
+
+    def test_valid_read_only_audit_still_executes(self):
+        plan = dispatcher.describe("shards-skill-audit",
+                                   target_skill="rebelytics-observer-rebelytics-observer")
+        def fake(argv, **kwargs):
+            return subprocess.CompletedProcess(argv, 0, stdout="{}", stderr="")
+        receipt = dispatcher.run(plan, executor=fake)
+        self.assertEqual(receipt["observation"]["status"], "pass")
 
     def test_unapproved_cli_plan_digest_fails_closed(self):
         proc = subprocess.run(

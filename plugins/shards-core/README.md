@@ -31,3 +31,21 @@ See docs/automation.md for security boundaries and the scheduled workflow.
 
 ## Governed execution
 A seventh curated skill, shards-skill-dispatch, provides a policy-bounded entry point through scripts/dispatch_skills.py in the full repository checkout. Run plan before run --execute; no imported skill script is directly executable. See docs/skill-dispatch.md at repository root.
+
+
+## Local multi-agent harness workflows
+
+Four more curated skills are executable from the full checkout:
+shards-a2a-harness, shards-dual-channel, shards-subagents and
+shards-parallel-swarm. These perform bounded first-party read-only checks
+through the existing dispatcher and emit dual-channel JSON receipts.
+
+~~~bash
+python scripts/shards_agent_harness.py list
+python scripts/shards_agent_harness.py plan --profile swarm
+python scripts/shards_agent_harness.py run --profile swarm --execute --save-receipt
+~~~
+
+Fixed skills can also be invoked via scripts/dispatch_skills.py.
+This is a local harness, not an A2A wire endpoint or OS sandbox.
+See docs/agent-harness.md for its execution envelope.

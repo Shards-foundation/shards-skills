@@ -51,6 +51,7 @@ jobs:
         run: |
           python scripts/dispatch_skills.py list
           python scripts/dispatch_skills.py plan --skill shards-repository-health
-          python scripts/dispatch_skills.py run --skill shards-repository-health --execute
+          PLAN_SHA=$(python scripts/dispatch_skills.py plan --skill shards-repository-health | python -c 'import json,sys; print(json.load(sys.stdin)["plan_sha256"])')
+          python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 "$PLAN_SHA"
       - name: Exercise repository health
         run: python plugins/shards-core/scripts/run.py repository-health --repo .

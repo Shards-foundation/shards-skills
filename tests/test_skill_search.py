@@ -124,6 +124,35 @@ class SkillSearchTests(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             discovery.curated_entries(root)
 
+    def test_curated_rejects_duplicate_name_and_frontmatter_limits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            name = "shards-repository-health"
+            descriptor = root / "plugins" / "shards-core" / "skills" / name / "SKILL.md"
+            descriptor.parent.mkdir(parents=True)
+            with mock.patch.object(discovery, "REGISTRY", {name: object()}):
+                valid = "---\\nname: " + name + "\\ndescription: Healthy\\n---\\n"
+                descriptor.write_text(valid, encoding="utf-8")
+                self.assertEqual(discovery.curated_entries(root)[0]["description"], "Healthy")
+                invalid = [
+                    "---\\nname: " + name + "\\nname: " + name +
+                    "\\ndescription: Duplicate\\n---\\n",
+                    "---\\nname: " + name + "\\ndescription: " +
+                    "x" * 8200 + "\\n---\\n",
+                    "---\\nname: " + name + "\\ndescription: Healthy\\n" +
+                    ("# filler\\n" * 99) + "---\\n",
+                ]
+                for content in invalid:
+                    with self.subTest(length=len(content)):
+                        descriptor.write_text(content, encoding="utf-8")
+                        with self.assertRaises(ValueError):
+                            discovery.curated_entries(root)
+                # Exactly 100 lines before the closing delimiter remains accepted.
+                descriptor.write_text(
+                    "---\\nname: " + name + "\\ndescription: Healthy\\n" +
+                    ("# filler\\n" * 97) + "---\\n", encoding="utf-8")
+                self.assertEqual(len(discovery.curated_entries(root)), 1)
+
     def test_bad_query_limit_rejected(self):
         with self.assertRaises(ValueError):
             discovery.rank([], "!?!")

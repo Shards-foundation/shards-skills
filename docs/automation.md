@@ -30,7 +30,13 @@ quick: catalogue integrity, structural metadata validation, curated plugin audit
 weekly: catalogue integrity, metadata validation, heuristic security lint, portfolio inventory.
 verify: catalogue integrity, metadata validation, security lint, curated plugin audit, full unit test suite.
 
-The controller uses a fixed Python argv allowlist (no shell invocation or arbitrary agent-generated command), bounded timeouts and subprocess exit codes. Plans do not execute commands. Runs may be stopped on first failure with --fail-fast. Reports are saved only when an output directory is provided, with unique filenames and redacted credential-shaped strings.
+The controller uses a fixed Python argv allowlist (no shell invocation or arbitrary agent-generated command), bounded timeouts and subprocess exit codes. Before launching an allowlisted helper, it rejects missing scripts, direct symlinks and script paths that resolve outside the repository. Plans do not execute commands. Runs may be stopped on first failure with --fail-fast. Reports are saved only when an output directory is provided, with unique filenames and best-effort redaction of credential-shaped tokens and private-key blocks.
+
+### Subprocess environment and threat boundary
+
+Maintenance subprocesses receive a **minimal allowlisted environment**: path and platform locale/temp directory essentials, plus `CI`/`GITHUB_ACTIONS` indicators when present. Parent tokens and credential variables, `PYTHONPATH`, dynamic-loader overrides such as `LD_PRELOAD`, and other unlisted variables are not forwarded. The runner explicitly sets `PYTHONDONTWRITEBYTECODE=1`, `PYTHONUTF8=1`, and `PYTHONNOUSERSITE=1`.
+
+This reduces accidental credential propagation and Python import injection; it is **not a sandbox**. Subprocesses can still access filesystem locations permitted to the current operating-system user, and tests execute first-party repository code. Only run maintenance against a trusted checkout in a least-privilege environment. Log redaction recognises known patterns but cannot guarantee removal of every possible secret. A local attacker able to modify the executable after path validation may still create a time-of-check/time-of-use race.
 
 ## Scheduling
 

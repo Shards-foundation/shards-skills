@@ -1,7 +1,7 @@
 # Run approved Shards skills through GitHub Actions
 
 The [Run Curated Shards Skill](../.github/workflows/run-curated-skill.yml)
-workflow offers **manual, read-only** access to three reviewed first-party
+workflow offers **manual, read-only** access to seven reviewed first-party
 workflows on a temporary GitHub Actions runner. It is designed for operators
 who do not have a local Python checkout.
 
@@ -24,6 +24,10 @@ permissions.
 | `shards-repository-health` | Check Git checkout state and important files | Read-only |
 | `shards-catalogue-sync` | Compare catalogue metadata with checked-out skills | Read-only |
 | `shards-skill-dispatch` | Verify curated plugin descriptors and registry integrity | Read-only |
+| `shards-a2a-harness` | Run local A2A-oriented delegation checks | Read-only |
+| `shards-dual-channel` | Separate control and data receipts | Read-only |
+| `shards-subagents` | Delegate two bounded first-party checks | Read-only |
+| `shards-parallel-swarm` | Run three reviewed checks concurrently | Read-only |
 
 The workflow does **not** offer handoff writes, automated maintenance execution,
 local tests of untrusted code, releases, deployments, or imported skill
@@ -59,3 +63,9 @@ Do not paste the placeholder digest as-is; use the `plan_sha256` of the
 reviewed plan. To audit an imported skill, use the local static audit
 entry point separately after checking provenance. This workflow deliberately
 does not allow arbitrary audit targets.
+
+
+The four multi-agent choices are local curated harness operations, not
+remote A2A transport or independent model execution. They require the same
+explicit, pinned dispatcher execution gate. The harness aggregates statuses
+and preserves separate control/data receipts; see [agent harness](agent-harness.md).

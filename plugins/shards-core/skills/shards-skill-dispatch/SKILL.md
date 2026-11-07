@@ -12,8 +12,8 @@ Python 3.11+ and a full Shards Skills checkout. Run only in an authorised reposi
 ## Workflow
 1. Discover curated capabilities using the dispatcher list command; never import arbitrary skill source as executable code.
 2. Select the exact curated skill identifier, and prepare any validated target skill name or workflow profile.
-3. Inspect the plan; verify its command, code revision, script hash, effect classification and timeout.
-4. Obtain runtime authorization and execute using the explicit --execute flag.
+3. Inspect the plan; verify its command, code revision, script hash, effect classification, timeout and plan_sha256.
+4. Obtain runtime authorization and execute using the explicit --execute flag; for plan-pinned execution supply --expect-plan-sha256 with the approved digest.
 5. Inspect the observation and status; keep sanitized JSON receipt evidence.
 6. For imported packages, use only the read-only audit operation. External side effects and production execution are outside this dispatcher.
 
@@ -22,7 +22,7 @@ From repository root:
 
     python scripts/dispatch_skills.py list
     python scripts/dispatch_skills.py plan --skill shards-repository-health
-    python scripts/dispatch_skills.py run --skill shards-repository-health --execute --save-receipt
+    python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 <digest-from-reviewed-plan> --save-receipt
     python scripts/dispatch_skills.py run --skill shards-skill-audit --target-skill release-readiness --execute
 
 Checkpoint writes require --allow-local-write and use files under .shards/state only.

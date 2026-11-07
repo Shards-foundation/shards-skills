@@ -33,6 +33,40 @@ class SkillDispatchTests(unittest.TestCase):
         self.assertEqual(report["effect"], "read-only")
         self.assertEqual(len(report["script_sha256"]), 64)
 
+    def test_plan_digest_is_stable_and_covers_command(self):
+        plan = dispatcher.describe("shards-repository-health")
+        self.assertEqual(len(plan["plan_sha256"]), 64)
+        self.assertEqual(plan["plan_sha256"], dispatcher.describe("shards-repository-health")["plan_sha256"])
+        altered = dict(plan, command=plan["command"] + ["--unexpected"])
+        self.assertNotEqual(plan["plan_sha256"], dispatcher._plan_fingerprint(altered))
+
+    def test_mutated_script_hash_fails_before_subprocess(self):
+        plan = dispatcher.describe("shards-repository-health")
+        plan["script_sha256"] = "0" * 64
+        plan["plan_sha256"] = dispatcher._plan_fingerprint(plan)
+        with patch("dispatch_skills.subprocess.run") as executor:
+            with self.assertRaisesRegex(ValueError, "executable changed"):
+                dispatcher.run(plan, executor=executor)
+            executor.assert_not_called()
+
+    def test_mutated_plan_or_revision_fails_before_subprocess(self):
+        plan = dispatcher.describe("shards-repository-health")
+        changed = dict(plan, timeout_seconds=9000)
+        with self.assertRaisesRegex(ValueError, "plan changed"):
+            dispatcher.run(changed, executor=lambda *a, **k: self.fail("executed"))
+        with patch.object(dispatcher, "_source_revision", return_value="other-revision"):
+            with self.assertRaisesRegex(ValueError, "revision changed"):
+                dispatcher.run(plan, executor=lambda *a, **k: self.fail("executed"))
+
+    def test_unapproved_cli_plan_digest_fails_closed(self):
+        proc = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/dispatch_skills.py"),
+             "run", "--skill", "shards-repository-health", "--execute",
+             "--expect-plan-sha256", "0" * 64],
+            capture_output=True, text=True, timeout=15)
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertIn("does not match", proc.stderr)
+
     def test_unknown_registry_action_denied(self):
         with self.assertRaises(ValueError):
             dispatcher.describe("shards-unknown-action")

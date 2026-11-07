@@ -145,7 +145,9 @@ class AgentHarnessTests(unittest.TestCase):
 
     def test_tampered_plan_and_regenerated_digest_denied(self):
         plan = harness.build_plan("swarm")
-        changed = dict(plan, workers=1)
+        tasks = [dict(task) for task in plan["tasks"]]
+        tasks[0]["task_id"] = "forged-coordinator-task"
+        changed = dict(plan, tasks=tasks)
         changed["plan_sha256"] = harness.fingerprint(
             {k: v for k, v in changed.items() if k != "plan_sha256"})
         with self.assertRaisesRegex(ValueError, "changed"):

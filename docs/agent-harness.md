@@ -87,7 +87,10 @@ error remain failures. There are no hidden retries.
 receipt_sha256 detects accidental changes to JSON data after generation.
 It is **not** a signature, an append-only audit ledger, or evidence of
 cross-host exactly-once execution. Optional --save-receipt performs a
-create-exclusive write inside ignored reports/agent-harness/. The saved JSON\nand printed JSON are identical; the file location is not injected into the\nchecksummed record. To validate, remove only receipt_sha256 and compute the\ncanonical sorted-key JSON SHA-256 using the harness fingerprint function.
+create-exclusive write inside ignored reports/agent-harness/. The saved JSON
+and printed JSON are identical; the file location is not injected into the
+checksummed record. To validate, remove only receipt_sha256 and compute the
+canonical sorted-key JSON SHA-256 using the harness fingerprint function.
 
 These channels are currently in-process JSON structures, not separate
 authenticated network transports or an interprocess message broker.

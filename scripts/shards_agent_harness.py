@@ -110,6 +110,13 @@ def _execute_one(task: dict, runner) -> dict:
         outcome = observation["status"]
         if outcome not in ("pass", "fail", "hold", "timeout", "error"):
             raise ValueError("Unexpected sub-agent outcome")
+        # A delegate receipt is evidence, not authority. Reject inconsistent
+        # claims before a forged success can influence the aggregate result.
+        if receipt["script_sha256"] != task["dispatch_plan"]["script_sha256"]:
+            raise ValueError("Delegate script digest differs from approved plan")
+        exit_code = observation.get("exit_code")
+        if type(exit_code) is not int or (outcome == "pass" and exit_code != 0) or (outcome == "fail" and exit_code == 0):
+            raise ValueError("Delegate status and exit code are inconsistent")
         return {
             "status": outcome,
             "receipt_id": receipt["receipt_id"],

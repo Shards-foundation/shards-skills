@@ -126,3 +126,14 @@ python scripts/search_skills.py --query "blockchain" --category blockchain
 
 The JSON response distinguishes catalogue-only skill descriptions from curated
 dispatcher allowlist entries. Search results are **not** execution permissions.
+
+## One-click curated skill checks
+
+Repo collaborators can run approved, read-only Shards workflows directly
+from the GitHub **Actions → Run Curated Shards Skill** page without a local
+Python environment. Choose repository health, catalogue consistency, or
+plugin/dispatcher integrity; each run produces a JSON plan, a pinned
+execution receipt, and a downloadable evidence artifact. This cannot execute
+third-party imported skills or deploy anything.
+
+See the [manual Actions runner guide](docs/manual-skill-runs.md).

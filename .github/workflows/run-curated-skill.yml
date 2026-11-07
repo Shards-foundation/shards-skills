@@ -1,0 +1,85 @@
+name: Run Curated Shards Skill
+
+# A manually triggered, read-only control-plane action. No imported skill scripts.
+on:
+  workflow_dispatch:
+    inputs:
+      skill:
+        description: "Select an approved read-only skill"
+        required: true
+        type: choice
+        options:
+          - shards-repository-health
+          - shards-catalogue-sync
+          - shards-skill-dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  run-skill:
+    name: Curated skill execution
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Plan, pin and execute allowlisted read-only skill
+        shell: bash
+        env:
+          SHARDS_SKILL: ${{ inputs.skill }}
+        run: |
+          set -euo pipefail
+          case "$SHARDS_SKILL" in
+            shards-repository-health|shards-catalogue-sync|shards-skill-dispatch) ;;
+            *) echo "Unsupported manual skill: $SHARDS_SKILL" >&2; exit 2 ;;
+          esac
+          mkdir -p reports/manual
+          python scripts/dispatch_skills.py plan --skill "$SHARDS_SKILL" > reports/manual/plan.json
+          PLAN_SHA="$(python -c 'import json; print(json.load(open("reports/manual/plan.json", encoding="utf-8"))["plan_sha256"])')"
+          python scripts/dispatch_skills.py run --skill "$SHARDS_SKILL" --execute --expect-plan-sha256 "$PLAN_SHA" --save-receipt > reports/manual/result.json
+      - name: Summarise observed result
+        if: always()
+        env:
+          SHARDS_SKILL: ${{ inputs.skill }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = Path("reports/manual/result.json")
+          try:
+              data = json.loads(result.read_text(encoding="utf-8")) if result.is_file() else {}
+          except (OSError, ValueError):
+              data = {}
+          observed = data.get("observation", {})
+          status = observed.get("status", "failed-before-receipt")
+          commit = data.get("commit") or "unavailable"
+          lines = [
+              "# Shards curated skill run",
+              "",
+              f"**Selected skill:** `{os.environ['SHARDS_SKILL']}`",
+              f"**Observed status:** `{status}`",
+              f"**Checkout commit:** `{commit}`",
+              "",
+              "Download the workflow artifact for the plan and JSON receipts.",
+              "This run is not a deployment, release, sandbox, or production-readiness certification.",
+          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write("\n".join(lines) + "\n")
+          PY
+      - name: Upload plans and execution receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shards-curated-skill-receipts
+          path: |
+            reports/manual/
+            reports/dispatch/
+          if-no-files-found: warn
+          retention-days: 7

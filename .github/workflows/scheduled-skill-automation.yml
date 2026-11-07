@@ -9,6 +9,9 @@ on:
       - 'scripts/audit_portfolio.py'
       - 'tests/test_automation.py'
       - 'tests/test_dispatch.py'
+      - 'tests/test_manual_skill_actions.py'
+      - '.github/workflows/run-curated-skill.yml'
+      - 'docs/manual-skill-runs.md'
       - 'scripts/dispatch_skills.py'
       - 'scripts/verify_plugins.py'
       - '.github/workflows/scheduled-skill-automation.yml'
@@ -19,6 +22,9 @@ on:
       - 'scripts/audit_portfolio.py'
       - 'tests/test_automation.py'
       - 'tests/test_dispatch.py'
+      - 'tests/test_manual_skill_actions.py'
+      - '.github/workflows/run-curated-skill.yml'
+      - 'docs/manual-skill-runs.md'
       - 'scripts/dispatch_skills.py'
       - 'scripts/verify_plugins.py'
       - '.github/workflows/scheduled-skill-automation.yml'
@@ -43,6 +49,10 @@ jobs:
         run: python -m py_compile scripts/automate.py scripts/catalogue_sync.py scripts/audit_portfolio.py scripts/dispatch_skills.py scripts/verify_plugins.py
       - name: Run automation regression suite
         run: python -m unittest discover -s tests -v
+      - name: Smoke test pinned remote read-only skill execution
+        run: |
+          PLAN_SHA=$(python scripts/dispatch_skills.py plan --skill shards-catalogue-sync | python -c 'import json,sys; print(json.load(sys.stdin)["plan_sha256"])')
+          python scripts/dispatch_skills.py run --skill shards-catalogue-sync --execute --expect-plan-sha256 "$PLAN_SHA"
       - name: Execute bounded weekly workflow
         run: python scripts/automate.py run --workflow weekly --output-dir reports/automation
       - name: Produce full portfolio JSON and Markdown

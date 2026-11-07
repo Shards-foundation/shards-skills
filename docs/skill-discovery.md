@@ -1,0 +1,51 @@
+# Metadata-only skill discovery
+
+The catalogue contains hundreds of heterogeneous skills, including imported
+review-stage packages. Finding one does **not** grant permission to execute it.
+
+## CLI
+
+From the repository root:
+
+```bash
+python scripts/search_skills.py --query "test driven development"
+python scripts/search_skills.py --query "release gate" --status curated --limit 5
+python scripts/search_skills.py --query "web research" --category research
+```
+
+The command emits JSON with candidate count, match count, ranked results,
+descriptions, categories, status, relative descriptor paths, and the
+execution boundary. Exit code 0 means a valid search, even with zero matches.
+Invalid metadata, unsupported catalogue schema, traversal paths, duplicate
+names, invalid query terms or limit values fail with exit code 2.
+
+## Matching and trust
+
+Matching is deterministic: token and exact-phrase overlap over catalogue name,
+description and category. This is a lexical search, not an LLM judgement,
+semantic retrieval service, skill certification or task-level evaluation.
+Ranks are relevant candidates, not guarantees of suitability.
+
+- `source=catalogue`, `execution=not-dispatchable`: a skill is listed only.
+  Imported scripts are never executed or loaded for search.
+- `source=curated`, `execution=dispatcher-plan-required`: a first-party
+  skill is present in the explicit dispatcher registry. Review the
+  `SKILL.md` and use `scripts/dispatch_skills.py plan` before any approved
+  execution. The trusted host must independently authorise tool access.
+- A metadata `status=verified` is not proof of platform compatibility or
+  operational readiness. Recheck source revision and provenance before use.
+
+The finder requires Python 3.11+, the full checkout and no third-party
+dependencies. It reads a bounded JSON catalogue plus curated first-party
+descriptors, makes no network calls and does not invoke a shell or subprocess.
+
+## Verification
+
+```bash
+python -m unittest tests.test_skill_search -v
+python scripts/search_skills.py --query "repository health" --status curated
+python scripts/validate_skills.py
+```
+
+The Agent Core Plugin GitHub Actions workflow compiles and smoke-tests the
+finder and runs the repository unit test suite on matching pull requests.

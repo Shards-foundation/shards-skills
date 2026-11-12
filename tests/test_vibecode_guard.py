@@ -4,6 +4,8 @@ import os
 from unittest.mock import patch
 from types import SimpleNamespace
 import tempfile
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -69,6 +71,28 @@ class VibeCodeGuardTests(unittest.TestCase):
         report = guard.inspect(self.root, ["../outside.py", "safe.py"])
         self.assertIn("SKIPPED-UNSAFE-PATH", [x["id"] for x in report["findings"]])
         self.assertIn("DYNAMIC-EVAL", [x["id"] for x in report["findings"]])
+
+    @unittest.skipUnless(shutil.which("git") and shutil.which("sh"), "Git and POSIX shell required")
+    def test_actual_git_repo_with_hostile_local_fsmonitor_never_runs_it(self):
+        """A real local config must not execute its fsmonitor command when scanned."""
+        root = self.root / "hostile-checkout"
+        root.mkdir()
+        subprocess.run(["git", "init", "-q", str(root)], check=True, timeout=10)
+        sample = root / "safe.py"
+        sample.write_text("print('hello')", encoding="utf-8")
+        subprocess.run(["git", "-C", str(root), "add", "safe.py"], check=True, timeout=10)
+        sentinel = self.root / "fsmonitor-was-invoked"
+        fsmonitor = self.root / "hostile-fsmonitor.sh"
+        fsmonitor.write_text(
+            "#!/bin/sh\\n" + "touch " + str(sentinel) + "\\n", encoding="utf-8"
+        )
+        fsmonitor.chmod(0o700)
+        subprocess.run(["git", "-C", str(root), "config", "--local",
+                        "core.fsmonitor", str(fsmonitor)], check=True, timeout=10)
+        self.assertFalse(sentinel.exists())
+        names = guard.tracked(root)
+        self.assertIn("safe.py", names)
+        self.assertFalse(sentinel.exists(), "The untrusted fsmonitor command executed")
 
     def test_non_utf8_git_path_is_retained_for_safe_skip(self):
         fake = SimpleNamespace(returncode=0, stdout=b"valid.py" + bytes([0]) + b"bad-" + bytes([255]) + b".py" + bytes([0]))

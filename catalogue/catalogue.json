@@ -3,7 +3,7 @@
   "name": "Shards Skills",
   "version": "0.1.0",
   "status": "bootstrap",
-  "skill_count": 321,
+  "skill_count": 329,
   "categories": [
     "agents",
     "blockchain",
@@ -301,10 +301,16 @@
     "skills/scientific-agent-skills-zarr-python",
     "skills/scientific-research",
     "skills/secure-code-review",
+    "skills/shards-sec-ai-agent-boundaries",
+    "skills/shards-sec-authorized-testing",
     "skills/shards-sec-business-threat-model",
     "skills/shards-sec-cloud-devsecops",
     "skills/shards-sec-compliance-evidence",
+    "skills/shards-sec-crypto-custody",
+    "skills/shards-sec-crypto-fincrime",
+    "skills/shards-sec-defi-protocol",
     "skills/shards-sec-detection-response",
+    "skills/shards-sec-fintech-payments",
     "skills/shards-sec-governance-policy",
     "skills/shards-sec-human-fraud",
     "skills/shards-sec-identity-access",
@@ -312,6 +318,8 @@
     "skills/shards-sec-intake",
     "skills/shards-sec-jurisdiction-scope",
     "skills/shards-sec-privacy-dpia",
+    "skills/shards-sec-prompt-injection",
+    "skills/shards-sec-resilience-recovery",
     "skills/shards-sec-secrets-keys",
     "skills/shards-sec-supply-chain",
     "skills/shards-sec-third-party-risk",
@@ -2613,6 +2621,22 @@
       "version": "0.1.0"
     },
     {
+      "name": "shards-sec-ai-agent-boundaries",
+      "path": "skills/shards-sec-ai-agent-boundaries",
+      "description": "Shards Foundation workflow. Use when agents, MCP tools, computer use or autonomous workflows gain access to data or external actions.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-sec-authorized-testing",
+      "path": "skills/shards-sec-authorized-testing",
+      "description": "Shards Foundation workflow. Use for legal penetration-test planning, bug-bounty scope reviews and defensive attacker-emulation exercises.",
+      "category": "security",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
       "name": "shards-sec-business-threat-model",
       "path": "skills/shards-sec-business-threat-model",
       "description": "Shards Foundation workflow. Use for an enterprise, startup or regulated product before architecture or significant feature changes.",
@@ -2637,10 +2661,42 @@
       "version": "0.1.0"
     },
     {
+      "name": "shards-sec-crypto-custody",
+      "path": "skills/shards-sec-crypto-custody",
+      "description": "Shards Foundation workflow. Use for wallet apps, multisig treasuries, token custody, key rotation and high-value on-chain signing.",
+      "category": "blockchain",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-sec-crypto-fincrime",
+      "path": "skills/shards-sec-crypto-fincrime",
+      "description": "Shards Foundation workflow. Use for VASP, exchanges, on/off-ramps or crypto financial services needing AML/CFT risk review.",
+      "category": "finance",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-sec-defi-protocol",
+      "path": "skills/shards-sec-defi-protocol",
+      "description": "Shards Foundation workflow. Use before deploying or upgrading contracts, bridges, oracles, DAOs or DeFi financial mechanisms.",
+      "category": "blockchain",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
       "name": "shards-sec-detection-response",
       "path": "skills/shards-sec-detection-response",
       "description": "Shards Foundation workflow. Use when designing security telemetry, fraud alerts or SOC detection for an app, API or cloud service.",
       "category": "security",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-sec-fintech-payments",
+      "path": "skills/shards-sec-fintech-payments",
+      "description": "Shards Foundation workflow. Use for wallets, banking APIs, card flows, payment platforms, money movement and settlement systems.",
+      "category": "finance",
       "status": "draft",
       "version": "0.1.0"
     },
@@ -2696,6 +2752,22 @@
       "name": "shards-sec-privacy-dpia",
       "path": "skills/shards-sec-privacy-dpia",
       "description": "Shards Foundation workflow. Use before collecting personal data, deploying surveillance, profiling, analytics or AI decision systems.",
+      "category": "security",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-sec-prompt-injection",
+      "path": "skills/shards-sec-prompt-injection",
+      "description": "Shards Foundation workflow. Use when an LLM consumes untrusted pages, code, documents, plugins, agent messages or RAG results.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-sec-resilience-recovery",
+      "path": "skills/shards-sec-resilience-recovery",
+      "description": "Shards Foundation workflow. Use for payment, crypto, SaaS, AI or enterprise critical services needing recovery guarantees.",
       "category": "security",
       "status": "draft",
       "version": "0.1.0"

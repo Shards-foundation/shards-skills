@@ -34,6 +34,8 @@ def target_path(raw: str) -> Path:
     if rel.is_absolute() or ".." in rel.parts or len(rel.parts) != 3 or rel.parts[0] != "skills" or rel.parts[2] != "SKILL.md" or not NAME.fullmatch(rel.parts[1]):
         raise ValueError("Target must be skills/<first-party-name>/SKILL.md")
     base = ROOT / "skills"
+    if ROOT.is_symlink() or base.is_symlink() or base.resolve().parent != ROOT.resolve():
+        raise ValueError("Symlinked or escaped skill root")
     folder = base / rel.parts[1]
     path = folder / "SKILL.md"
     if folder.is_symlink() or path.is_symlink() or (folder / "UPSTREAM.md").exists() or not path.is_file():
@@ -52,6 +54,24 @@ def descriptor(blob: bytes, name: str) -> str:
         raise ValueError("Candidate name must match target")
     if len(text) > 200_000 or len(text) < 120:
         raise ValueError("Descriptor size outside limits")
+    metadata = {}
+    for line in header:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if line[:1].isspace() or ":" not in line:
+            raise ValueError("Unsupported frontmatter")
+        key, value = line.split(":", 1)
+        if key in metadata or not key.strip() or value.lstrip().startswith(("[", "{", "|", ">")):
+            raise ValueError("Invalid frontmatter key or value")
+        metadata[key] = value.strip().strip('"\\\'')
+    description = metadata.get("description", "")
+    if not 20 <= len(description) <= 1024:
+        raise ValueError("Invalid description")
+    if metadata.get("status", "draft") not in {"draft", "review", "verified", "deprecated"}:
+        raise ValueError("Invalid status")
+    body = text.split("\\n---\\n", 1)[1]
+    if len(body.strip()) < 100:
+        raise ValueError("Descriptor body too short")
     return text
 
 def safe_file(raw: str) -> Path:
@@ -64,9 +84,14 @@ def create_only(path: Path, data: bytes) -> None:
     if path.is_symlink():
         raise ValueError("Output must not be symlinked")
     with path.open("xb") as stream:
-        stream.write(data)
-        stream.flush()
-        os.fsync(stream.fileno())
+        try:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        except BaseException:
+            stream.close()
+            path.unlink(missing_ok=True)
+            raise
 
 def plan(args) -> dict:
     target = target_path(args.target)

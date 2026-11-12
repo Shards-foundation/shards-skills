@@ -33,7 +33,10 @@ To use an **instruction-only** skill with an agent, provide its
 `skills/<name>/SKILL.md` and the project task. The agent must actually read it
 and produce task evidence; simply listing or selecting a skill is not
 proof of execution. [Agent adoption evidence](docs/agent-adoption.md) records
-the retrieval and host-verification boundaries.
+the retrieval and host-verification boundaries. See the
+[first-party applied-task evidence](docs/first-party-skill-task-evidence.md)
+for a real repository defect, red-to-green tests, and explicit limits on
+what the original Shards skills have demonstrated.
 
 ## Use Shards Security Skills now
 

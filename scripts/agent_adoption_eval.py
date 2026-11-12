@@ -99,6 +99,8 @@ def host_report(cases: list[dict], receipts: dict) -> dict:
         if run is None:
             result = "not_run"
         else:
+            touched_target = (run["selected_skill"] == case["skill"] or
+                              (run["skill_opened"] and run["selected_skill"] is None))
             invoked_target = (run["selected_skill"] == case["skill"] and
                               run["skill_opened"] and run["procedure_applied"])
             if case["should_trigger"]:
@@ -106,7 +108,7 @@ def host_report(cases: list[dict], receipts: dict) -> dict:
                           bool(run["trace_reference"].strip()) and
                           run["task_outcome"] == "pass" else "not_demonstrated")
             else:
-                result = ("reported_false_trigger" if invoked_target else
+                result = ("reported_false_trigger" if touched_target else
                           "reported_appropriate_abstention" if
                           bool(run["trace_reference"].strip()) and
                           run["task_outcome"] == "pass" else "not_demonstrated")

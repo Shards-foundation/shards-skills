@@ -96,7 +96,10 @@ def emit(file, row, *, exclusive=False):
 
 def lock(file):
     lockfile = file.with_suffix(".lock")
-    fd = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    try:
+        fd = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError as exc:
+        raise ValueError("Task lock exists. Confirm no live writer, verify ledger integrity, then manually remove only the stale .lock file as documented.") from exc
     os.close(fd)
     return lockfile
 

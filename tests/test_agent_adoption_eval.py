@@ -29,6 +29,15 @@ class AgentAdoptionEvalTests(unittest.TestCase):
         self.assertFalse(report["negative_trigger_assessed"])
         self.assertTrue(all(not r["agent_activation_verified"] for r in report["results"]))
 
+    def test_real_catalogue_trigger_recall_regression(self):
+        cases = evaluator.load_cases(ROOT / "evals" / "trigger-cases.json")
+        entries = evaluator.catalogue_entries() + evaluator.curated_entries()
+        report = evaluator.retrieval_report(cases, entries)
+        self.assertEqual(report["positive_count"], 7)
+        self.assertGreaterEqual(report["recall_at_3"], 6 / 7)
+        self.assertEqual(report["recall_at_5"], 1.0)
+        self.assertFalse(report["negative_trigger_assessed"])
+
     def test_missing_host_trace_does_not_count_as_use(self):
         report = evaluator.host_report(self.cases, {"schema_version": 1, "host": "Claude Code",
                     "repository_commit": "a" * 40, "runs": []})

@@ -1,6 +1,10 @@
 """Reviewer counterexamples: no certificate or credential false negatives."""
 import importlib.util
 import tempfile
+import json
+import os
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -71,6 +75,46 @@ class ReviewerRegressionTests(unittest.TestCase):
             (root / "Dockerfile").write_text("COPY tests/certs/server.pem /etc/server.pem\n")
             repo = guard.Repo(root, ["Dockerfile", "tests/certs/server.pem"])
             self.assertEqual(repo.production_references("tests/certs/server.pem"), ["Dockerfile"])
+
+    def test_internal_key_and_env_symlinks_are_actionable(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "tests").mkdir()
+            (root / "config").mkdir()
+            (root / "keydata.txt").write_text("-----BEGIN PRIVATE KEY-----\ntest-only\n")
+            (root / "settings.txt").write_text("TEST_TOKEN=example\n")
+            (root / "tests" / "server.key").symlink_to("../keydata.txt")
+            (root / "config" / ".env").symlink_to("../settings.txt")
+            result = guard.inspect(root, ["tests/server.key", "keydata.txt",
+                                          "config/.env", "settings.txt"])
+            findings = {(f["path"], f["id"]): f for f in result["findings"]}
+            self.assertIn(("tests/server.key", "TRACKED-KEY-MATERIAL"), findings)
+            self.assertIn(("config/.env", "TRACKED-ENV"), findings)
+            self.assertEqual(result["summary"]["actionable"], 2)
+            self.assertEqual(result["status"], "WARNINGS_FOUND")
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "FIFO requires a POSIX environment")
+    def test_fifo_replacing_tracked_source_does_not_hang_reference_scan(self):
+        # Run the actual CLI in a child process with a strict timeout.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            subprocess.run(["git", "-C", str(root), "init", "-q"],
+                           check=True, timeout=5)
+            (root / "a.key").write_text("test-only")
+            (root / "source.py").write_text("print('hello')\n")
+            subprocess.run(["git", "-C", str(root), "add", "a.key", "source.py"],
+                           check=True, timeout=5)
+            (root / "source.py").unlink()
+            os.mkfifo(root / "source.py")
+            run = subprocess.run([sys.executable, str(ROOT / "scripts" / "vibecode_guard.py"),
+                                  "--repo", str(root)],
+                                 capture_output=True, text=True, timeout=5)
+            report = json.loads(run.stdout)
+            self.assertEqual(run.returncode, 2)
+            self.assertEqual(report["status"], "INCOMPLETE_SCAN")
+            self.assertIn("source.py", [x["path"] for x in report["skipped_paths"]])
+            self.assertTrue(any(x["id"] == "TRACKED-KEY-MATERIAL"
+                                for x in report["findings"]))
 
     def test_nested_function_inside_expected_ssl_error_is_not_suppressed(self):
         source = '''import pytest, requests

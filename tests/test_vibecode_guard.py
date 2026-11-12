@@ -71,7 +71,7 @@ class VibeCodeGuardTests(unittest.TestCase):
         self.assertIn("DYNAMIC-EVAL", [x["id"] for x in report["findings"]])
 
     def test_non_utf8_git_path_is_retained_for_safe_skip(self):
-        fake = SimpleNamespace(returncode=0, stdout=b"valid.py\\0bad-\\xff.py\\0")
+        fake = SimpleNamespace(returncode=0, stdout=b"valid.py" + bytes([0]) + b"bad-" + bytes([255]) + b".py" + bytes([0]))
         with patch.object(guard.subprocess, "run", return_value=fake):
             names = guard.tracked(self.root)
         self.assertEqual(len(names), 2)

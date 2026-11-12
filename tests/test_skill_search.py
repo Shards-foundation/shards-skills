@@ -176,6 +176,40 @@ class SkillSearchTests(unittest.TestCase):
                 found = discovery.rank([entry], query)
                 self.assertEqual([item["name"] for item in found], [name])
 
+    def test_negated_broker_actions_do_not_rank_broker_skill(self):
+        # Real user task: copying third-party skills, NOT connecting a broker.
+        query = ("Import the day-trading skill files into the catalogue; "
+                 "do not connect a broker or place orders.")
+        entries = discovery.catalogue_entries() + discovery.curated_entries()
+        results = discovery.rank(entries, query)
+        names = [item["name"] for item in results]
+        self.assertNotIn("trader-broker", names)
+        self.assertIn("skill-supply-chain-audit", names)
+
+    def test_negative_only_instruction_does_not_trigger_skills(self):
+        entries = discovery.catalogue_entries()
+        self.assertEqual(discovery.rank(entries, "Do not connect a broker or place orders."), [])
+
+    def test_positive_broker_request_still_retrievable(self):
+        entries = discovery.catalogue_entries()
+        results = discovery.rank(entries, "Connect a broker and place approved orders")
+        self.assertIn("trader-broker", [item["name"] for item in results[:3]])
+        match = next(item for item in results if item["name"] == "trader-broker")
+        self.assertEqual(match["execution"], "not-dispatchable")
+
+    def test_negated_clause_does_not_erase_following_positive_task(self):
+        entries = [
+            {**self._entry("trader-broker",
+                           "Connect a broker, execute and place orders"),
+             "execution": "not-dispatchable"},
+            {**self._entry("skill-supply-chain-audit",
+                           "Audit third-party skill before importing or installing"),
+             "execution": "not-dispatchable"},
+        ]
+        results = discovery.rank(
+            entries, "Don't place broker orders; audit this third-party skill before installing")
+        self.assertEqual([r["name"] for r in results], ["skill-supply-chain-audit"])
+
     def test_inflections_match_base_forms_with_final_e(self):
         for query, base in (("releases", "release"), ("images", "image"),
                             ("packages", "package"), ("updated", "update"),

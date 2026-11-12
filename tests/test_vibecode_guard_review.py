@@ -45,6 +45,36 @@ class ReviewerRegressionTests(unittest.TestCase):
             self.assertEqual(result["status"], "CLEAR_HEURISTICS_ONLY")
             self.assertFalse(result["incomplete"])
 
+    def test_multiline_tls_keyword_is_actionable(self):
+        source = 'import requests\\nrequests.get("https://x", verify = \\\\\\n    False)\\n'
+        # Construct explicit Python line continuation, rather than a Python
+        # literal newline swallowed by the test parser.
+        source = 'import requests\\nrequests.get("https://x", verify = ' + chr(92) + '\\n    False)\\n'
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "src").mkdir()
+            (root / "src" / "multiline.py").write_text(source)
+            result = guard.inspect(root, ["src/multiline.py"])
+            self.assertEqual(result["status"], "WARNINGS_FOUND")
+            self.assertTrue(any(f["id"] == "TLS-VERIFY-DISABLED" for f in result["findings"]))
+
+    def test_source_like_submodule_directory_is_not_missing_source(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "libs" / "highlight.js").mkdir(parents=True)
+            result = guard.inspect(root, ["libs/highlight.js"])
+            self.assertFalse(result["incomplete"])
+            self.assertEqual(result["status"], "CLEAR_HEURISTICS_ONLY")
+
+    def test_dockerfile_reference_is_production_evidence(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "tests" / "certs").mkdir(parents=True)
+            (root / "tests" / "certs" / "server.pem").write_text("fixture")
+            (root / "Dockerfile").write_text("COPY tests/certs/server.pem /etc/server.pem\\n")
+            repo = guard.Repo(root, ["Dockerfile", "tests/certs/server.pem"])
+            self.assertEqual(repo.production_references("tests/certs/server.pem"), ["Dockerfile"])
+
     def test_nested_function_inside_expected_ssl_error_is_not_suppressed(self):
         source = '''import pytest, requests
 

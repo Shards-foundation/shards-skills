@@ -1,0 +1,68 @@
+"""Reviewer counterexamples: no certificate or credential false negatives."""
+import importlib.util
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("vibecode_guard_review", ROOT / "scripts" / "vibecode_guard.py")
+guard = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(guard)
+
+
+class ReviewerRegressionTests(unittest.TestCase):
+    def test_test_identity_uses_tokens_not_substrings_or_project_names(self):
+        for label in ("Latest Holdings", "Attestation Bank", "Contest Ltd", "PSF", "python-requests"):
+            with self.subTest(label=label):
+                self.assertFalse(guard._test_identity({"organizationName": label}))
+        self.assertTrue(guard._test_identity({"commonName": "localhost"}))
+        self.assertTrue(guard._test_identity({"commonName": "service.example"}))
+
+    def test_sibling_certificate_never_excuses_an_unrelated_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "tests" / "certs").mkdir(parents=True)
+            (root / "tests" / "conftest.py").write_text("# fixture declaration\n")
+            (root / "tests" / "certs" / "localhost.pem").write_text("-----BEGIN CERTIFICATE-----\nfixture\n")
+            (root / "tests" / "certs" / "unrelated.key").write_text("-----BEGIN PRIVATE KEY-----\nunrelated\n")
+            result = guard.inspect(root, ["tests/certs/localhost.pem", "tests/certs/unrelated.key", "tests/conftest.py"])
+            key = next(f for f in result["findings"] if f["path"].endswith("unrelated.key"))
+            self.assertEqual(key["classification"], "CONFIRMED")
+            self.assertGreaterEqual(result["summary"]["actionable"], 1)
+
+    def test_all_tracked_key_material_remains_actionable_even_if_likely_fixture(self):
+        for category in ("TEST_FIXTURE_LIKELY_INTENTIONAL", "TEST_FIXTURE_UNCONFIRMED_DIRECTORY"):
+            with self.subTest(category=category):
+                f = guard._finding("TRACKED-KEY-MATERIAL", "high", "tests/certs/example.pem", None,
+                                   "review", category, "low", "heuristic fixture hint")
+                result = guard.report([f], 1, 0, truncated=False)
+                self.assertEqual(result["status"], "WARNINGS_FOUND")
+                self.assertEqual(result["summary"]["actionable"], 1)
+
+    def test_missing_non_scanned_file_does_not_block_completion(self):
+        with tempfile.TemporaryDirectory() as d:
+            result = guard.inspect(Path(d), ["README.md"])
+            self.assertEqual(result["status"], "CLEAR_HEURISTICS_ONLY")
+            self.assertFalse(result["incomplete"])
+
+    def test_nested_function_inside_expected_ssl_error_is_not_suppressed(self):
+        source = '''import pytest, requests
+
+def test_case():
+    with pytest.raises(requests.exceptions.SSLError):
+        def later():
+            requests.get("https://x", verify=False)
+        raise requests.exceptions.SSLError()
+'''
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "tests").mkdir()
+            (root / "tests" / "test_case.py").write_text(source)
+            result = guard.inspect(root, ["tests/test_case.py"])
+            item = next(f for f in result["findings"] if f["id"] == "TLS-VERIFY-DISABLED")
+            self.assertEqual(item["classification"], "TEST_CONTEXT_UNPROVEN")
+            self.assertEqual(result["summary"]["actionable"], 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

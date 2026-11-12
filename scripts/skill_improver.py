@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import tempfile
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,9 +123,10 @@ def apply(args) -> dict:
         fromfile=record["target"] + " (baseline)", tofile=record["target"] + " (candidate)"))
     if expected != record["diff"]:
         raise ValueError("Diff mismatch")
-    backup = target.with_name("SKILL.md.backup-" + digest(old)[:16])
+    backup = target.with_name("SKILL.md.backup-" + digest(old)[:16] + "-" + uuid.uuid4().hex)
     create_only(backup, old)
     temp = None
+    replaced = False
     try:
         with tempfile.NamedTemporaryFile(mode="wb", dir=target.parent, prefix=".skill-improver-", delete=False) as stream:
             temp = Path(stream.name)
@@ -134,9 +136,12 @@ def apply(args) -> dict:
         if digest(target.read_bytes()) != digest(old):
             raise ValueError("Target changed during apply")
         os.replace(temp, target)
+        replaced = True
     finally:
         if temp is not None:
             temp.unlink(missing_ok=True)
+        if not replaced:
+            backup.unlink(missing_ok=True)
     return {"status": "applied", "target": record["target"], "before_sha256": digest(old),
             "after_sha256": digest(new), "backup": str(backup.relative_to(ROOT)),
             "plan_sha256": record["plan_sha256"]}
@@ -146,9 +151,14 @@ def rollback(args) -> dict:
         raise ValueError("Rollback requires approval and exact current digest")
     target = target_path(args.target)
     backup = safe_file(args.backup)
-    if backup.parent.resolve() != target.parent.resolve() or not backup.name.startswith("SKILL.md.backup-"):
+    if backup.parent.resolve() != target.parent.resolve():
         raise ValueError("Backup must belong to target")
+    match = re.fullmatch(r"SKILL\.md\.backup-([0-9a-f]{16})-([0-9a-f]{32})", backup.name)
+    if match is None:
+        raise ValueError("Invalid backup filename")
     old, current = backup.read_bytes(), target.read_bytes()
+    if not digest(old).startswith(match.group(1)):
+        raise ValueError("Backup digest mismatch")
     descriptor(old, target.parent.name)
     if digest(current) != args.expect_current_sha256:
         raise ValueError("Target changed; rollback blocked")

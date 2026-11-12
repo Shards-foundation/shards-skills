@@ -82,7 +82,10 @@ Each delegated task has a distinct stable ID within the run and a sub-agent
 identity. In parallel mode, workers execute concurrently, then return
 results in the original task order for deterministic joins. Aggregate status
 is pass only when every delegate passes; fail, hold, timeout and
-error remain failures. There are no hidden retries.
+error remain failures. Delegate receipts must match the pinned script SHA-256
+and have a consistent exit code (zero for pass; nonzero for fail or hold).
+Timeout and startup-error receipts correctly have a null exit code; mismatched
+evidence becomes an attributed task error. There are no hidden retries.
 
 receipt_sha256 detects accidental changes to JSON data after generation.
 It is **not** a signature, an append-only audit ledger, or evidence of

@@ -145,6 +145,89 @@ class AgentHarnessTests(unittest.TestCase):
         self.assertTrue(all(entry["artifact"]["error_type"] == "ValueError"
                             for entry in record["data_channel"]))
 
+    def test_delegate_receipt_rejects_false_success_and_digest_mismatch(self):
+        plan = harness.build_plan("a2a")
+        def invalid(delegate, mode):
+            receipt = fake_receipt(delegate)
+            if mode == "digest":
+                receipt["script_sha256"] = "0" * 64
+            elif mode == "nonzero":
+                receipt["observation"]["exit_code"] = 17
+            elif mode == "missing":
+                receipt["observation"].pop("exit_code")
+            elif mode == "false_failure":
+                receipt["observation"]["status"] = "fail"
+            return receipt
+        for mode in ("digest", "nonzero", "missing", "false_failure"):
+            with self.subTest(mode=mode):
+                result = harness.execute(plan, runner=lambda p: invalid(p, mode))
+                self.assertEqual(result["status"], "fail")
+                self.assertEqual(result["summary"]["failed"], 2)
+                self.assertTrue(all(entry["artifact"]["error_type"] == "ValueError"
+                                    for entry in result["data_channel"]))
+
+    def test_delegate_receipt_accepts_consistent_nonzero_failure(self):
+        result = harness.execute(harness.build_plan("a2a"),
+                                 runner=lambda p: fake_receipt(p, "fail"))
+        self.assertEqual(result["status"], "fail")
+        self.assertTrue(all(entry["artifact"]["status"] == "fail"
+                            for entry in result["data_channel"]))
+
+    def test_delegate_receipt_preserves_real_timeout_and_oserror(self):
+        for outcome in ("timeout", "error"):
+            with self.subTest(outcome=outcome):
+                def delegated(plan):
+                    receipt = fake_receipt(plan, outcome)
+                    receipt["observation"]["exit_code"] = None
+                    return receipt
+                record = harness.execute(harness.build_plan("a2a"), runner=delegated)
+                self.assertEqual(record["status"], "fail")
+                self.assertEqual(record["summary"]["failed"], 2)
+                self.assertTrue(all(
+                    entry["artifact"]["status"] == outcome
+                    and entry["artifact"]["exit_code"] is None
+                    and "error_type" not in entry["artifact"]
+                    for entry in record["data_channel"]
+                ))
+
+    def test_dispatcher_timeout_and_start_failure_keep_attribution(self):
+        def timed_out(command, **kwargs):
+            raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+
+        def unavailable(command, **kwargs):
+            raise OSError("executable unavailable")
+
+        failures = (("timeout", timed_out), ("error", unavailable))
+        for outcome, executor in failures:
+            with self.subTest(outcome=outcome):
+                def delegated(plan):
+                    return dispatch_skills.run(plan, executor=executor)
+                record = harness.execute(harness.build_plan("a2a"), runner=delegated)
+                self.assertEqual(record["status"], "fail")
+                self.assertTrue(all(
+                    entry["artifact"]["status"] == outcome
+                    and entry["artifact"]["exit_code"] is None
+                    and entry["artifact"]["receipt_id"]
+                    and entry["artifact"]["script_sha256"]
+                    for entry in record["data_channel"]
+                ))
+
+    def test_delegate_receipt_rejects_forged_nonprocess_outcomes(self):
+        for outcome, exit_code in (("timeout", 0), ("error", 1),
+                                   ("hold", 0), ("pass", None),
+                                   ("fail", None)):
+            with self.subTest(outcome=outcome, exit_code=exit_code):
+                def delegated(plan):
+                    receipt = fake_receipt(plan, outcome)
+                    receipt["observation"]["exit_code"] = exit_code
+                    return receipt
+                record = harness.execute(harness.build_plan("a2a"), runner=delegated)
+                self.assertEqual(record["status"], "fail")
+                self.assertTrue(all(
+                    entry["artifact"].get("error_type") == "ValueError"
+                    for entry in record["data_channel"]
+                ))
+
     def test_tampered_plan_and_regenerated_digest_denied(self):
         plan = harness.build_plan("swarm")
         tasks = [dict(task) for task in plan["tasks"]]

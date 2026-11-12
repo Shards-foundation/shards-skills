@@ -122,6 +122,11 @@ class Repo:
                 try:
                     # Never traverse a tracked symlink or symlinked ancestor.
                     path = relative_file(self.root, f)
+                    # Tracked source files may be replaced by a FIFO or socket.
+                    # Reject non-regular inputs instead of blocking in read_bytes().
+                    if not path.is_file():
+                        self._source_scan_complete = False
+                        continue
                     size = path.stat().st_size
                     if size > MAX_FILE_BYTES or source_bytes + size > MAX_TOTAL_BYTES:
                         self._source_scan_complete = False
@@ -365,10 +370,22 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                                              "Tracked symlink resolves outside the repository; do not follow it",
                                              "CONFIRMED", "high", None) | {"target": state["target"]})
                 elif state["state"] == "INTERNAL":
-                    findings.append(_finding("SYMLINK-INTERNAL", "info", name, None,
-                                             "Tracked symlink resolves inside the repository; content not read",
-                                             "SYMLINK_INTERNAL_REVIEWED", "high",
-                                             "destination verified inside repository; link not followed") | {"target": state["target"]})
+                    # Internal links may point to unscanned text assets.
+                    # Never infer credential safety from repository containment.
+                    is_env = (Path(name).name.startswith(".env") and
+                              Path(name).name not in {".env.example", ".env.sample", ".env.template"})
+                    is_key = Path(name).suffix.lower() in (KEY_EXT | CONTAINER_EXT)
+                    if is_env or is_key:
+                        findings.append(_finding(
+                            "TRACKED-ENV" if is_env else "TRACKED-KEY-MATERIAL",
+                            "high", name, None,
+                            "Tracked credential-like symlink; review the target without following the link",
+                            "CONFIRMED", "high", None) | {"target": state["target"]})
+                    else:
+                        findings.append(_finding("SYMLINK-INTERNAL", "info", name, None,
+                                                 "Tracked symlink resolves inside the repository; content not read",
+                                                 "SYMLINK_INTERNAL_REVIEWED", "high",
+                                                 "destination verified inside repository; link not followed") | {"target": state["target"]})
                 else:
                     findings.append(_finding("SYMLINK-UNRESOLVABLE", "medium", name, None,
                                              "Tracked symlink could not be resolved; review independently",

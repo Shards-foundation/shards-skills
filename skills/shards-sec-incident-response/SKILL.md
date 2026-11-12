@@ -20,8 +20,8 @@ alert, incident coordinator, affected assets, contact tree and evidence retentio
 ## Workflow
 1. Open incident record, preserve timestamps, contacts and chain-of-custody expectations.
 2. Classify severity by customer safety, financial loss, data exposure and service availability.
-3. Separate verified facts from hypotheses; preserve relevant logs before containment changes.
-4. Select containment that minimises harm and explicitly authorise disruptive actions.
+3. If an attack is active, invoke pre-authorised emergency containment immediately to reduce ongoing harm, coordinating fast evidence capture in parallel; never wait for exhaustive log collection while exfiltration continues.
+4. Distinguish facts from hypotheses, document containment decisions and preserve volatile logs or images as safely feasible without delaying containment. Obtain appropriate approval for disruptive actions outside standing emergency authority.
 5. Coordinate recovery, credential rotation, stakeholder communications and regulatory notification review.
 6. Verify restored operations, monitor for recurrence and write a sanitised post-incident review.
 

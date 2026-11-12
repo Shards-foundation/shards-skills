@@ -372,9 +372,15 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                 elif state["state"] == "INTERNAL":
                     # Internal links may point to unscanned text assets.
                     # Never infer credential safety from repository containment.
-                    is_env = (Path(name).name.startswith(".env") and
-                              Path(name).name not in {".env.example", ".env.sample", ".env.template"})
-                    is_key = Path(name).suffix.lower() in (KEY_EXT | CONTAINER_EXT)
+                    # The tracked link may have a benign name while its
+                    # resolved in-repository target is an untracked .env/key.
+                    # Check path metadata only: never open the destination.
+                    link_candidates = (Path(name), Path(state["target"]))
+                    is_env = any(p.name.startswith(".env") and
+                                 p.name not in {".env.example", ".env.sample", ".env.template"}
+                                 for p in link_candidates)
+                    is_key = any(p.suffix.lower() in (KEY_EXT | CONTAINER_EXT)
+                                 for p in link_candidates)
                     if is_env or is_key:
                         findings.append(_finding(
                             "TRACKED-ENV" if is_env else "TRACKED-KEY-MATERIAL",

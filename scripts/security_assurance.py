@@ -179,7 +179,7 @@ def main(argv=None) -> int:
         report = assess(data, registry_sha, payload, input_sha)
         emit(report, args.output)
         return 0 if report["verdict"] == "REVIEW_READY_NOT_CERTIFIED" else 1
-    except (ValueError, OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
+    except (ValueError, OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError, RecursionError) as exc:
         print(json.dumps({"status": "BLOCKED", "reason": str(exc)}), file=sys.stderr)
         return 2
 

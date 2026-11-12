@@ -157,6 +157,34 @@ class SkillSearchTests(unittest.TestCase):
                     ("# filler\n" * 97) + "---\n", encoding="utf-8")
                 self.assertEqual(len(discovery.curated_entries(root)), 1)
 
+    def test_short_query_matches_without_losing_abbreviations(self):
+        for term, name in (("ci", "ci-cd-automation"), ("ai", "ai-agent-boundaries"),
+                           ("ui", "ui-engineering"), ("go", "go-programming")):
+            with self.subTest(term=term):
+                entry = {**self._entry(name, "Reviewed workflow"),
+                         "execution": "not-dispatchable"}
+                found = discovery.rank([entry], term)
+                self.assertEqual([match["name"] for match in found], [name])
+
+    def test_short_acronym_survives_mixed_task_query(self):
+        for query, name in (("setup ci pipeline", "ci-cd-automation"),
+                            ("improve ai workflows", "ai-agent-boundaries"),
+                            ("build ui dashboard", "ui-engineering")):
+            with self.subTest(query=query):
+                entry = {**self._entry(name, "Reviewed workflow"),
+                         "execution": "not-dispatchable"}
+                found = discovery.rank([entry], query)
+                self.assertEqual([item["name"] for item in found], [name])
+
+    def test_inflections_match_base_forms_with_final_e(self):
+        for query, base in (("releases", "release"), ("images", "image"),
+                            ("packages", "package"), ("updated", "update"),
+                            ("creating", "create")):
+            with self.subTest(query=query):
+                entry = {**self._entry("target-workflow", "Use for " + base + " analysis"),
+                         "execution": "not-dispatchable"}
+                self.assertEqual(discovery.rank([entry], query)[0]["name"], "target-workflow")
+
     def test_bad_query_limit_rejected(self):
         with self.assertRaises(ValueError):
             discovery.rank([], "!?!")

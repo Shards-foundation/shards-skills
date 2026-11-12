@@ -4,6 +4,37 @@
 
 > **Usable now:** First-party skills are written procedures that an agent can read and apply immediately. The `draft` metadata records the limits of independent host-level evaluation; it does **not** disable use. The Python preflight and assurance tools run locally. Imported skills remain separate and subject to their own provenance reviews.
 
+## Get a useful result — no paid AI credits required
+
+This repository has **two distinct capabilities**: instructions for agents (the
+`skills/` catalogue) and **eleven curated workflows with executable entrypoints**
+under `plugins/shards-core/`. Finding an imported skill does not authorise
+running its scripts. The list of catalogue skills is not a count of tested agents.
+
+From a local checkout with Python 3.11+:
+
+```bash
+# 1. Discover a candidate for an actual task (does not run imported code).
+python scripts/search_skills.py --query "check repository health" --status curated --limit 3
+
+# 2. Run a useful read-only check on a Git repository you own.
+python plugins/shards-core/scripts/run.py repository-health --repo /path/to/your/project
+
+# 3. Measure whether natural-language tasks retrieve relevant skills.
+python scripts/agent_adoption_eval.py
+```
+
+For an Android-only operator with no local Python, the existing
+[Run Curated Shards Skill](docs/manual-skill-runs.md) GitHub Action runs reviewed
+read-only checks and provides JSON receipts. To see skill matches rather than
+run one, use [Search Shards Skill Catalogue](docs/skill-discovery.md).
+
+To use an **instruction-only** skill with an agent, provide its
+`skills/<name>/SKILL.md` and the project task. The agent must actually read it
+and produce task evidence; simply listing or selecting a skill is not
+proof of execution. [Agent adoption evidence](docs/agent-adoption.md) records
+the retrieval and host-verification boundaries.
+
 ## Use Shards Security Skills now
 
 **No certification or special agent integration is required to start using the workflows.**

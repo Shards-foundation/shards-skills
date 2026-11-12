@@ -106,7 +106,10 @@ def host_report(cases: list[dict], receipts: dict) -> dict:
                           bool(run["trace_reference"].strip()) and
                           run["task_outcome"] == "pass" else "not_demonstrated")
             else:
-                result = "reported_appropriate_abstention" if not invoked_target else "reported_false_trigger"
+                result = ("reported_false_trigger" if invoked_target else
+                          "reported_appropriate_abstention" if
+                          bool(run["trace_reference"].strip()) and
+                          run["task_outcome"] == "pass" else "not_demonstrated")
         results.append({"case_id": cid, "target_skill": case["skill"],
                         "expected_trigger": case["should_trigger"], "result": result})
     return {"evaluation": "self_reported_host_trace", "host": receipts["host"],

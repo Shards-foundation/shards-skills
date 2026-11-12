@@ -73,7 +73,7 @@ def descriptor(blob: bytes, name: str) -> str:
     if len(body.strip()) < 100:
         raise ValueError("Descriptor body too short")
     skill_dir = ROOT / "skills" / name
-    for link in re.findall(r"\\[[^\\]]*\\]\\(([^)]+)\\)", body):
+    for link in re.findall(r"\[[^]]*\]\(([^)]+)\)", body):
         if link.startswith(("https://", "http://", "mailto:", "#")):
             continue
         path = (skill_dir / link.split("#", 1)[0]).resolve()

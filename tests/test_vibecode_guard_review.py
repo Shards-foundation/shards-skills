@@ -94,6 +94,22 @@ class ReviewerRegressionTests(unittest.TestCase):
             self.assertEqual(result["summary"]["actionable"], 2)
             self.assertEqual(result["status"], "WARNINGS_FOUND")
 
+    def test_benign_named_internal_link_to_untracked_credential_is_actionable(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "config").mkdir()
+            (root / "secrets").mkdir()
+            (root / "secrets" / "prod.key").write_text("synthetic only")
+            (root / ".env").write_text("TEST_TOKEN=synthetic\n")
+            (root / "config" / "settings").symlink_to("../.env")
+            (root / "config" / "cert").symlink_to("../secrets/prod.key")
+            # The destinations deliberately do not appear in the Git index.
+            result = guard.inspect(root, ["config/settings", "config/cert"])
+            findings = {(f["path"], f["id"]) for f in result["findings"]}
+            self.assertIn(("config/settings", "TRACKED-ENV"), findings)
+            self.assertIn(("config/cert", "TRACKED-KEY-MATERIAL"), findings)
+            self.assertEqual(result["summary"]["actionable"], 2)
+
     @unittest.skipUnless(hasattr(os, "mkfifo"), "FIFO requires a POSIX environment")
     def test_fifo_replacing_tracked_source_does_not_hang_reference_scan(self):
         # Run the actual CLI in a child process with a strict timeout.

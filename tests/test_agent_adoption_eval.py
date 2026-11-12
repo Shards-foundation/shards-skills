@@ -55,6 +55,13 @@ class AgentAdoptionEvalTests(unittest.TestCase):
         self.assertEqual([r["result"] for r in report["results"]],
                          ["not_demonstrated", "reported_false_trigger"])
 
+    def test_negative_abstention_requires_host_trace(self):
+        report = evaluator.host_report(self.cases, {"schema_version": 1, "host": "Codex",
+            "repository_commit": "c" * 40, "runs": [
+                {"case_id": "2", "selected_skill": None, "skill_opened": False,
+                 "procedure_applied": False, "trace_reference": "", "task_outcome": "pass"}]})
+        self.assertEqual(report["results"][1]["result"], "not_demonstrated")
+
     def test_reject_forged_or_malformed_receipts(self):
         baseline = {"schema_version": 1, "host": "Codex", "repository_commit": "a" * 40,
                     "runs": []}

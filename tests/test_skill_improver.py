@@ -142,6 +142,22 @@ class ImproverTests(unittest.TestCase):
                 backup=str(backup), approve=True,
                 expect_current_sha256=receipt["after_sha256"]))
 
+    def test_symlink_skills_root_rejected(self):
+        self.prepare()
+        import shutil
+        folder = self.root / "skills"
+        alternate = self.root / "elsewhere"
+        folder.rename(alternate)
+        folder.symlink_to(alternate, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "Symlinked"):
+            imp.target_path("skills/sample-skill/SKILL.md")
+
+    def test_invalid_candidate_link_rejected(self):
+        self.new.write_bytes(content("new [bad link](../../etc/passwd)"))
+        with self.assertRaisesRegex(ValueError, "relative link"):
+            imp.plan(SimpleNamespace(target="skills/sample-skill/SKILL.md",
+                candidate=str(self.new), output=str(self.plan_path)))
+
     def test_duplicate_apply_fails(self):
         plan = self.prepare()
         imp.apply(self.options(plan))

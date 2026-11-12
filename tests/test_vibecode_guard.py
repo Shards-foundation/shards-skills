@@ -84,9 +84,15 @@ class VibeCodeGuardTests(unittest.TestCase):
         sentinel = self.root / "fsmonitor-was-invoked"
         fsmonitor = self.root / "hostile-fsmonitor.sh"
         fsmonitor.write_text(
-            "#!/bin/sh\\n" + "touch " + str(sentinel) + "\\n", encoding="utf-8"
+            "#!/bin/sh\n"
+            f"touch '{sentinel}'\n",
+            encoding="utf-8",
         )
         fsmonitor.chmod(0o700)
+        # Prove the fixture itself executes and writes the marker.
+        subprocess.run([str(fsmonitor)], check=True, timeout=10)
+        self.assertTrue(sentinel.exists(), "Hostile fixture must be executable")
+        sentinel.unlink()
         subprocess.run(["git", "-C", str(root), "config", "--local",
                         "core.fsmonitor", str(fsmonitor)], check=True, timeout=10)
         self.assertFalse(sentinel.exists())

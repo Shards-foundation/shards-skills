@@ -131,6 +131,18 @@ class SecurityAssuranceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "non-symlink"):
             mod.read_json(l)
 
+    def test_deeply_nested_json_returns_invalid_input_exit_2(self):
+        import contextlib
+        import io
+        source = self.tmp / "nested.json"
+        source.write_text("[" * 1600 + "0" + "]" * 1600, encoding="utf-8")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            exit_code = mod.main(["assess", "--input", str(source)])
+        self.assertEqual(exit_code, 2)
+        self.assertIn('"status": "BLOCKED"', err.getvalue())
+        self.assertNotIn("Traceback", err.getvalue())
+
     def test_output_is_create_only(self):
         f = self.tmp / "result.json"
         mod.emit({"hello": "world"}, str(f))

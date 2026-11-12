@@ -139,8 +139,20 @@ def assess(data: dict, registry_sha: str, payload: dict, input_sha: str) -> dict
                         "observed_revision": item["revision"] if item else None})
     # An external reviewer must independently validate sources and jurisdiction.
     verdict = "REVIEW_READY_NOT_CERTIFIED" if not counts["blocked"] and not counts["fail"] else "HOLD"
-    return {"schema_version": 1, "system": scope["system"], "profiles": chosen, "jurisdictions": scope["jurisdictions"],
-            "registry_sha256": registry_sha, "input_sha256": input_sha, "revision": scope["revision"],
+    # Preserve the assessed owner, environment and authorisation boundary with every verdict.
+    # Use normalized validated values rather than silently dropping scope metadata.
+    full_scope = {
+        "system": require_text(scope["system"], "system"),
+        "owner": require_text(scope["owner"], "owner"),
+        "jurisdictions": [require_text(v, "jurisdiction") for v in scope["jurisdictions"]],
+        "revision": require_text(scope["revision"], "revision"),
+        "environment": require_text(scope["environment"], "environment"),
+        "authorised_scope": require_text(scope["authorised_scope"], "authorised_scope"),
+        "profiles": chosen,
+    }
+    return {"schema_version": 1, "scope": full_scope,
+            "system": full_scope["system"], "profiles": chosen, "jurisdictions": full_scope["jurisdictions"],
+            "registry_sha256": registry_sha, "input_sha256": input_sha, "revision": full_scope["revision"],
             "assessment": "operator-attested-only", "verdict": verdict,
             "counts": counts, "controls": results,
             "warning": "Does not establish security, legal compliance, production readiness or independent audit assurance."}

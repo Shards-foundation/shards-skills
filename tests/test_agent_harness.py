@@ -190,6 +190,28 @@ class AgentHarnessTests(unittest.TestCase):
                     for entry in record["data_channel"]
                 ))
 
+    def test_dispatcher_timeout_and_start_failure_keep_attribution(self):
+        failures = (
+            ("timeout", lambda command, **kwargs: (
+                (_ for _ in ()).throw(
+                    subprocess.TimeoutExpired(command, kwargs["timeout"])))),
+            ("error", lambda command, **kwargs: (
+                (_ for _ in ()).throw(OSError("executable unavailable")))),
+        )
+        for outcome, executor in failures:
+            with self.subTest(outcome=outcome):
+                def delegated(plan):
+                    return dispatch_skills.run(plan, executor=executor)
+                record = harness.execute(harness.build_plan("a2a"), runner=delegated)
+                self.assertEqual(record["status"], "fail")
+                self.assertTrue(all(
+                    entry["artifact"]["status"] == outcome
+                    and entry["artifact"]["exit_code"] is None
+                    and entry["artifact"]["receipt_id"]
+                    and entry["artifact"]["script_sha256"]
+                    for entry in record["data_channel"]
+                ))
+
     def test_delegate_receipt_rejects_forged_nonprocess_outcomes(self):
         for outcome, exit_code in (("timeout", 0), ("error", 1),
                                    ("hold", 0), ("pass", None),

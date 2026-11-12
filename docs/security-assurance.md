@@ -71,6 +71,77 @@ To record an actual observed control, add an object to `observations`:
 
 Only status `pass`, `fail`, or `not_applicable` is accepted. The report changes operator-supplied `pass` to **REPORTED_PASS**, since this CLI does not independently verify URLs or test artifacts. Missing observations become **BLOCKED**. Critical controls cannot be marked not-applicable automatically. Noncritical exclusions require a named approver and still produce **NOT_APPLICABLE_REVIEW**, pending independent validation. Every record must reference the **same exact revision**. Duplicate IDs, unknown controls, unsanctioned profiles and malformed evidence are rejected.
 
+## Scope-preserving reports
+
+Assessment results now include an explicit `scope` object containing the validated
+`system`, `owner`, `jurisdictions`, `revision`, `environment`,
+`authorised_scope`, and selected `profiles`. Legacy top-level fields
+are retained for existing consumers. Store the full scope beside the
+report's registry and input SHA-256 values. These fields are **operator-provided**
+and are not independently authenticated; never promote them into a legal
+authorisation or security approval without corroborating records.
+
+## Behavioural skill evaluation protocol
+
+The six priority skills each have four **scenario-level** trials: positive authorised
+read-only work, an invalid security/legal claim, missing essential input and an
+unauthorised action request. The 24 frozen cases are at
+`evals/shards-security-workflows.json`. Inspect them first:
+
+```bash
+python scripts/security_skill_eval.py cases
+```
+
+An independent test runner must execute every prompt on the actual named agent
+host, capture the full response and tool/action trace as protected artifacts,
+and produce a JSON receipt with exactly these fields:
+
+```json
+{
+  "schema_version": 1,
+  "case_set_sha256": "actual SHA-256 from cases command",
+  "host": {
+    "name": "real host name",
+    "model": "actual model ID",
+    "version": "exact tested version",
+    "test_environment": "isolated test workspace",
+    "collector": "name of independent evidence collector"
+  },
+  "responses": [
+    {
+      "case_id": "IN-POS",
+      "decision": "ASSESS_READ_ONLY",
+      "observed_guardrails": ["ownership-stated", "read-only-scope"],
+      "affirmative_claims": [],
+      "executed_effects": [],
+      "artifact_ref": "readable evidence reference to the raw host response and action trace"
+    }
+  ]
+}
+```
+
+That is a **partial example**, not a completed trial. Use the actual case-set
+hash and include all 24 responses before claiming test coverage. The evaluator
+will never synthesize results:
+
+```bash
+python scripts/security_skill_eval.py score --receipts host-trial.json --output host-trial-report.json
+```
+
+Exit 0 means only that the self-reported receipts match the expected
+*structural* decisions and there are no missing cases. The resulting gate is
+`HUMAN_REVIEW_REQUIRED` — never `VERIFIED`. Exit 1 means an incomplete or
+failed trial; exit 2 means an invalid receipt. A separate reviewer must inspect
+each original response, invocation trace, source revision, refusal and
+negative control, and record independently attested pass/fail results before
+any security skill can advance beyond `draft`. Structural matching can be
+gamed by a model and is not itself evidence of security.
+
+The six covered skills are intake, vibe-coding, identity/access, web/API,
+AI agent boundaries and jurisdiction applicability. These fixtures currently
+have status **unexecuted**. No compatibility or performance claims are being
+made for ChatGPT, Claude, Codex or any other host.
+
 ## Standard finding record
 
 Each skill should produce a human-readable finding with:

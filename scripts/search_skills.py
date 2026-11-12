@@ -36,16 +36,19 @@ def normalized_words(value: str) -> set[str]:
         if token in STOPWORDS or len(token) <= 2:
             continue
         if token.endswith("ies") and len(token) > 4:
-            token = token[:-3] + "y"
+            result.add(token[:-3] + "y")
         elif token.endswith("ing") and len(token) > 6:
-            token = token[:-3]
+            stem = token[:-3]
+            result.update((stem, stem + "e"))
         elif token.endswith("ed") and len(token) > 5:
-            token = token[:-2]
-        elif token.endswith("es") and len(token) > 5:
-            token = token[:-2]
+            stem = token[:-2]
+            result.update((stem, stem + "e"))
+        elif token.endswith("es") and len(token) > 4:
+            result.update((token[:-1], token[:-2]))
         elif token.endswith("s") and len(token) > 3:
-            token = token[:-1]
-        result.add(token)
+            result.add(token[:-1])
+        else:
+            result.add(token)
     return result
 
 
@@ -123,7 +126,11 @@ def rank(entries: list[dict], query: str, *, category: str | None = None,
          status: str | None = None) -> list[dict]:
     if not words(query):
         raise ValueError("Query must contain at least one letter or number")
-    query_tokens = normalized_words(query) or words(query)
+    query_tokens = normalized_words(query)
+    raw_fallback = not query_tokens
+    if raw_fallback:
+        query_tokens = words(query)
+    term_words = words if raw_fallback else normalized_words
     ranked = []
     for item in entries:
         if category and item["category"] != category:
@@ -132,9 +139,9 @@ def rank(entries: list[dict], query: str, *, category: str | None = None,
             continue
         name = item["name"].replace("-", " ").lower()
         desc = item["description"].lower()
-        hits_name = len(query_tokens & normalized_words(name))
-        hits_desc = len(query_tokens & normalized_words(desc))
-        hits_cat = len(query_tokens & normalized_words(item["category"]))
+        hits_name = len(query_tokens & term_words(name))
+        hits_desc = len(query_tokens & term_words(desc))
+        hits_cat = len(query_tokens & term_words(item["category"]))
         # Short skill names are high-signal; generic prose overlap is not.
         score = 10 * hits_name + 4 * hits_desc + 2 * hits_cat
         if score == 0:

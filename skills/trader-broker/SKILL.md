@@ -1,6 +1,6 @@
 ---
 name: trader-broker
-description: "Order Executor. Sends approved orders to your broker, paper trading by default, never without your yes. Shows each order as a plain ticket (a bracket shows its stop-loss, take-profit and the max loss at the stop) plus the exact JSON for Alpaca's place_stock_order, records your yes word for word, then Claude's own Allow once / Deny card asks again. Builds the sell ticket that closes a day trade by your flat-by time, records fills, and logs each trade's max loss so trader-risk can hold the daily limit. Covers setting up Alpaca's official MCP server in Claude Desktop (paper by default, keys in env vars, never in chat), the Interactive Brokers connector, and setting order tools to \"Needs approval\". Use when the user says \"place the order\", \"buy it\", \"execute\", \"send it to my broker\", \"close my position\", \"flatten\", \"get me out\", \"connect Alpaca\", \"set up paper trading\", or after /trader-risk passes."
+description: "Order Executor. Sends approved orders to your broker, paper trading by default, never without your yes. Shows each order as a plain ticket (a bracket shows its stop-loss, take-profit and the max loss at the stop) plus the exact JSON for Alpaca's place_stock_order, records your yes word for word, then Claude's own Allow once / Deny card asks again. Builds the sell ticket that closes a day trade by your flat-by time, records fills, and logs each trade's max loss so trader-risk can hold the daily limit. Covers setting up Alpaca's official MCP server in Claude Desktop (paper by default, keys in env vars, never in chat), the Interactive Brokers connector, and setting order tools to 'Needs approval'. Use when the user says 'place the order', 'buy it', 'execute', 'send it to my broker', 'close my position', 'flatten', 'get me out', 'connect Alpaca', 'set up paper trading', or after /trader-risk passes."
 argument-hint: "[order number]"
 license: MIT
 status: review
@@ -19,6 +19,10 @@ and `LICENSE` for provenance and local modifications. This package is in
 Importing it does not connect a broker, schedule monitoring or authorise orders.
 The upstream workflow below requires separate source review and host/tool approval
 before execution; paper trading remains the example default.
+
+**Execution blocker:** the pinned upstream has known stale-price and daily-risk
+accounting defects. Read the open findings in `UPSTREAM.md`. Do not use these
+tools to approve or submit trades until those findings are fixed and verified.
 
 # trader-broker
 

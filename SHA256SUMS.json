@@ -31,8 +31,8 @@
   },
   {
     "path": "README.md",
-    "sha256": "70729c019f16ba7f12e674d0e00666b94f22135adbf02bcf90908d4be1bd202f",
-    "bytes": 11382
+    "sha256": "b39a3fc0f5f8f459b4d87debfb0e0eb8b98d1350026d071f27f8c08807ec5ad0",
+    "bytes": 11536
   },
   {
     "path": "SECURITY.md",
@@ -46,8 +46,8 @@
   },
   {
     "path": "catalogue/catalogue.json",
-    "sha256": "07ddcc603c30e89c1f5f035af6bed7166d0cb6636a46c53928904442a6ca7f51",
-    "bytes": 190079
+    "sha256": "870b89c4a698e2b4fad2233512ff8a0844acbdbe66040c0d699ad955c7e546fa",
+    "bytes": 189563
   },
   {
     "path": "catalogue/imported-skills.json",
@@ -71,8 +71,8 @@
   },
   {
     "path": "docs/day-trader-skills.md",
-    "sha256": "f8492456f3337c78cbb86cfee7b4c438e004c905fcfc74e0897f53c90f8a0916",
-    "bytes": 3626
+    "sha256": "62f0b1e8feb44f3327271d8484944361e18145b52677aead8b28bd56f89c1d30",
+    "bytes": 4992
   },
   {
     "path": "evals/README.md",
@@ -14411,13 +14411,13 @@
   },
   {
     "path": "skills/trader-alerts/SKILL.md",
-    "sha256": "3e1554fb2d2ca5b607e8bebb436f49db12d55146965280f2fe4a3622405e5afd",
-    "bytes": 10210
+    "sha256": "1a686442b5f83a6774ac6e87efd2c9aff33d176d1f66a14d139e7684163f396f",
+    "bytes": 10192
   },
   {
     "path": "skills/trader-alerts/UPSTREAM.md",
-    "sha256": "3b6d396ec715f3681772d77bf23ae99eef5e759201e119988076bb59b524604e",
-    "bytes": 1501
+    "sha256": "cb09accb551e6a6f7e119830f15e47e9e90805255b1c4b876ef67a9e7c5331d4",
+    "bytes": 1540
   },
   {
     "path": "skills/trader-alerts/alerts.example.json",
@@ -14436,13 +14436,13 @@
   },
   {
     "path": "skills/trader-analyst/SKILL.md",
-    "sha256": "b5bbcfd14c27ee64446b9aa80d28b0da06331c6b1894cca147a1449218fa3c4f",
-    "bytes": 7931
+    "sha256": "9d2b3ee2687ba4561468423df1c6c0eb7ef3ca67921a17dfd2ac020253a339b4",
+    "bytes": 7915
   },
   {
     "path": "skills/trader-analyst/UPSTREAM.md",
-    "sha256": "fb9e3135228c02fcff8649febafa0468904229e683cb01e077f22860fb13c4d1",
-    "bytes": 1503
+    "sha256": "bfcc40b5babe2b9957647a49a4bb220f883ed536036a89e5addd89b28c451133",
+    "bytes": 1542
   },
   {
     "path": "skills/trader-analyst/facts.py",
@@ -14461,13 +14461,13 @@
   },
   {
     "path": "skills/trader-broker/SKILL.md",
-    "sha256": "b2c468cd7ab905ddfbcaa08790ecc7c51c8b641b147ce597946021c15358bef6",
-    "bytes": 13454
+    "sha256": "56d24b06fcb8bfb4e7ffff2444389efcea193a9b868a9a178e6002c0f235988a",
+    "bytes": 13672
   },
   {
     "path": "skills/trader-broker/UPSTREAM.md",
-    "sha256": "276cfea5ceab8b8c99ee88567264f699789bf1c4e290491b2c8244c2ae74f219",
-    "bytes": 1501
+    "sha256": "b2a41c71bb413080d2d1aa49f6076cd629f33f4a68a58e38090a02d9e2c8cb10",
+    "bytes": 2636
   },
   {
     "path": "skills/trader-broker/claude_desktop_config.example.json",
@@ -14486,13 +14486,13 @@
   },
   {
     "path": "skills/trader-budget/SKILL.md",
-    "sha256": "8be2041f0ea9d3a347d7e0c79db3fa68cbbe0101cef8a461eb7c523cabd86c86",
-    "bytes": 10616
+    "sha256": "c9e1b16df2c359a1f2972a27c475c827ccbef74f534d6b3cb93144a38424487e",
+    "bytes": 10602
   },
   {
     "path": "skills/trader-budget/UPSTREAM.md",
-    "sha256": "7845c38d214ae7f7d228fa155c6ffd32e13695a58144cce4193f2a2b0d4f9406",
-    "bytes": 1501
+    "sha256": "600801131b46ea8fb7c12f7cbbdb326022a4fcca21ca122056b8e715c443715d",
+    "bytes": 1540
   },
   {
     "path": "skills/trader-budget/config.example.json",
@@ -14516,13 +14516,13 @@
   },
   {
     "path": "skills/trader-entry/SKILL.md",
-    "sha256": "398b0ae6fc6ed9218fa5f968e197cceb3a179489963703eff66f7f82bfd0177d",
-    "bytes": 9689
+    "sha256": "4e51836e5b73f5d0fb0df23d66db027e13a2dc8b0055349332e7e3b960a2b37e",
+    "bytes": 9675
   },
   {
     "path": "skills/trader-entry/UPSTREAM.md",
-    "sha256": "0d957ef10b7ac109e8890d639969218c387544c5f3ee1903b80d49206b79536c",
-    "bytes": 1499
+    "sha256": "7cb79e527186befbe1f137392256c92b94b8cbd956e72e32d7c0e5b9680b11e9",
+    "bytes": 1538
   },
   {
     "path": "skills/trader-entry/entry.py",
@@ -14536,13 +14536,13 @@
   },
   {
     "path": "skills/trader-exit/SKILL.md",
-    "sha256": "47b9b2cc84d87d3969425404ed318807e2f8d26d106f973736932946d04db099",
-    "bytes": 8951
+    "sha256": "6912fd9b908ee143a2a5379826b785a0d18a0ec45c00250ab4d38cf521c349ed",
+    "bytes": 8937
   },
   {
     "path": "skills/trader-exit/UPSTREAM.md",
-    "sha256": "9a2f971f4f927ca231690c850a9e48190c5d53b20c04930f58b80e92e4cc9a49",
-    "bytes": 1497
+    "sha256": "03719fbe4f1ecbc42dc3f23e6916b7aeba26be288c37700a47d0222929e486f0",
+    "bytes": 1536
   },
   {
     "path": "skills/trader-exit/exit.py",
@@ -14556,13 +14556,13 @@
   },
   {
     "path": "skills/trader-news/SKILL.md",
-    "sha256": "fa4503762956f8940cb85881efcc66453f3d1ca480f68f0dbb2c69d61e651d95",
-    "bytes": 7331
+    "sha256": "c3b9aad100c6baf9067cfc7c675e462031367ac9604cd996891c638375945115",
+    "bytes": 7315
   },
   {
     "path": "skills/trader-news/UPSTREAM.md",
-    "sha256": "a63bcb44396756cb66aba9f335c45fa9aa8c5b955d48717ad28df57523efc167",
-    "bytes": 1497
+    "sha256": "31ac69dd521394af55222c78d74abea02688a03b8231838ef205cecbdbfa19dc",
+    "bytes": 1536
   },
   {
     "path": "skills/trader-news/news.py",
@@ -14576,13 +14576,13 @@
   },
   {
     "path": "skills/trader-pelosi/SKILL.md",
-    "sha256": "1282b5bb4ce384fc88e790bf7eba138e9e826bcd97832b062bc8dfad110f6423",
-    "bytes": 9376
+    "sha256": "51ec4e00485a4764ad9d159190fc9a45a5a03cf193ed250928f2df73ddaa6dac",
+    "bytes": 9362
   },
   {
     "path": "skills/trader-pelosi/UPSTREAM.md",
-    "sha256": "a456ebae820baef429d82d8a798c15c0c2460d9f9e222ebff8ffb6e7ac31a8d5",
-    "bytes": 1501
+    "sha256": "d071ac8255b2847e39cb680b43989bc76b89c3c29dc30d9ce12c80d310732b40",
+    "bytes": 1540
   },
   {
     "path": "skills/trader-pelosi/ptr.py",
@@ -14596,13 +14596,13 @@
   },
   {
     "path": "skills/trader-risk/SKILL.md",
-    "sha256": "e791d7db8f91a7f895150629666d976f87628551fc9590a88bdc972f8077a814",
-    "bytes": 11598
+    "sha256": "38320e6b1a3636ea9373c0e2acebf217caa2e8216182c32f3016408e1bcce1b6",
+    "bytes": 11824
   },
   {
     "path": "skills/trader-risk/UPSTREAM.md",
-    "sha256": "1777266a5fdd97db3e01b067c80cdf4cd1a5810f319f4147a136b61773bb7102",
-    "bytes": 1497
+    "sha256": "9b08aa55b9bc1cf23fc29325974824a91db05693020efa8b2d621dc9e3c7dae3",
+    "bytes": 2632
   },
   {
     "path": "skills/trader-risk/check.py",
@@ -14616,13 +14616,13 @@
   },
   {
     "path": "skills/trader-scanner/SKILL.md",
-    "sha256": "614de6c8dff8832eab7cf5c52fac6a3f91796083ff16772af2e3cf1772c9fd3b",
-    "bytes": 12907
+    "sha256": "6a660396bb4611796f76e85c0349ba95ba6f0a9be583e20a4773d07b8416e209",
+    "bytes": 12889
   },
   {
     "path": "skills/trader-scanner/UPSTREAM.md",
-    "sha256": "79a5a13842bb6f9e52080a283695bf361ac04fea76e7b5167af37c4eb9a2755e",
-    "bytes": 1503
+    "sha256": "223cd432fd206356c19aa735f52cd2f9291446db5428feb63f9bd8d7c4cd0885",
+    "bytes": 1542
   },
   {
     "path": "skills/trader-scanner/scan.py",
@@ -14636,13 +14636,13 @@
   },
   {
     "path": "skills/trader-timemachine/SKILL.md",
-    "sha256": "043a1eb23ef8f923c36358fbbaf7e86611fef0a491007e84cc7dfa9701923e35",
-    "bytes": 11625
+    "sha256": "a3e31fe551fd8afd00fa46f3e8290684273318c57c8164c94ee1577801b5fd8d",
+    "bytes": 11609
   },
   {
     "path": "skills/trader-timemachine/UPSTREAM.md",
-    "sha256": "1cf2d6bdd3847d7950ea5e38ec3302d1e35b6b28a111951055fc02edcfcf30e3",
-    "bytes": 1511
+    "sha256": "0a34218c5e1dd3fb7a8d9ff456c5692c2f858c46968170de3d4fc2050c0f329b",
+    "bytes": 1550
   },
   {
     "path": "skills/trader-timemachine/timemachine.py",
@@ -14676,8 +14676,8 @@
   },
   {
     "path": "third_party/day-trader-skill/manifest.json",
-    "sha256": "71bc4ee135e88e8b7b13c9a0cd517d8c6fb571037c14a3817399863017bfe688",
-    "bytes": 9048
+    "sha256": "2b1116429e2ad27033bb30144583d37fdf3c609c83c8967e6290dda63cc7b1c1",
+    "bytes": 9773
   },
   {
     "path": "third_party/licenses/addy-agent-skills/LICENSE",

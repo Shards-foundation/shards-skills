@@ -66,3 +66,20 @@ Public feeds, scheduled monitoring, host installation, trade calculations and
 broker order execution remain unverified by this import. Preserve paper trading
 and the upstream per-order approval requirements when separately reviewing a
 host integration. No broker connection or live trading is enabled here.
+
+
+## Open upstream findings
+
+Independent PR review found two defects in the preserved source. Source inspection
+confirmed the relevant paths; no trading reproduction was run during this import.
+
+| Finding | Consequence | Required correction before execution |
+| --- | --- | --- |
+| [Stale market reference](https://github.com/Shards-foundation/shards-skills/pull/15#discussion_r4549614914) in `trader-risk/check.py` | With no planned entry, a quote rejected for freshness can still be used to return PASS. | Reject market entries without a usable price reference; add stale-quote regression coverage. |
+| [Understated approved loss](https://github.com/Shards-foundation/shards-skills/pull/15#discussion_r4549614905) in `trader-broker/ticket.py` | Approval/placed logs can understate the risk already calculated from a higher fresh quote, weakening the daily limit. | Preserve the matching risk verdict's calculated loss through approval and placement; add daily-limit regression coverage. |
+
+These are unresolved upstream execution blockers, not fixed defects. The import
+preserves the pinned Python source for inspection, records the findings in the
+file manifest and affected packages, and keeps every package outside the Shards
+executable dispatcher. Do not use these tools to approve or submit trades until
+the findings are corrected and independently verified.

@@ -1,6 +1,6 @@
 ---
 name: trader-risk
-description: "Risk Manager. Checks every trade against your limits and stops anything over them, before it can reach the broker. For a day trade: a stop is required, the loss at the stop must fit your max loss per trade (measured from the higher of the plan's entry and a fresh price), reward:risk must meet your minimum, the day's total risk must fit your daily loss limit, no more than your trades per day, and no new entries outside your entry window or when the market is closed. It also keeps the basics: blocked tickers, order size, position cap, cash buffer, margin, short sales, options and crypto, malformed or bad bracket orders, duplicates and a daily order limit. Getting out is never blocked by a day limit. Prints PASS or BLOCK with the reason and records the verdicts so trader-broker only shows an order that passed. Use when the user says \"check my order\", \"is this safe\", \"risk check\", \"does this break my rules\", \"can I take this trade\", \"how much have I risked today\", or before /trader-broker, always."
+description: "Risk Manager. Checks every trade against your limits and stops anything over them, before it can reach the broker. For a day trade: a stop is required, the loss at the stop must fit your max loss per trade (measured from the higher of the plan's entry and a fresh price), reward:risk must meet your minimum, the day's total risk must fit your daily loss limit, no more than your trades per day, and no new entries outside your entry window or when the market is closed. It also keeps the basics: blocked tickers, order size, position cap, cash buffer, margin, short sales, options and crypto, malformed or bad bracket orders, duplicates and a daily order limit. Getting out is never blocked by a day limit. Prints PASS or BLOCK with the reason and records the verdicts so trader-broker only shows an order that passed. Use when the user says 'check my order', 'is this safe', 'risk check', 'does this break my rules', 'can I take this trade', 'how much have I risked today', or before /trader-broker, always."
 argument-hint: "[path to orders.json]"
 license: MIT
 status: review
@@ -19,6 +19,10 @@ and `LICENSE` for provenance and local modifications. This package is in
 Importing it does not connect a broker, schedule monitoring or authorise orders.
 The upstream workflow below requires separate source review and host/tool approval
 before execution; paper trading remains the example default.
+
+**Execution blocker:** the pinned upstream has known stale-price and daily-risk
+accounting defects. Read the open findings in `UPSTREAM.md`. Do not use these
+tools to approve or submit trades until those findings are fixed and verified.
 
 # trader-risk
 

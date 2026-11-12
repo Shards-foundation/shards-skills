@@ -11,7 +11,8 @@
 
 ## Local modifications
 
-Flattened the folded description for the dependency-free Shards metadata parser;
+Flattened the folded description and normalised trigger quotation marks for the
+dependency-free Shards metadata parser;
 retained the original name and argument hint; added licence, review status,
 category, version and immutable provenance. Prepended the Shards import status and
 appended workflow, output, verification and failure sections. The original skill

@@ -189,3 +189,6 @@ See the [import and usage notes](docs/day-trader-skills.md) for provenance,
 paths, prerequisites and verification scope. They are review-stage catalogue
 packages, not part of the executable Shards Core dispatcher. Importing the pack
 does not connect a broker or start monitoring. Paper trading is the example default.
+
+Two known upstream risk defects block use for trade approval until corrected;
+see the [open findings](docs/day-trader-skills.md#open-upstream-findings).

@@ -88,6 +88,10 @@ jobs:
           python scripts/security_assurance.py list
           python scripts/vibecode_guard.py --help
           python scripts/security_assurance.py plan --system 'CI demo' --profiles web,ai,crypto,fintech
+      - name: Verify generated catalogue is reproducible
+        run: |
+          python scripts/build_catalogue.py
+          git diff --exit-code -- catalogue/catalogue.json
       - name: Validate existing skill metadata
         run: python scripts/validate_skills.py
       - name: Heuristic skill security lint

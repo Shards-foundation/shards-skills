@@ -215,3 +215,20 @@ Apply and rollback operate on the local checkout only. The eval receipt is not
 cryptographically authenticated and must be reviewed against independently
 recorded test artifacts. The host remains responsible for authorization,
 GitHub branch protection, permissions and independent approval.
+
+
+## Ten operating skills: complete work without losing context
+
+The [operating-loop guide](docs/operating-loop.md) links ten Shards-authored,
+draft skills: task contract, context recovery, tool selection, progress control,
+evidence verification, review resolution, learning capture, skill evaluation,
+controlled skill updates and host compatibility. It includes an append-only,
+hash-chained **local task ledger** for durable criteria, attempts and evidence,
+plus a testable interrupted-agent handoff scenario. This local tool does not
+independently authenticate external observations or connect ChatGPT/Claude.
+
+```bash
+python scripts/operating_ledger.py --help
+python -m unittest discover -s tests -p 'test_operating_ledger.py' -v
+python -m unittest discover -s tests -p 'test_skill_improver.py' -v
+```

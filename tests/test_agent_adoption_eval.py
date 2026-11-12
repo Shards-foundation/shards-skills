@@ -64,6 +64,13 @@ class AgentAdoptionEvalTests(unittest.TestCase):
         self.assertEqual([r["result"] for r in report["results"]],
                          ["not_demonstrated", "reported_false_trigger"])
 
+    def test_negative_selection_without_application_is_false_trigger(self):
+        report = evaluator.host_report(self.cases, {"schema_version": 1, "host": "Codex",
+            "repository_commit": "d" * 40, "runs": [
+                {"case_id": "2", "selected_skill": "broker", "skill_opened": True,
+                 "procedure_applied": False, "trace_reference": "host:case-2", "task_outcome": "pass"}]})
+        self.assertEqual(report["results"][1]["result"], "reported_false_trigger")
+
     def test_negative_abstention_requires_host_trace(self):
         report = evaluator.host_report(self.cases, {"schema_version": 1, "host": "Codex",
             "repository_commit": "c" * 40, "runs": [

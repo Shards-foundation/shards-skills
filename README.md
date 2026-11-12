@@ -2,7 +2,41 @@
 
 **A security-aware, cross-agent skills library for engineering, research, design, security, data, AI agents, blockchain, and operations.**
 
-> Status: curated mega-library release candidate. Shards-authored and imported packages are clearly separated by provenance and review status; third-party content is not silently treated as first-party.
+> **Usable now:** First-party skills are written procedures that an agent can read and apply immediately. The `draft` metadata records the limits of independent host-level evaluation; it does **not** disable use. The Python preflight and assurance tools run locally. Imported skills remain separate and subject to their own provenance reviews.
+
+## Use Shards Security Skills now
+
+**No certification or special agent integration is required to start using the workflows.**
+For any ChatGPT or Claude session that can read this repository, give the agent the specific `SKILL.md` file and your owned project context. Example:
+
+> Read [shards-sec-vibecoding-gate](skills/shards-sec-vibecoding-gate/SKILL.md) and apply its workflow to my authorised web-app repository. Show actual findings, missing evidence and next changes. Don't claim tests ran unless you executed them.
+
+If your agent cannot open GitHub, paste or upload the individual `SKILL.md` file. A skill describes **how** to perform work; it is not executable code and does not require a privileged dispatcher entry.
+
+For hands-on local checks on a repository you own, run these commands in a terminal:
+
+```bash
+git clone https://github.com/Shards-foundation/shards-skills.git
+cd shards-skills
+
+# Select an assessment checklist appropriate for your app:
+python scripts/security_assurance.py plan --system "My application" --profiles web,ai
+
+# Inspect your OWN local code for selected risky patterns without running the app:
+python scripts/vibecode_guard.py --repo /path/to/your/app
+```
+
+The `plan` command returns controls to investigate, not results. The local guard uses
+**0 = no configured patterns found**, **1 = warnings found**, and **2 = blocked input**.
+A clean run is not an automatic security sign-off. For observed evidence and a
+reproducible assessment, follow [the evidence and assessment walkthrough](docs/security-assurance.md).
+
+**What is ready today:** 25 structured security workflows, 45 reference controls,
+an offline planning/evidence CLI and a bounded local preflight, all committed to
+`main`. **What is not claimed:** automatic full-stack scanning, independently
+validated performance on every agent host, regulatory certification, or a
+guarantee that an application has no vulnerabilities. Those are separate
+properties, not prerequisites to reading and applying the skills.
 
 ## Shards Foundation first-party skills
 
@@ -77,7 +111,7 @@ These live in `plugins/shards-core/skills/`, not `skills/shards-sec-*/`. They us
 
 [problem-framing](skills/problem-framing/SKILL.md) · [implementation-planning](skills/implementation-planning/SKILL.md) · [systematic-debugging](skills/systematic-debugging/SKILL.md) · [test-driven-development](skills/test-driven-development/SKILL.md) · [code-review](skills/code-review/SKILL.md) · [secure-code-review](skills/secure-code-review/SKILL.md) · [threat-modeling](skills/threat-modeling/SKILL.md) · [skill-supply-chain-audit](skills/skill-supply-chain-audit/SKILL.md) · [smart-contract-review](skills/smart-contract-review/SKILL.md) · [release-readiness](skills/release-readiness/SKILL.md) · [incident-runbook](skills/incident-runbook/SKILL.md) · [agent-system-design](skills/agent-system-design/SKILL.md) · [tool-contract-design](skills/tool-contract-design/SKILL.md) · [evidence-based-research](skills/evidence-based-research/SKILL.md) · [reproducible-data-analysis](skills/reproducible-data-analysis/SKILL.md) · [frontend-accessibility-review](skills/frontend-accessibility-review/SKILL.md) · [web-application-testing](skills/web-application-testing/SKILL.md) · [writing-skill-packages](skills/writing-skill-packages/SKILL.md).
 
-**Separate pending work:** the ten operating-loop skills (task contract, context recovery, tool selection, progress control, evidence verification, review resolution, learning capture, skill evaluation, controlled updates and host compatibility) are in [PR #16](https://github.com/Shards-foundation/shards-skills/pull/16), not yet merged into `main`. They are **not** represented as installed or available on the main branch. This security-suite PR remains independent of that review.
+**Separate pending work:** the ten operating-loop skills (task contract, context recovery, tool selection, progress control, evidence verification, review resolution, learning capture, skill evaluation, controlled updates and host compatibility) are in [PR #16](https://github.com/Shards-foundation/shards-skills/pull/16), not yet merged into `main`. They are **not** represented as installed or available on the main branch. The security suite is already merged into `main`; the ten operating-loop skills remain a separate pending change.
 
 Third-party packages retain their own licences and their review-stage status. Discovery is not authorisation. For current counts, use `catalogue/catalogue.json`; any examples and totals on a branch describe that branch only.
 

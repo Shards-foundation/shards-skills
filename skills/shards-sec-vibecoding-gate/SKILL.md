@@ -28,6 +28,9 @@ repository revision, intended user actions, data handled, deployment target, aut
 ## Output contract
 A beginner-readable PASS/FAIL/BLOCKED release checklist with exact reproduction steps, changes required and tested commit. Each finding includes **ID, severity, affected asset, observation, evidence reference, recommended control, owner, status (PASS/FAIL/BLOCKED/NOT_APPLICABLE), and next verification step**. Keep absent evidence BLOCKED. Report the exact revision, environment and timestamp; separate planned, implemented, tested and independently verified.
 
+## Read-only local preflight
+For an owned Git checkout, run `python scripts/vibecode_guard.py --repo .` and inspect **sanitised file/line findings only**. An exit code of 0 means no configured heuristics matched, **not** that the app is secure; code 1 means findings need review, code 2 means input is blocked. The tool reads tracked local files only; it does not execute project code, call external services, inspect live cloud systems or reveal matched source lines. Manually verify each finding and conduct the negative application tests in the workflow.
+
 ## Verification
 Use `python scripts/security_assurance.py plan --profiles base,web --system "named system"` for a consistent control selection. Collect actual technical and organisational evidence; assess with the reviewed input schema in `docs/security-assurance.md`. Record at least one positive and one negative test where feasible. The tool reports operator-attested evidence, **not automated security certification**.
 

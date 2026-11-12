@@ -3,7 +3,7 @@
   "name": "Shards Skills",
   "version": "0.1.0",
   "status": "bootstrap",
-  "skill_count": 304,
+  "skill_count": 305,
   "categories": [
     "agents",
     "blockchain",
@@ -301,6 +301,7 @@
     "skills/scientific-agent-skills-zarr-python",
     "skills/scientific-research",
     "skills/secure-code-review",
+    "skills/shards-skill-improver",
     "skills/skill-supply-chain-audit",
     "skills/smart-contract-review",
     "skills/systematic-debugging",
@@ -366,7 +367,7 @@
     {
       "name": "addy-agent-skills-constraint-driven-development",
       "path": "skills/addy-agent-skills-constraint-driven-development",
-      "description": "Establishes a project's quality bar as a written contract and stops agents quietly lowering it. Interviews the user on which dimensions matter, supplies sane default thresholds when they have no number in mind, records everything in CONSTRAINTS.md, and watches the diff for a weakened bar \u2014 new @ts-ignore or eslint-disable suppressions, skipped or deleted tests, assertions stripped out, unimplemented stubs, thresholds edited down. Use when no quality bar is written down, when the user says set up constraints or define our standards , when the user wants dimensions they care about \u2014 accessibility, web performance, coverage \u2014 set up as enforced constraints, when an agent keeps silencing checks or skipping tests to get to green, when you need a coverage or performance threshold and don't know what number to pick, or when an agent writes more code than anyone will read.",
+      "description": "Establishes a project's quality bar as a written contract and stops agents quietly lowering it. Interviews the user on which dimensions matter, supplies sane default thresholds when they have no number in mind, records everything in CONSTRAINTS.md, and watches the diff for a weakened bar — new @ts-ignore or eslint-disable suppressions, skipped or deleted tests, assertions stripped out, unimplemented stubs, thresholds edited down. Use when no quality bar is written down, when the user says set up constraints or define our standards , when the user wants dimensions they care about — accessibility, web performance, coverage — set up as enforced constraints, when an agent keeps silencing checks or skipping tests to get to green, when you need a coverage or performance threshold and don't know what number to pick, or when an agent writes more code than anyone will read.",
       "category": "engineering",
       "status": "review",
       "version": "0.0.0"
@@ -382,7 +383,7 @@
     {
       "name": "addy-agent-skills-debugging-and-error-recovery",
       "path": "skills/addy-agent-skills-debugging-and-error-recovery",
-      "description": "Guides systematic root-cause debugging. Use when tests fail, builds break, something that worked yesterday broke, behavior doesn't match expectations, or you encounter any unexpected error. Use when you need to figure out what broke and why \u2014 a systematic approach to finding and fixing the root cause rather than guessing.",
+      "description": "Guides systematic root-cause debugging. Use when tests fail, builds break, something that worked yesterday broke, behavior doesn't match expectations, or you encounter any unexpected error. Use when you need to figure out what broke and why — a systematic approach to finding and fixing the root cause rather than guessing.",
       "category": "engineering",
       "status": "review",
       "version": "0.0.0"
@@ -734,7 +735,7 @@
     {
       "name": "deer-flow-consulting-analysis",
       "path": "skills/deer-flow-consulting-analysis",
-      "description": "Use this skill when the user requests to generate, create, or write professional research reports including but not limited to market analysis, consumer insights, brand analysis, financial analysis, industry research, competitive intelligence, investment due diligence, or any consulting-grade analytical report. This skill operates in two phases \u2014 (1) generating a structured analysis framework with chapter skeleton, data query requirements, and analysis logic, and (2) after data collection by other skills, producing the final consulting-grade report with structured narratives, embedded charts, and strategic insights.",
+      "description": "Use this skill when the user requests to generate, create, or write professional research reports including but not limited to market analysis, consumer insights, brand analysis, financial analysis, industry research, competitive intelligence, investment due diligence, or any consulting-grade analytical report. This skill operates in two phases — (1) generating a structured analysis framework with chapter skeleton, data query requirements, and analysis logic, and (2) after data collection by other skills, producing the final consulting-grade report with structured narratives, embedded charts, and strategic insights.",
       "category": "research",
       "status": "review",
       "version": "0.0.0"
@@ -790,7 +791,7 @@
     {
       "name": "deer-flow-music-generation",
       "path": "skills/deer-flow-music-generation",
-      "description": "Use this skill when the user requests to generate, create, compose, or produce music or songs \u2014 background music, theme songs, jingles, or instrumental tracks. Generates a song from a style/mood prompt and optional lyrics via the MiniMax music API.",
+      "description": "Use this skill when the user requests to generate, create, compose, or produce music or songs — background music, theme songs, jingles, or instrumental tracks. Generates a song from a style/mood prompt and optional lyrics via the MiniMax music API.",
       "category": "research",
       "status": "review",
       "version": "0.0.0"
@@ -846,7 +847,7 @@
     {
       "name": "deer-flow-systematic-literature-review",
       "path": "skills/deer-flow-systematic-literature-review",
-      "description": "Use this skill when the user wants a systematic literature review, survey, or synthesis across multiple academic papers on a topic. Also covers annotated bibliographies and cross-paper comparisons. Searches arXiv and outputs reports in APA, IEEE, or BibTeX format. Not for single-paper tasks \u2014 use academic-paper-review for reviewing one paper.",
+      "description": "Use this skill when the user wants a systematic literature review, survey, or synthesis across multiple academic papers on a topic. Also covers annotated bibliographies and cross-paper comparisons. Searches arXiv and outputs reports in APA, IEEE, or BibTeX format. Not for single-paper tasks — use academic-paper-review for reviewing one paper.",
       "category": "research",
       "status": "review",
       "version": "0.0.0"
@@ -902,7 +903,7 @@
     {
       "name": "ecc-deep-research",
       "path": "skills/ecc-deep-research",
-      "description": "Produce cited research reports from multiple web sources using firecrawl and exa MCP tools \u2014 plan sub-questions, search and deep-read sources, then synthesize findings with inline citations and confidence levels. Use when the user asks to research a topic in depth, run a deep dive or investigation, or do competitive analysis, technology evaluation, market sizing, or due diligence on a company.",
+      "description": "Produce cited research reports from multiple web sources using firecrawl and exa MCP tools — plan sub-questions, search and deep-read sources, then synthesize findings with inline citations and confidence levels. Use when the user asks to research a topic in depth, run a deep dive or investigation, or do competitive analysis, technology evaluation, market sizing, or due diligence on a company.",
       "category": "engineering",
       "status": "review",
       "version": "0.0.0"
@@ -918,7 +919,7 @@
     {
       "name": "ecc-security-scan",
       "path": "skills/ecc-security-scan",
-      "description": "Scan your Claude Code configuration (.claude/ directory) for security vulnerabilities, misconfigurations, and injection risks using AgentShield. Checks CLAUDE.md, settings.json, MCP servers, hooks, and agent definitions. Use when auditing a .claude/ directory \u2014 CLAUDE.md, settings.json, MCP servers, hooks, or agent definitions.",
+      "description": "Scan your Claude Code configuration (.claude/ directory) for security vulnerabilities, misconfigurations, and injection risks using AgentShield. Checks CLAUDE.md, settings.json, MCP servers, hooks, and agent definitions. Use when auditing a .claude/ directory — CLAUDE.md, settings.json, MCP servers, hooks, or agent definitions.",
       "category": "engineering",
       "status": "review",
       "version": "0.0.0"
@@ -934,7 +935,7 @@
     {
       "name": "ecc-verification-loop",
       "path": "skills/ecc-verification-loop",
-      "description": "Run a six-phase verification of a Claude Code session's work \u2014 build, type check, lint, tests with coverage, security grep, and diff review \u2014 then produce a PASS/FAIL verification report. Use when verifying work after completing a feature or refactor, before creating a PR, or when quality gates must pass.",
+      "description": "Run a six-phase verification of a Claude Code session's work — build, type check, lint, tests with coverage, security grep, and diff review — then produce a PASS/FAIL verification report. Use when verifying work after completing a feature or refactor, before creating a PR, or when quality gates must pass.",
       "category": "engineering",
       "status": "review",
       "version": "0.0.0"
@@ -1022,7 +1023,7 @@
     {
       "name": "obra-superpowers-diagnosing-superpowers",
       "path": "skills/obra-superpowers-diagnosing-superpowers",
-      "description": "Use when a superpowers session went wrong and your human partner wants to know why \u2014 repeated work, ignored plans, stumbles, poor results, a skill that didn't fire, it took too long , why is it so expensive , what is it doing \u2014 or wants to build a bug report for the superpowers maintainers, for the current session or a past one identified by id or path, on any harness.",
+      "description": "Use when a superpowers session went wrong and your human partner wants to know why — repeated work, ignored plans, stumbles, poor results, a skill that didn't fire, it took too long , why is it so expensive , what is it doing — or wants to build a bug report for the superpowers maintainers, for the current session or a past one identified by id or path, on any harness.",
       "category": "engineering",
       "status": "review",
       "version": "0.0.0"
@@ -1038,7 +1039,7 @@
     {
       "name": "obra-superpowers-executing-plans",
       "path": "skills/obra-superpowers-executing-plans",
-      "description": "Use when executing an implementation plan in the current session as the implementer yourself \u2014 your human partner chose inline execution, or no subagent tool is available",
+      "description": "Use when executing an implementation plan in the current session as the implementer yourself — your human partner chose inline execution, or no subagent tool is available",
       "category": "engineering",
       "status": "review",
       "version": "0.0.0"
@@ -1206,7 +1207,7 @@
     {
       "name": "scientific-agent-skills-anndata",
       "path": "skills/scientific-agent-skills-anndata",
-      "description": "Handles annotated matrices in single-cell analysis, .h5ad and Zarr files, and integration with the scverse ecosystem. This is the data format skill\u2014for analysis workflows use scanpy; for probabilistic models use scvi-tools; for population-scale queries use cellxgene-census.",
+      "description": "Handles annotated matrices in single-cell analysis, .h5ad and Zarr files, and integration with the scverse ecosystem. This is the data format skill—for analysis workflows use scanpy; for probabilistic models use scvi-tools; for population-scale queries use cellxgene-census.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -1478,7 +1479,7 @@
     {
       "name": "scientific-agent-skills-experimental-design",
       "path": "skills/scientific-agent-skills-experimental-design",
-      "description": "Designs experiments and studies BEFORE data is collected \u2014 choosing a design, randomizing, blocking, and laying out treatment combinations so results are interpretable. Use whenever someone is planning a study, asks how to assign subjects/samples to groups, mentions randomization, blocking, stratification, controls, factorial or fractional-factorial designs, design of experiments (DOE), screening many factors, response-surface optimization, crossover or repeated-measures or split-plot designs, cluster/group randomization, Latin squares, plate layouts, batch/run-order effects, replication vs. pseudoreplication, or sequential/adaptive/group-sequential designs. Trigger even for informal phrasings like how should I set up this experiment , how do I avoid confounding , what's the best way to test these 6 factors , or assign these mice to condi",
+      "description": "Designs experiments and studies BEFORE data is collected — choosing a design, randomizing, blocking, and laying out treatment combinations so results are interpretable. Use whenever someone is planning a study, asks how to assign subjects/samples to groups, mentions randomization, blocking, stratification, controls, factorial or fractional-factorial designs, design of experiments (DOE), screening many factors, response-surface optimization, crossover or repeated-measures or split-plot designs, cluster/group randomization, Latin squares, plate layouts, batch/run-order effects, replication vs. pseudoreplication, or sequential/adaptive/group-sequential designs. Trigger even for informal phrasings like how should I set up this experiment , how do I avoid confounding , what's the best way to test these 6 factors , or assign these mice to condi",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -1558,7 +1559,7 @@
     {
       "name": "scientific-agent-skills-genomic-intelligence",
       "path": "skills/scientific-agent-skills-genomic-intelligence",
-      "description": "Predicts regulatory features, gene structure, and expression directly from DNA sequence using Genomic Intelligence's hosted transformer DNA language models \u2014 no local GPU or model weights. Six tasks over a REST API and a hosted MCP server (keyless public demo): promoter regions, splice donor/acceptor sites, enhancer activity, chromatin state, sequence-to-expression (log TPM), and de-novo gene annotation, plus a composite find-genes-then-predict-expression workflow. Use when the user has a gene symbol, a genomic region, or a DNA/FASTA sequence and wants any of these predictions, mentions Genomic Intelligence, genomicintelligence.ai, api.genomicintelligence.ai, or mcp.genomicintelligence.ai.",
+      "description": "Predicts regulatory features, gene structure, and expression directly from DNA sequence using Genomic Intelligence's hosted transformer DNA language models — no local GPU or model weights. Six tasks over a REST API and a hosted MCP server (keyless public demo): promoter regions, splice donor/acceptor sites, enhancer activity, chromatin state, sequence-to-expression (log TPM), and de-novo gene annotation, plus a composite find-genes-then-predict-expression workflow. Use when the user has a gene symbol, a genomic region, or a DNA/FASTA sequence and wants any of these predictions, mentions Genomic Intelligence, genomicintelligence.ai, api.genomicintelligence.ai, or mcp.genomicintelligence.ai.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -1638,7 +1639,7 @@
     {
       "name": "scientific-agent-skills-hypogenic",
       "path": "skills/scientific-agent-skills-hypogenic",
-      "description": "Plans and audits use of ChicagoHAI HypoGeniC/HypoRefine for LLM-assisted hypothesis generation from labeled text datasets. Use for the `hypogenic` package, its task configs, hypothesis banks, or HypoBench datasets\u2014not for manual hypothesis formulation or scientific validation.",
+      "description": "Plans and audits use of ChicagoHAI HypoGeniC/HypoRefine for LLM-assisted hypothesis generation from labeled text datasets. Use for the `hypogenic` package, its task configs, hypothesis banks, or HypoBench datasets—not for manual hypothesis formulation or scientific validation.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -1846,7 +1847,7 @@
     {
       "name": "scientific-agent-skills-neurokit2",
       "path": "skills/scientific-agent-skills-neurokit2",
-      "description": "Builds and audits reproducible NeuroKit2 research workflows for physiological time-series preprocessing, event/interval analysis, multimodal alignment, variability, and complexity. Use when code imports neurokit2 or needs its current APIs, schemas, and method-aware validation\u2014not for diagnosis or device validation.",
+      "description": "Builds and audits reproducible NeuroKit2 research workflows for physiological time-series preprocessing, event/interval analysis, multimodal alignment, variability, and complexity. Use when code imports neurokit2 or needs its current APIs, schemas, and method-aware validation—not for diagnosis or device validation.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -1998,7 +1999,7 @@
     {
       "name": "scientific-agent-skills-pathway-enrichment",
       "path": "skills/scientific-agent-skills-pathway-enrichment",
-      "description": "Performs pathway and gene-set enrichment analysis on gene lists or ranked gene data and interprets the results. Used when the user has a set of genes (differentially expressed genes from PyDESeq2/Scanpy, CRISPR-screen hits, cluster marker genes, proteomics hits) and wants to know which biological pathways, GO terms, or gene sets are over-represented or enriched. Covers over-representation analysis (ORA / Enrichr / Fisher / hypergeometric), ranked Gene Set Enrichment Analysis (GSEA / preranked), single-sample scoring (ssGSEA/GSVA), and functional profiling via gseapy, g:Profiler, Enrichr libraries, MSigDB, GO, KEGG, Reactome, and WikiPathways \u2014 plus gene-ID mapping, choosing the right background universe, multiple-testing correction, redundancy reduction, dotplots/enrichment maps, and publication-ready tables. Use this for pathway analysis",
+      "description": "Performs pathway and gene-set enrichment analysis on gene lists or ranked gene data and interprets the results. Used when the user has a set of genes (differentially expressed genes from PyDESeq2/Scanpy, CRISPR-screen hits, cluster marker genes, proteomics hits) and wants to know which biological pathways, GO terms, or gene sets are over-represented or enriched. Covers over-representation analysis (ORA / Enrichr / Fisher / hypergeometric), ranked Gene Set Enrichment Analysis (GSEA / preranked), single-sample scoring (ssGSEA/GSVA), and functional profiling via gseapy, g:Profiler, Enrichr libraries, MSigDB, GO, KEGG, Reactome, and WikiPathways — plus gene-ID mapping, choosing the right background universe, multiple-testing correction, redundancy reduction, dotplots/enrichment maps, and publication-ready tables. Use this for pathway analysis",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -2006,7 +2007,7 @@
     {
       "name": "scientific-agent-skills-peer-review",
       "path": "skills/scientific-agent-skills-peer-review",
-      "description": "Prepares evidence-bounded, constructive peer-review drafts and structured manuscript assessments. Supports authorized review of scientific manuscripts, protocols, preprints, or research proposals; reporting-guideline selection; claim\u2013evidence checks; methods, statistics, reproducibility, ethics, figure/table, and citation critique; or revision-response planning.",
+      "description": "Prepares evidence-bounded, constructive peer-review drafts and structured manuscript assessments. Supports authorized review of scientific manuscripts, protocols, preprints, or research proposals; reporting-guideline selection; claim–evidence checks; methods, statistics, reproducibility, ethics, figure/table, and citation critique; or revision-response planning.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -2174,7 +2175,7 @@
     {
       "name": "scientific-agent-skills-pyopenms",
       "path": "skills/scientific-agent-skills-pyopenms",
-      "description": "Processes mass spectrometry data with pyOpenMS. Supports proteomics and metabolomics workflows\u2014feature detection, peptide/protein identification, label-free quantification, adduct/accurate-mass annotation, and complex LC-MS/MS pipelines. Supports extensive file formats and algorithms. For simple spectral comparison and small-molecule library matching use matchms.",
+      "description": "Processes mass spectrometry data with pyOpenMS. Supports proteomics and metabolomics workflows—feature detection, peptide/protein identification, label-free quantification, adduct/accurate-mass annotation, and complex LC-MS/MS pipelines. Supports extensive file formats and algorithms. For simple spectral comparison and small-molecule library matching use matchms.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -2254,7 +2255,7 @@
     {
       "name": "scientific-agent-skills-relsa-severity-assessment",
       "path": "skills/scientific-agent-skills-relsa-severity-assessment",
-      "description": "Supports multivariate severity assessment and exploratory endpoint-time score forecasting for laboratory animal studies using the RELSA (RELative Severity Assessment) score and ARIMA-based foRcast forecasting. Use when combining welfare readouts \u2014 body weight or weight loss, body temperature, clinical or nesting scores, biomarkers, activity, heart rate, burrowing, wheel running \u2014 into one severity score per animal per day, when asking which animals are at risk of reaching a humane endpoint at a specified future observation time, when defining attention/danger zones or thresholds on a severity scale by kernel density estimation, or when reporting severity for a 3Rs, refinement, animal-welfare, or EU Directive 2010/63/EU severity-assessment context. Covers directionality ( turned variables), baseline normalization, reference sets, RELSA weights, ARIMA prediction intervals, and RMSE/PICP/MPIW evaluation.",
+      "description": "Supports multivariate severity assessment and exploratory endpoint-time score forecasting for laboratory animal studies using the RELSA (RELative Severity Assessment) score and ARIMA-based foRcast forecasting. Use when combining welfare readouts — body weight or weight loss, body temperature, clinical or nesting scores, biomarkers, activity, heart rate, burrowing, wheel running — into one severity score per animal per day, when asking which animals are at risk of reaching a humane endpoint at a specified future observation time, when defining attention/danger zones or thresholds on a severity scale by kernel density estimation, or when reporting severity for a 3Rs, refinement, animal-welfare, or EU Directive 2010/63/EU severity-assessment context. Covers directionality ( turned variables), baseline normalization, reference sets, RELSA weights, ARIMA prediction intervals, and RMSE/PICP/MPIW evaluation.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -2430,7 +2431,7 @@
     {
       "name": "scientific-agent-skills-statistical-power",
       "path": "skills/scientific-agent-skills-statistical-power",
-      "description": "Calculates sample sizes and statistical power for study planning. Applies when someone asks how many subjects/samples/replicates do I need , wants an a priori power analysis, a minimum detectable effect (MDE), a power curve, or needs to justify a sample size for a grant, IRB protocol, or pre-registration. Covers closed-form power for t-tests, ANOVA, proportions, correlations, chi-square, and regression, plus simulation-based (Monte Carlo) power for complex designs \u2014 logistic/Poisson regression, mixed models, cluster-randomized trials, survival, and interactions. Also handles requests that only mention an effect size, alpha, or 80% power without saying power analysis explicitly. For laying out the study (randomization, blocking, factorial/DOE, crossover, sequential designs) use experimental-design; for analyzing data already collected and reporting it use statistical-analysis.",
+      "description": "Calculates sample sizes and statistical power for study planning. Applies when someone asks how many subjects/samples/replicates do I need , wants an a priori power analysis, a minimum detectable effect (MDE), a power curve, or needs to justify a sample size for a grant, IRB protocol, or pre-registration. Covers closed-form power for t-tests, ANOVA, proportions, correlations, chi-square, and regression, plus simulation-based (Monte Carlo) power for complex designs — logistic/Poisson regression, mixed models, cluster-randomized trials, survival, and interactions. Also handles requests that only mention an effect size, alpha, or 80% power without saying power analysis explicitly. For laying out the study (randomization, blocking, factorial/DOE, crossover, sequential designs) use experimental-design; for analyzing data already collected and reporting it use statistical-analysis.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -2454,7 +2455,7 @@
     {
       "name": "scientific-agent-skills-tamarind",
       "path": "skills/scientific-agent-skills-tamarind",
-      "description": "Provides access to a collection of open-source molecular design and structural biology tools on the Tamarind Bio platform, via its REST API or MCP server \u2014 no local GPUs required. Tamarind bundles popular open-source models for structure prediction (AlphaFold, Boltz, Chai, ESMFold), protein, binder, and de novo design (RFdiffusion, ProteinMPNN, BoltzGen), antibody and nanobody design and developability, protein-ligand docking (DiffDock, Autodock Vina), binding-affinity prediction, MSA generation, and molecular dynamics. Use when the user mentions Tamarind or tamarind.bio, wants to run any of these open-source tools in the cloud, references app.tamarind.bio/api or the x-api-key header, or needs to submit batches of sequences for structural or biophysical characterization.",
+      "description": "Provides access to a collection of open-source molecular design and structural biology tools on the Tamarind Bio platform, via its REST API or MCP server — no local GPUs required. Tamarind bundles popular open-source models for structure prediction (AlphaFold, Boltz, Chai, ESMFold), protein, binder, and de novo design (RFdiffusion, ProteinMPNN, BoltzGen), antibody and nanobody design and developability, protein-ligand docking (DiffDock, Autodock Vina), binding-affinity prediction, MSA generation, and molecular dynamics. Use when the user mentions Tamarind or tamarind.bio, wants to run any of these open-source tools in the cloud, references app.tamarind.bio/api or the x-api-key header, or needs to submit batches of sequences for structural or biophysical characterization.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -2486,7 +2487,7 @@
     {
       "name": "scientific-agent-skills-torch-geometric",
       "path": "skills/scientific-agent-skills-torch-geometric",
-      "description": "Supports PyTorch Geometric (PyG) graph neural networks \u2014 node/link/graph classification, message passing (GCN, GAT, GraphSAGE, GIN), heterogeneous graphs, neighbor sampling, and custom datasets. Use when working with torch_geometric, not for general NetworkX analytics or non-graph PyTorch models.",
+      "description": "Supports PyTorch Geometric (PyG) graph neural networks — node/link/graph classification, message passing (GCN, GAT, GraphSAGE, GIN), heterogeneous graphs, neighbor sampling, and custom datasets. Use when working with torch_geometric, not for general NetworkX analytics or non-graph PyTorch models.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -2510,7 +2511,7 @@
     {
       "name": "scientific-agent-skills-treatment-plans",
       "path": "skills/scientific-agent-skills-treatment-plans",
-      "description": "Formats and structurally validates local treatment-plan documentation after clinical decisions have already been supplied and verified by authorized licensed professionals. Use for source traceability, clinician-authored intervention records, goals and checkpoints, shared-decision records, reconciliation handoffs, and release gates\u2014not for clinical decision-making.",
+      "description": "Formats and structurally validates local treatment-plan documentation after clinical decisions have already been supplied and verified by authorized licensed professionals. Use for source traceability, clinician-authored intervention records, goals and checkpoints, shared-decision records, reconciliation handoffs, and release gates—not for clinical decision-making.",
       "category": "science",
       "status": "review",
       "version": "0.0.0"
@@ -2592,6 +2593,14 @@
       "path": "skills/secure-code-review",
       "description": "Use when reviewing code for vulnerabilities, unsafe input handling, authorisation errors, secrets exposure or insecure defaults.",
       "category": "security",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-skill-improver",
+      "path": "skills/shards-skill-improver",
+      "description": "Use to propose, evaluate and explicitly apply evidence-based revisions to first-party agent skills while preserving rollback and approval boundaries.",
+      "category": "agents",
       "status": "draft",
       "version": "0.1.0"
     },

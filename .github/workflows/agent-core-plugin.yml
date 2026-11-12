@@ -9,6 +9,8 @@ on:
       - 'skills/shards-sec-*/**'
       - 'catalogue/shards-security-controls.json'
       - 'scripts/security_assurance.py'
+      - 'scripts/vibecode_guard.py'
+      - 'tests/test_vibecode_guard.py'
       - 'tests/test_security_assurance.py'
       - 'tests/test_security_suite.py'
       - 'docs/security-assurance.md'
@@ -40,6 +42,8 @@ on:
       - 'skills/shards-sec-*/**'
       - 'catalogue/shards-security-controls.json'
       - 'scripts/security_assurance.py'
+      - 'scripts/vibecode_guard.py'
+      - 'tests/test_vibecode_guard.py'
       - 'tests/test_security_assurance.py'
       - 'tests/test_security_suite.py'
       - 'docs/security-assurance.md'
@@ -76,10 +80,11 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile Python entry points
-        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/shards_agent_harness.py scripts/search_skills.py scripts/verify_plugins.py scripts/security_assurance.py
+        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/shards_agent_harness.py scripts/search_skills.py scripts/verify_plugins.py scripts/security_assurance.py scripts/vibecode_guard.py
       - name: Smoke test security assurance profiles
         run: |
           python scripts/security_assurance.py list
+          python scripts/vibecode_guard.py --help
           python scripts/security_assurance.py plan --system 'CI demo' --profiles web,ai,crypto,fintech
       - name: Validate existing skill metadata
         run: python scripts/validate_skills.py

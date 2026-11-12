@@ -122,6 +122,26 @@ class ImproverTests(unittest.TestCase):
                 expect_current_sha256=receipt["after_sha256"]))
         self.assertEqual(self.target.read_bytes(), content("later edit"))
 
+    def test_reapply_after_rollback(self):
+        plan = self.prepare()
+        first = imp.apply(self.options(plan))
+        imp.rollback(SimpleNamespace(target="skills/sample-skill/SKILL.md",
+            backup=str(self.root / first["backup"]), approve=True,
+            expect_current_sha256=first["after_sha256"]))
+        second = imp.apply(self.options(plan))
+        self.assertNotEqual(first["backup"], second["backup"])
+        self.assertEqual(self.target.read_bytes(), self.candidate)
+
+    def test_tampered_backup_rejected(self):
+        plan = self.prepare()
+        receipt = imp.apply(self.options(plan))
+        backup = self.root / receipt["backup"]
+        backup.write_bytes(content("forged backup"))
+        with self.assertRaisesRegex(ValueError, "digest mismatch"):
+            imp.rollback(SimpleNamespace(target="skills/sample-skill/SKILL.md",
+                backup=str(backup), approve=True,
+                expect_current_sha256=receipt["after_sha256"]))
+
     def test_duplicate_apply_fails(self):
         plan = self.prepare()
         imp.apply(self.options(plan))

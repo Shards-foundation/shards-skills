@@ -115,7 +115,18 @@ def _execute_one(task: dict, runner) -> dict:
         if receipt["script_sha256"] != task["dispatch_plan"]["script_sha256"]:
             raise ValueError("Delegate script digest differs from approved plan")
         exit_code = observation.get("exit_code")
-        if type(exit_code) is not int or (outcome == "pass" and exit_code != 0) or (outcome == "fail" and exit_code == 0):
+        # The dispatcher intentionally records no process exit code when a
+        # process times out or cannot start; those outcomes must stay visible.
+        # A normal process result, including HOLD, must have an integer code.
+        if outcome in ("timeout", "error"):
+            valid_exit = exit_code is None
+        else:
+            valid_exit = (
+                type(exit_code) is int
+                and ((outcome == "pass" and exit_code == 0)
+                     or (outcome in ("fail", "hold") and exit_code != 0))
+            )
+        if not valid_exit:
             raise ValueError("Delegate status and exit code are inconsistent")
         return {
             "status": outcome,

@@ -14,6 +14,9 @@ on:
       - 'tests/test_vibecode_guard.py'
       - 'tests/test_security_assurance.py'
       - 'tests/test_security_suite.py'
+      - 'tests/test_security_skill_eval.py'
+      - 'scripts/security_skill_eval.py'
+      - 'evals/shards-security-workflows.json'
       - 'docs/security-assurance.md'
       - 'docs/security-frameworks.md'
       - 'README.md'
@@ -48,6 +51,9 @@ on:
       - 'tests/test_vibecode_guard.py'
       - 'tests/test_security_assurance.py'
       - 'tests/test_security_suite.py'
+      - 'tests/test_security_skill_eval.py'
+      - 'scripts/security_skill_eval.py'
+      - 'evals/shards-security-workflows.json'
       - 'docs/security-assurance.md'
       - 'docs/security-frameworks.md'
       - 'README.md'
@@ -82,10 +88,11 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile Python entry points
-        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/shards_agent_harness.py scripts/search_skills.py scripts/verify_plugins.py scripts/security_assurance.py scripts/vibecode_guard.py
+        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/shards_agent_harness.py scripts/search_skills.py scripts/verify_plugins.py scripts/security_assurance.py scripts/vibecode_guard.py scripts/security_skill_eval.py
       - name: Smoke test security assurance profiles
         run: |
           python scripts/security_assurance.py list
+          python scripts/security_skill_eval.py cases
           python scripts/vibecode_guard.py --help
           python scripts/security_assurance.py plan --system 'CI demo' --profiles web,ai,crypto,fintech
       - name: Verify generated catalogue is reproducible

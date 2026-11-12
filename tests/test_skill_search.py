@@ -166,6 +166,16 @@ class SkillSearchTests(unittest.TestCase):
                 found = discovery.rank([entry], term)
                 self.assertEqual([match["name"] for match in found], [name])
 
+    def test_short_acronym_survives_mixed_task_query(self):
+        for query, name in (("setup ci pipeline", "ci-cd-automation"),
+                            ("improve ai workflows", "ai-agent-boundaries"),
+                            ("build ui dashboard", "ui-engineering")):
+            with self.subTest(query=query):
+                entry = {**self._entry(name, "Reviewed workflow"),
+                         "execution": "not-dispatchable"}
+                found = discovery.rank([entry], query)
+                self.assertEqual([item["name"] for item in found], [name])
+
     def test_inflections_match_base_forms_with_final_e(self):
         for query, base in (("releases", "release"), ("images", "image"),
                             ("packages", "package"), ("updated", "update"),

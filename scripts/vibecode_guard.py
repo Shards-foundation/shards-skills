@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -40,13 +41,23 @@ def relative_file(root: Path, raw: str) -> Path:
 
 def tracked(root: Path) -> list[str]:
     try:
-        proc = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--cached"],
-                              capture_output=True, timeout=15, check=False)
+        # Git index reads can invoke core.fsmonitor from local Git config.
+        # Override it, disable optional locks and drop inherited GIT_* overrides.
+        env = {key: os.environ[key] for key in ("PATH", "HOME", "SYSTEMROOT", "WINDIR", "TMPDIR", "LANG")
+               if key in os.environ}
+        env.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                    "GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0"})
+        proc = subprocess.run(
+            ["git", "--no-optional-locks", "-c", "core.fsmonitor=false",
+             "-c", "core.hooksPath=" + os.devnull, "-C", str(root),
+             "ls-files", "-z", "--cached"],
+            capture_output=True, timeout=15, check=False, env=env)
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise ValueError("Cannot enumerate tracked files") from exc
     if proc.returncode:
         raise ValueError("Target is not a readable Git repository")
-    names = proc.stdout.decode("utf-8").split("\0")
+    # Git paths are byte sequences, not guaranteed UTF-8.
+    names = proc.stdout.decode("utf-8", errors="surrogateescape").split("\0")
     return [n for n in names if n]
 
 def inspect(root: Path, files: list[str]) -> dict:
@@ -60,7 +71,17 @@ def inspect(root: Path, files: list[str]) -> dict:
         if name in seen:
             continue
         seen.add(name)
-        path = relative_file(root, name)
+        try:
+            path = relative_file(root, name)
+        except (ValueError, OSError, UnicodeError):
+            # Preserve useful results for other files. Never follow a symlink.
+            findings.append({"id": "SKIPPED-UNSAFE-PATH", "severity": "medium",
+                             "path": name.encode("unicode_escape").decode("ascii"),
+                             "line": None,
+                             "advice": "Tracked path could not be inspected safely; review independently"})
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True)
+            continue
         if not path.is_file():
             continue
         if path.name.startswith(".env") and path.name not in {".env.example", ".env.sample", ".env.template"}:

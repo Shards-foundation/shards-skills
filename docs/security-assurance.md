@@ -15,6 +15,19 @@ Selecting any other profile automatically includes `base`; there are eight profi
 
 Before assessing, review system ownership, authorisation, target revision, environment and regulator applicability. Do not paste production passwords, signing keys or customer records into a planning agent.
 
+## Optional local source preflight for beginners
+
+For an **owned Git checkout**, the Shards vibe-coding gate can run a conservative local heuristic:
+
+```bash
+python scripts/vibecode_guard.py --repo .
+python scripts/vibecode_guard.py --repo . --output local-preflight.json
+```
+
+The preflight enumerates tracked files and reads bounded source text without running application code, installing packages, sending network requests, scanning websites or printing matched code/secrets. It flags selected patterns such as tracked .env/key files, disabled TLS checks, dynamic evaluation, unsafe YAML loaders, overly broad CI permissions, public CORS indicators and permissive row policies. Findings contain **rule IDs, file paths, line numbers and remediation hints**, never source snippets. Each finding requires human verification; legitimate code may be flagged. A clear result is only `CLEAR_HEURISTICS_ONLY`, never SAFE. Exit status 0 means no heuristic findings; 1 means warnings; 2 means tool blocked.
+
+This is intentionally narrower than a true static-analysis pipeline, dynamic scan or penetration test. For sensitive products add reviewed tooling, API/authorization negative tests, cloud controls and specialist review. Do not point it at a codebase you do not have permission to inspect.
+
 ## Evidence input
 
 Create `assessment.json` (non-production example with **no claimed passes**):

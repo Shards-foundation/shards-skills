@@ -63,13 +63,13 @@ def descriptor(blob: bytes, name: str) -> str:
         key, value = line.split(":", 1)
         if key in metadata or not key.strip() or value.lstrip().startswith(("[", "{", "|", ">")):
             raise ValueError("Invalid frontmatter key or value")
-        metadata[key] = value.strip().strip('"\\\'')
+        metadata[key] = value.strip().strip(chr(34) + chr(39))
     description = metadata.get("description", "")
     if not 20 <= len(description) <= 1024:
         raise ValueError("Invalid description")
     if metadata.get("status", "draft") not in {"draft", "review", "verified", "deprecated"}:
         raise ValueError("Invalid status")
-    body = text.split("\\n---\\n", 1)[1]
+    body = text.split("\n---\n", 1)[1]
     if len(body.strip()) < 100:
         raise ValueError("Descriptor body too short")
     return text

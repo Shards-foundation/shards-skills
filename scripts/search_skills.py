@@ -33,7 +33,9 @@ STOPWORDS = set(
 def normalized_words(value: str) -> set[str]:
     result = set()
     for token in words(value):
-        if token in STOPWORDS or len(token) <= 2:
+        # Short technical abbreviations (CI, AI, UI, Go) are meaningful even
+        # when a query also contains longer words. Remove only stopwords.
+        if token in STOPWORDS:
             continue
         if token.endswith("ies") and len(token) > 4:
             result.add(token[:-3] + "y")

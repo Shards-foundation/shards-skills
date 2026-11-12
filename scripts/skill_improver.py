@@ -72,6 +72,13 @@ def descriptor(blob: bytes, name: str) -> str:
     body = text.split("\n---\n", 1)[1]
     if len(body.strip()) < 100:
         raise ValueError("Descriptor body too short")
+    skill_dir = ROOT / "skills" / name
+    for link in re.findall(r"\\[[^\\]]*\\]\\(([^)]+)\\)", body):
+        if link.startswith(("https://", "http://", "mailto:", "#")):
+            continue
+        path = (skill_dir / link.split("#", 1)[0]).resolve()
+        if not path.is_relative_to(skill_dir.resolve()) or not path.exists():
+            raise ValueError("Broken or unsafe relative link")
     return text
 
 def safe_file(raw: str) -> Path:

@@ -31,6 +31,15 @@ A least-privilege agent capability matrix, test observations and effect-by-effec
 ## Verification
 Use `python scripts/security_assurance.py plan --profiles base,ai --system "named system"` for consistent control selection. Collect actual evidence with scope and revision; assess using `docs/security-assurance.md`. This tool reports operator-attested results, not automated security certification.
 
+## Behavioural evaluation cases
+Before claiming this skill works on a specific host, execute its positive,
+negative, missing-input and unauthorised-action cases from
+[the frozen security scenario set](../../evals/shards-security-workflows.json).
+Capture the real model response and external tool-action evidence with the exact
+case-set hash. The local `scripts/security_skill_eval.py` scorer checks only
+receipt structure; independent assessment of the raw host trace is required.
+These cases have **not yet been executed on a real agent host**.
+
 ## Failure handling
 On conflicting evidence, uncertain legal applicability, unapproved effects or stale controls, return BLOCKED with the precise missing input. Never down-classify a critical failure to an informational comment.
 

@@ -80,8 +80,8 @@ EXPECTED_REAL = {
     "tests/certs/mtls/client/client.pem": ("TRACKED-KEY-MATERIAL", "TEST_FIXTURE_LIKELY_INTENTIONAL"),
     "tests/certs/valid/server/server.key": ("TRACKED-KEY-MATERIAL", "CONFIRMED"),
     "tests/certs/valid/server/server.pem": ("TRACKED-KEY-MATERIAL", "TEST_FIXTURE_LIKELY_INTENTIONAL"),
-    "tests/certs/mtls/client/ca": ("SYMLINK-INTERNAL", "SYMLINK_INTERNAL_REVIEWED"),
-    "tests/certs/valid/ca": ("SYMLINK-INTERNAL", "SYMLINK_INTERNAL_REVIEWED"),
+    "tests/certs/mtls/client/ca": ("SYMLINK-INTERNAL", "CONFIRMED"),
+    "tests/certs/valid/ca": ("SYMLINK-INTERNAL", "CONFIRMED"),
 }
 
 
@@ -115,10 +115,10 @@ def test_real_repository_findings_are_classified(tmp_path):
         assert f["confidence"] == "low"
         assert "no expected-failure assertion" in f["suppression_reason"]
     # 2 symlinks + 7 key material + 4 TLS is the whole set
-    assert payload["summary"]["by_classification"]["SYMLINK_INTERNAL_REVIEWED"] == 2
+    assert sum(f["id"] == "SYMLINK-INTERNAL" and f["classification"] == "CONFIRMED" for f in payload["findings"]) == 2
     assert payload["summary"]["by_classification"]["TEST_CONTEXT_UNPROVEN"] == 4
     # Seven tracked key/certificate files require review, including likely fixtures.
-    assert payload["summary"]["actionable"] == 11
+    assert payload["summary"]["actionable"] == 13
     assert code == 1
 
 
@@ -238,7 +238,7 @@ def test_symlink_escape_is_high_severity(tmp_path):
     assert code == 1
 
 
-def test_symlink_internal_is_reviewed_info(tmp_path):
+def test_symlink_internal_requires_review(tmp_path):
     repo = make_repo(
         tmp_path / "r",
         {"tests/certs/expired/ca/ca.pem": "-----BEGIN CERTIFICATE-----\nMIID\n-----END CERTIFICATE-----\n"},
@@ -248,9 +248,11 @@ def test_symlink_internal_is_reviewed_info(tmp_path):
     assert payload is not None, err
     f = by_path(payload)["tests/certs/valid/ca"][0]
     assert f["id"] == "SYMLINK-INTERNAL"
-    assert f["severity"] == "info"
-    assert f["classification"] == "SYMLINK_INTERNAL_REVIEWED"
+    assert f["severity"] == "medium"
+    assert f["classification"] == "CONFIRMED"
     assert f["target"].endswith("expired/ca")
+    assert code == 1
+    assert payload["summary"]["actionable"] >= 1
 
 
 def test_symlinked_content_is_never_read(tmp_path):
@@ -318,8 +320,8 @@ class VibeCodeGuardCalibrationTests(unittest.TestCase):
     def test_symlink_escape_is_high_severity(self):
         test_symlink_escape_is_high_severity(Path(self.temp.name))
 
-    def test_symlink_internal_is_reviewed_info(self):
-        test_symlink_internal_is_reviewed_info(Path(self.temp.name))
+    def test_symlink_internal_requires_review(self):
+        test_symlink_internal_requires_review(Path(self.temp.name))
 
     def test_symlinked_content_is_never_read(self):
         test_symlinked_content_is_never_read(Path(self.temp.name))

@@ -136,5 +136,48 @@ class VibeCodeGuardTests(unittest.TestCase):
         result = guard.inspect(self.root, ["b.py", "a.py"])
         self.assertEqual([item["path"] for item in result["findings"]], ["a.py", "b.py"])
 
+
+    def test_cap_blocks_clean_exit_even_when_later_tls_unseen(self):
+        for i in range(guard.MAX_FINDINGS):
+            self.file(f"a/key{i:04}.key", "fixture")
+        self.file("z/unsafe.py", "request.get(url, verify=False)")
+        names = [f"a/key{i:04}.key" for i in range(guard.MAX_FINDINGS)] + ["z/unsafe.py"]
+        r = guard.inspect(self.root, names)
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertTrue(r["truncated"])
+        self.assertTrue(r["incomplete"])
+        with patch.object(guard, "tracked", return_value=names), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 2)
+
+    def test_skipped_source_must_block_clean_exit(self):
+        self.file("oversized.py", "x" * (guard.MAX_FILE_BYTES + 1))
+        r = guard.inspect(self.root, ["oversized.py", "missing.py"])
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertEqual(len(r["skipped_paths"]), 2)
+        with patch.object(guard, "tracked", return_value=["oversized.py"]), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 2)
+
+    def test_invalid_source_content_must_not_pass(self):
+        self.file("nul.py", "a\x00b")
+        (self.root / "nonutf8.py").write_bytes(b"\xff\xfe")
+        r = guard.inspect(self.root, ["nul.py", "nonutf8.py"])
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertEqual(len(r["skipped_paths"]), 2)
+
+    def test_unsafe_symlink_is_incomplete_even_when_other_findings_exist(self):
+        original = self.file("real.py", "eval(input())")
+        (self.root / "link.py").symlink_to(original)
+        r = guard.inspect(self.root, ["link.py", "real.py"])
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([f["id"] for f in r["findings"]], ["SKIPPED-UNSAFE-PATH", "DYNAMIC-EVAL"])
+
+    def test_exit_codes_preserve_complete_warning_and_clean(self):
+        self.file("warning.py", "request.get(url, verify=False)")
+        self.file("clean.py", "print('ok')")
+        with patch.object(guard, "tracked", return_value=["warning.py"]), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 1)
+        with patch.object(guard, "tracked", return_value=["clean.py"]), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 0)
+
 if __name__ == "__main__":
     unittest.main()

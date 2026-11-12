@@ -98,7 +98,7 @@ class SecuritySuiteTests(unittest.TestCase):
         operator = (ROOT / "docs/security-assurance.md").read_text()
         for source in ("nist.gov", "asvs.owasp.org", "ico.org.uk", "fatf-gafi.org", "esma.europa.eu"):
             self.assertIn(source, sources)
-        for signal in ("REPORTED_PASS", "BLOCKED", "REVIEW_READY_NOT_CERTIFIED", "not automatically"):
+        for signal in ("REPORTED_PASS", "BLOCKED", "REVIEW_READY_NOT_CERTIFIED", "Critical controls cannot be marked not-applicable automatically"):
             self.assertIn(signal, operator)
 
 if __name__ == "__main__":

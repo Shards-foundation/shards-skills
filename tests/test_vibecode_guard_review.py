@@ -46,10 +46,7 @@ class ReviewerRegressionTests(unittest.TestCase):
             self.assertFalse(result["incomplete"])
 
     def test_multiline_tls_keyword_is_actionable(self):
-        source = 'import requests\\nrequests.get("https://x", verify = \\\\\\n    False)\\n'
-        # Construct explicit Python line continuation, rather than a Python
-        # literal newline swallowed by the test parser.
-        source = 'import requests\\nrequests.get("https://x", verify = ' + chr(92) + '\\n    False)\\n'
+        source = 'import requests\nrequests.get("https://x", verify = ' + chr(92) + '\n    False)\n'
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "src").mkdir()
@@ -71,7 +68,7 @@ class ReviewerRegressionTests(unittest.TestCase):
             root = Path(d)
             (root / "tests" / "certs").mkdir(parents=True)
             (root / "tests" / "certs" / "server.pem").write_text("fixture")
-            (root / "Dockerfile").write_text("COPY tests/certs/server.pem /etc/server.pem\\n")
+            (root / "Dockerfile").write_text("COPY tests/certs/server.pem /etc/server.pem\n")
             repo = guard.Repo(root, ["Dockerfile", "tests/certs/server.pem"])
             self.assertEqual(repo.production_references("tests/certs/server.pem"), ["Dockerfile"])
 

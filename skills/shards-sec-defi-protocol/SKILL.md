@@ -15,7 +15,7 @@ author: Shards Foundation
 Use before deploying or upgrading contracts, bridges, oracles, DAOs or DeFi financial mechanisms.
 
 ## Required inputs
-exact chain and commit, contract addresses, upgrade model, economic assumptions and oracle sources. If essential input is unavailable, mark BLOCKED. Never request passwords, private keys or personal datasets in chat.
+exact target chain and reviewed source commit, proposed deployment configuration (deployed contract addresses only if already deployed), upgrade model, economic assumptions and oracle sources. For an initial deployment, inspect build artifacts, bytecode and prospective address derivation where applicable; a deployed address is not a prerequisite. If essential input is unavailable, mark BLOCKED. Never request passwords, private keys or personal datasets in chat.
 
 ## Workflow
 1. Document contract trust boundaries, token flows, privileged roles and external integrations.

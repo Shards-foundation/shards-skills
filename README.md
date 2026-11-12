@@ -86,7 +86,7 @@ Original first-party content is licensed under MIT unless a file states otherwis
 
 ## Curated mega-library
 
-The bootstrap collection has been expanded into a curated catalogue of **293 skill packages** across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 13 audited upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
+The bootstrap collection has been expanded into a curated catalogue of **304 skill packages** across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 14 upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
 
 Imported packages are not silently treated as first-party. Each one is marked `review`, includes its immutable upstream commit and original path in frontmatter, and contains an `UPSTREAM.md` record. Package-level provenance is indexed in [`catalogue/imported-skills.json`](catalogue/imported-skills.json), with preserved source notices under [`third_party/`](third_party/).
 
@@ -163,3 +163,32 @@ python scripts/shards_agent_harness.py run --profile swarm --execute --save-rece
 
 These are useful local orchestration primitives. They do not yet implement
 the network Agent2Agent protocol or spawn independent AI models.
+
+
+## Day Trader skills
+
+All eleven skills from [Jake Schincariol's Day Trader pack](https://github.com/Jakeschincariol/day-trader-skill)
+are included with their Python tools, example configurations and MIT attribution.
+
+| Skill | Purpose |
+| --- | --- |
+| [trader-scanner](skills/trader-scanner/SKILL.md) | Chart and opening-range scans |
+| [trader-news](skills/trader-news/SKILL.md) | Watchlist headlines and SEC filings |
+| [trader-entry](skills/trader-entry/SKILL.md) | Bar-based entry signals |
+| [trader-exit](skills/trader-exit/SKILL.md) | Stop, target and exit plans |
+| [trader-timemachine](skills/trader-timemachine/SKILL.md) | Historical replay and Monte Carlo simulation |
+| [trader-budget](skills/trader-budget/SKILL.md) | Position sizing |
+| [trader-risk](skills/trader-risk/SKILL.md) | Order and daily risk checks |
+| [trader-broker](skills/trader-broker/SKILL.md) | Approval-gated order tickets and decision logs |
+| [trader-alerts](skills/trader-alerts/SKILL.md) | Price, stop, target and session alerts |
+| [trader-analyst](skills/trader-analyst/SKILL.md) | Earnings and SEC financial analysis |
+| [trader-pelosi](skills/trader-pelosi/SKILL.md) | Public congressional trade disclosures |
+
+Find them with `python scripts/search_skills.py --query "trader" --category finance --limit 20`.
+See the [import and usage notes](docs/day-trader-skills.md) for provenance,
+paths, prerequisites and verification scope. They are review-stage catalogue
+packages, not part of the executable Shards Core dispatcher. Importing the pack
+does not connect a broker or start monitoring. Paper trading is the example default.
+
+Two known upstream risk defects block use for trade approval until corrected;
+see the [open findings](docs/day-trader-skills.md#open-upstream-findings).

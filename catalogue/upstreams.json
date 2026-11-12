@@ -109,6 +109,17 @@
       "url": "https://github.com/rebelytics/one-skill-to-rule-them-all",
       "role": "skill composition and cross-agent management patterns",
       "integration": "architecture reference; review licence and security model"
+    },
+    {
+      "name": "Day Trader Skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "owner": "Jakeschincariol",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "retrieved": "2026-11-12",
+      "license": "MIT",
+      "role": "Eleven day-trading analysis, planning, risk and order-ticket workflows",
+      "integration": "Import all eleven trader-* packages into skills/ as review-stage catalogue entries, preserving their Python tools and JSON examples; no automatic execution or broker setup.",
+      "local_modifications": "Normalise descriptor frontmatter and add Shards provenance/review sections, UPSTREAM.md and package-local LICENSE; original Python, JSON and skill bodies unchanged."
     }
   ]
 }

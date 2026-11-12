@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
     paths:
+      - 'skills/trader-*/**'
+      - 'third_party/day-trader-skill/**'
+      - 'docs/day-trader-skills.md'
       - 'plugins/shards-core/**'
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'
@@ -22,6 +25,9 @@ on:
       - '.github/workflows/agent-core-plugin.yml'
   pull_request:
     paths:
+      - 'skills/trader-*/**'
+      - 'third_party/day-trader-skill/**'
+      - 'docs/day-trader-skills.md'
       - 'plugins/shards-core/**'
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'

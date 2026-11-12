@@ -40,6 +40,21 @@
       "skill": "incident-runbook",
       "should_trigger": true,
       "prompt": "Production API error rates just spiked after deployment; establish incident status and safe diagnosis."
+    },
+    {
+      "skill": "trader-scanner",
+      "should_trigger": true,
+      "prompt": "Find chart setups with an opening-range breakout scan."
+    },
+    {
+      "skill": "trader-timemachine",
+      "should_trigger": true,
+      "prompt": "Replay a planned trade using historical bars and Monte Carlo simulation."
+    },
+    {
+      "skill": "trader-broker",
+      "should_trigger": false,
+      "prompt": "Import the day-trading skill files into the catalogue; do not connect a broker or place orders."
     }
   ]
 }

@@ -2466,6 +2466,105 @@
       "path": ".",
       "license": "CC BY 4.0",
       "local_path": "skills/rebelytics-observer-rebelytics-observer"
+    },
+    {
+      "name": "trader-alerts",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-alerts",
+      "license": "MIT",
+      "local_path": "skills/trader-alerts"
+    },
+    {
+      "name": "trader-analyst",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-analyst",
+      "license": "MIT",
+      "local_path": "skills/trader-analyst"
+    },
+    {
+      "name": "trader-broker",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-broker",
+      "license": "MIT",
+      "local_path": "skills/trader-broker"
+    },
+    {
+      "name": "trader-budget",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-budget",
+      "license": "MIT",
+      "local_path": "skills/trader-budget"
+    },
+    {
+      "name": "trader-entry",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-entry",
+      "license": "MIT",
+      "local_path": "skills/trader-entry"
+    },
+    {
+      "name": "trader-exit",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-exit",
+      "license": "MIT",
+      "local_path": "skills/trader-exit"
+    },
+    {
+      "name": "trader-news",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-news",
+      "license": "MIT",
+      "local_path": "skills/trader-news"
+    },
+    {
+      "name": "trader-pelosi",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-pelosi",
+      "license": "MIT",
+      "local_path": "skills/trader-pelosi"
+    },
+    {
+      "name": "trader-risk",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-risk",
+      "license": "MIT",
+      "local_path": "skills/trader-risk"
+    },
+    {
+      "name": "trader-scanner",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-scanner",
+      "license": "MIT",
+      "local_path": "skills/trader-scanner"
+    },
+    {
+      "name": "trader-timemachine",
+      "source": "day-trader-skill",
+      "url": "https://github.com/Jakeschincariol/day-trader-skill",
+      "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+      "path": "trader-timemachine",
+      "license": "MIT",
+      "local_path": "skills/trader-timemachine"
     }
   ]
 }

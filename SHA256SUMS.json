@@ -5,6 +5,16 @@
     "bytes": 428
   },
   {
+    "path": ".github/workflows/agent-core-plugin.yml",
+    "sha256": "4cb5c36ff45faac50b543e539b36699ef2af6fe1e3b031a4fab405cdbf5aaf5d",
+    "bytes": 3655
+  },
+  {
+    "path": ".github/workflows/search-shards-skills.yml",
+    "sha256": "345217d855e40133f1a30c7b525d9876c6636332e87ea5917203cdb43d392932",
+    "bytes": 4196
+  },
+  {
     "path": ".gitignore",
     "sha256": "5d4c763d88222258553b8057936598c46cc704043a60b35ab5053464caabb84d",
     "bytes": 73
@@ -21,8 +31,8 @@
   },
   {
     "path": "README.md",
-    "sha256": "f9505bba9eb6170eab8eb1e85caedb12c9373b6b8b5ade2bea9b2d0f59385d89",
-    "bytes": 6211
+    "sha256": "b39a3fc0f5f8f459b4d87debfb0e0eb8b98d1350026d071f27f8c08807ec5ad0",
+    "bytes": 11536
   },
   {
     "path": "SECURITY.md",
@@ -31,23 +41,23 @@
   },
   {
     "path": "THIRD_PARTY_NOTICES.md",
-    "sha256": "bfe702fea433a3c67b5cfa20d6052580c095f1dc93bed7bfba53938af472ef2a",
-    "bytes": 401
+    "sha256": "d324d5ae83d0b2e913f342deeafd96d85377b93f72fa95ae8a5489bd235469fb",
+    "bytes": 1178
   },
   {
     "path": "catalogue/catalogue.json",
-    "sha256": "a7e741183e2bc086e395a9757d199c229a72853230cce0e060f96b7bde71579a",
-    "bytes": 179386
+    "sha256": "870b89c4a698e2b4fad2233512ff8a0844acbdbe66040c0d699ad955c7e546fa",
+    "bytes": 189563
   },
   {
     "path": "catalogue/imported-skills.json",
-    "sha256": "652e1400e96cc4e19aade93b71f195c096579a973b30690c0712400069c06340",
-    "bytes": 104455
+    "sha256": "e3203a200d0687bf599b9050c9984245c6125511f0c41757ff7adcbc680a5d12",
+    "bytes": 107821
   },
   {
     "path": "catalogue/upstreams.json",
-    "sha256": "4f1983948d38cf051f9ae67d4b58645e9823da071fed2a14b9a8682eefb0a102",
-    "bytes": 4844
+    "sha256": "1e8d16302f55ff3a5ec108155ffae010faaeb1f386063453a466d6f2cc37e31b",
+    "bytes": 5591
   },
   {
     "path": "docs/catalogue-guide.md",
@@ -60,14 +70,19 @@
     "bytes": 1711
   },
   {
+    "path": "docs/day-trader-skills.md",
+    "sha256": "62f0b1e8feb44f3327271d8484944361e18145b52677aead8b28bd56f89c1d30",
+    "bytes": 4992
+  },
+  {
     "path": "evals/README.md",
     "sha256": "8c6ead707d60c8776cf6431b57d1a55d085c7ce237cbb735947c1fa6912d40cf",
     "bytes": 218
   },
   {
     "path": "evals/trigger-cases.json",
-    "sha256": "7b942457ebb2d4bc10204ae56e155c089ab26b12c21472d103ff7a75388ab41e",
-    "bytes": 1498
+    "sha256": "e027811d5fca14b672dfa864cbeb05ba1c61fb6c78420f1edb53a6174c9635a2",
+    "bytes": 2008
   },
   {
     "path": "pyproject.toml",
@@ -10050,6 +10065,46 @@
     "bytes": 13300
   },
   {
+    "path": "skills/scientific-agent-skills-polars-bio/SKILL.md",
+    "sha256": "602e8e084262b1d91917a592e9a652b44abc56fcc4cbd22d84d90906a8639e25",
+    "bytes": 13462
+  },
+  {
+    "path": "skills/scientific-agent-skills-polars-bio/UPSTREAM.md",
+    "sha256": "fd296f83256b7d42dbeaf284c23d06ff6ec93e85c8794a97f6fe941a14914a11",
+    "bytes": 432
+  },
+  {
+    "path": "skills/scientific-agent-skills-polars-bio/references/bioframe_migration.md",
+    "sha256": "0b9a50bc7a9377240e9e65413302f3b42f9f783dcf7540c66d3120b60d41f212",
+    "bytes": 4887
+  },
+  {
+    "path": "skills/scientific-agent-skills-polars-bio/references/configuration.md",
+    "sha256": "f6c8cca032067556d13a8fd07f65405a220c0e1e61e1b1fdfc0f4971507f8306",
+    "bytes": 4405
+  },
+  {
+    "path": "skills/scientific-agent-skills-polars-bio/references/file_io.md",
+    "sha256": "72dbb6c5b90ca77984bf5f746591a760aad3f684f4f204da3dc8d1470012893a",
+    "bytes": 11758
+  },
+  {
+    "path": "skills/scientific-agent-skills-polars-bio/references/interval_operations.md",
+    "sha256": "31651d77bfb17ff89eaf7526e5edc372580465be1adef25f07b097330a7159c7",
+    "bytes": 7369
+  },
+  {
+    "path": "skills/scientific-agent-skills-polars-bio/references/pileup_operations.md",
+    "sha256": "b616dd3aaddb41d198763d854188fabf8a931ae14c183ab93bfeab28990daf5e",
+    "bytes": 6008
+  },
+  {
+    "path": "skills/scientific-agent-skills-polars-bio/references/sql_processing.md",
+    "sha256": "34933a5084ecc188753fc5cd437f4fd587f4df02d4d57850112b950e491ed362",
+    "bytes": 5714
+  },
+  {
     "path": "skills/scientific-agent-skills-polars/SKILL.md",
     "sha256": "f86121176e0111a0875a0f7c9e123e12bb824597bc43efd1b8b4c6f72a926610",
     "bytes": 13919
@@ -10093,46 +10148,6 @@
     "path": "skills/scientific-agent-skills-polars/references/transformations.md",
     "sha256": "dcbaadcece9335b120a0deaa6950abd1068c30d2d24960b3bf26ba424638f529",
     "bytes": 14431
-  },
-  {
-    "path": "skills/scientific-agent-skills-polars-bio/SKILL.md",
-    "sha256": "602e8e084262b1d91917a592e9a652b44abc56fcc4cbd22d84d90906a8639e25",
-    "bytes": 13462
-  },
-  {
-    "path": "skills/scientific-agent-skills-polars-bio/UPSTREAM.md",
-    "sha256": "fd296f83256b7d42dbeaf284c23d06ff6ec93e85c8794a97f6fe941a14914a11",
-    "bytes": 432
-  },
-  {
-    "path": "skills/scientific-agent-skills-polars-bio/references/bioframe_migration.md",
-    "sha256": "0b9a50bc7a9377240e9e65413302f3b42f9f783dcf7540c66d3120b60d41f212",
-    "bytes": 4887
-  },
-  {
-    "path": "skills/scientific-agent-skills-polars-bio/references/configuration.md",
-    "sha256": "f6c8cca032067556d13a8fd07f65405a220c0e1e61e1b1fdfc0f4971507f8306",
-    "bytes": 4405
-  },
-  {
-    "path": "skills/scientific-agent-skills-polars-bio/references/file_io.md",
-    "sha256": "72dbb6c5b90ca77984bf5f746591a760aad3f684f4f204da3dc8d1470012893a",
-    "bytes": 11758
-  },
-  {
-    "path": "skills/scientific-agent-skills-polars-bio/references/interval_operations.md",
-    "sha256": "31651d77bfb17ff89eaf7526e5edc372580465be1adef25f07b097330a7159c7",
-    "bytes": 7369
-  },
-  {
-    "path": "skills/scientific-agent-skills-polars-bio/references/pileup_operations.md",
-    "sha256": "b616dd3aaddb41d198763d854188fabf8a931ae14c183ab93bfeab28990daf5e",
-    "bytes": 6008
-  },
-  {
-    "path": "skills/scientific-agent-skills-polars-bio/references/sql_processing.md",
-    "sha256": "34933a5084ecc188753fc5cd437f4fd587f4df02d4d57850112b950e491ed362",
-    "bytes": 5714
   },
   {
     "path": "skills/scientific-agent-skills-pptx-posters/SKILL.md",
@@ -14390,6 +14405,251 @@
     "bytes": 1563
   },
   {
+    "path": "skills/trader-alerts/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-alerts/SKILL.md",
+    "sha256": "1a686442b5f83a6774ac6e87efd2c9aff33d176d1f66a14d139e7684163f396f",
+    "bytes": 10192
+  },
+  {
+    "path": "skills/trader-alerts/UPSTREAM.md",
+    "sha256": "cb09accb551e6a6f7e119830f15e47e9e90805255b1c4b876ef67a9e7c5331d4",
+    "bytes": 1540
+  },
+  {
+    "path": "skills/trader-alerts/alerts.example.json",
+    "sha256": "54d4be97231f618cb8766962ace66120c5388d2d69cff16580d43fe38c30f94e",
+    "bytes": 597
+  },
+  {
+    "path": "skills/trader-alerts/alerts.py",
+    "sha256": "2db22d8e9b27ff1776600dd53664e21b55fc8787ed1abdd9e6f1e79bcc80c74f",
+    "bytes": 32825
+  },
+  {
+    "path": "skills/trader-analyst/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-analyst/SKILL.md",
+    "sha256": "9d2b3ee2687ba4561468423df1c6c0eb7ef3ca67921a17dfd2ac020253a339b4",
+    "bytes": 7915
+  },
+  {
+    "path": "skills/trader-analyst/UPSTREAM.md",
+    "sha256": "bfcc40b5babe2b9957647a49a4bb220f883ed536036a89e5addd89b28c451133",
+    "bytes": 1542
+  },
+  {
+    "path": "skills/trader-analyst/facts.py",
+    "sha256": "6cd7e24588e7389268cd6af6315768bd9c292032773fe1a7364e07696d7ac6b9",
+    "bytes": 23996
+  },
+  {
+    "path": "skills/trader-analyst/metrics.example.json",
+    "sha256": "e7929dd849a072cf444a085f26a7c32aaa99dcf23beac6ef8c81d39335767c7d",
+    "bytes": 2317
+  },
+  {
+    "path": "skills/trader-broker/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-broker/SKILL.md",
+    "sha256": "56d24b06fcb8bfb4e7ffff2444389efcea193a9b868a9a178e6002c0f235988a",
+    "bytes": 13672
+  },
+  {
+    "path": "skills/trader-broker/UPSTREAM.md",
+    "sha256": "b2a41c71bb413080d2d1aa49f6076cd629f33f4a68a58e38090a02d9e2c8cb10",
+    "bytes": 2636
+  },
+  {
+    "path": "skills/trader-broker/claude_desktop_config.example.json",
+    "sha256": "012ccc622a02dc818448a285651a875bef241a162341d12ba63dcc63d1d77b65",
+    "bytes": 378
+  },
+  {
+    "path": "skills/trader-broker/ticket.py",
+    "sha256": "9500300b3ceba93c1423c0e022654bc6283cbed9084c81b324778f062a5f6559",
+    "bytes": 32390
+  },
+  {
+    "path": "skills/trader-budget/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-budget/SKILL.md",
+    "sha256": "c9e1b16df2c359a1f2972a27c475c827ccbef74f534d6b3cb93144a38424487e",
+    "bytes": 10602
+  },
+  {
+    "path": "skills/trader-budget/UPSTREAM.md",
+    "sha256": "600801131b46ea8fb7c12f7cbbdb326022a4fcca21ca122056b8e715c443715d",
+    "bytes": 1540
+  },
+  {
+    "path": "skills/trader-budget/config.example.json",
+    "sha256": "a889c0283ab24d30f16707b71e1a2e242ad97312a83731061255087f96697008",
+    "bytes": 595
+  },
+  {
+    "path": "skills/trader-budget/size.py",
+    "sha256": "2dcb2ef604a92fb022ca210eb67a9b28ef82fefe5f7a2382ce2592461a6d3cba",
+    "bytes": 39238
+  },
+  {
+    "path": "skills/trader-budget/targets.example.json",
+    "sha256": "901df8a605f79a064a770a3a21a915e4852bb7a64eaca90a5df5c8e0fec3a6b8",
+    "bytes": 610
+  },
+  {
+    "path": "skills/trader-entry/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-entry/SKILL.md",
+    "sha256": "4e51836e5b73f5d0fb0df23d66db027e13a2dc8b0055349332e7e3b960a2b37e",
+    "bytes": 9675
+  },
+  {
+    "path": "skills/trader-entry/UPSTREAM.md",
+    "sha256": "7cb79e527186befbe1f137392256c92b94b8cbd956e72e32d7c0e5b9680b11e9",
+    "bytes": 1538
+  },
+  {
+    "path": "skills/trader-entry/entry.py",
+    "sha256": "11518ca87e329520741044329e37066207d8a096d37809cd29ebed9f6d2776ec",
+    "bytes": 42324
+  },
+  {
+    "path": "skills/trader-exit/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-exit/SKILL.md",
+    "sha256": "6912fd9b908ee143a2a5379826b785a0d18a0ec45c00250ab4d38cf521c349ed",
+    "bytes": 8937
+  },
+  {
+    "path": "skills/trader-exit/UPSTREAM.md",
+    "sha256": "03719fbe4f1ecbc42dc3f23e6916b7aeba26be288c37700a47d0222929e486f0",
+    "bytes": 1536
+  },
+  {
+    "path": "skills/trader-exit/exit.py",
+    "sha256": "8183a2cc5c71cecef33d7ae6a401416a5d042aeb7d130a1f8d5e8a51642447fc",
+    "bytes": 31107
+  },
+  {
+    "path": "skills/trader-news/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-news/SKILL.md",
+    "sha256": "c3b9aad100c6baf9067cfc7c675e462031367ac9604cd996891c638375945115",
+    "bytes": 7315
+  },
+  {
+    "path": "skills/trader-news/UPSTREAM.md",
+    "sha256": "31ac69dd521394af55222c78d74abea02688a03b8231838ef205cecbdbfa19dc",
+    "bytes": 1536
+  },
+  {
+    "path": "skills/trader-news/news.py",
+    "sha256": "bf9e12a9c5962de3f661bf334e76f4df417a39879ff067426b338b7a063c71f3",
+    "bytes": 22467
+  },
+  {
+    "path": "skills/trader-pelosi/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-pelosi/SKILL.md",
+    "sha256": "51ec4e00485a4764ad9d159190fc9a45a5a03cf193ed250928f2df73ddaa6dac",
+    "bytes": 9362
+  },
+  {
+    "path": "skills/trader-pelosi/UPSTREAM.md",
+    "sha256": "d071ac8255b2847e39cb680b43989bc76b89c3c29dc30d9ce12c80d310732b40",
+    "bytes": 1540
+  },
+  {
+    "path": "skills/trader-pelosi/ptr.py",
+    "sha256": "b325c8b56a9580f8ce6a447b5b5d3d9c34508bbed3d67d50d3f71603807e9fcc",
+    "bytes": 22928
+  },
+  {
+    "path": "skills/trader-risk/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-risk/SKILL.md",
+    "sha256": "38320e6b1a3636ea9373c0e2acebf217caa2e8216182c32f3016408e1bcce1b6",
+    "bytes": 11824
+  },
+  {
+    "path": "skills/trader-risk/UPSTREAM.md",
+    "sha256": "9b08aa55b9bc1cf23fc29325974824a91db05693020efa8b2d621dc9e3c7dae3",
+    "bytes": 2632
+  },
+  {
+    "path": "skills/trader-risk/check.py",
+    "sha256": "6faf9372c20d30b33dbc6175d0d81935f8dc88bc8e94aacd2ed0ae6919aafa18",
+    "bytes": 39151
+  },
+  {
+    "path": "skills/trader-scanner/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-scanner/SKILL.md",
+    "sha256": "6a660396bb4611796f76e85c0349ba95ba6f0a9be583e20a4773d07b8416e209",
+    "bytes": 12889
+  },
+  {
+    "path": "skills/trader-scanner/UPSTREAM.md",
+    "sha256": "223cd432fd206356c19aa735f52cd2f9291446db5428feb63f9bd8d7c4cd0885",
+    "bytes": 1542
+  },
+  {
+    "path": "skills/trader-scanner/scan.py",
+    "sha256": "2cc0d99a4f21d2b8a28b6917d527ca17e3a71dea0951365d5f82c6b5afcac913",
+    "bytes": 47679
+  },
+  {
+    "path": "skills/trader-timemachine/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
+  },
+  {
+    "path": "skills/trader-timemachine/SKILL.md",
+    "sha256": "a3e31fe551fd8afd00fa46f3e8290684273318c57c8164c94ee1577801b5fd8d",
+    "bytes": 11609
+  },
+  {
+    "path": "skills/trader-timemachine/UPSTREAM.md",
+    "sha256": "0a34218c5e1dd3fb7a8d9ff456c5692c2f858c46968170de3d4fc2050c0f329b",
+    "bytes": 1550
+  },
+  {
+    "path": "skills/trader-timemachine/timemachine.py",
+    "sha256": "5e73d566c78e5e42142371319491eef6257b6fc31fab5a87aa62506d03e9b5a1",
+    "bytes": 43070
+  },
+  {
     "path": "skills/web-application-testing/SKILL.md",
     "sha256": "27a52656416dd07e5b79fba0e4ca5b44105e9d1af1dad60efa3a9020fafe0e54",
     "bytes": 1597
@@ -14411,8 +14671,13 @@
   },
   {
     "path": "third_party/SOURCES.md",
-    "sha256": "43c000cd9592f613eb44f0845581cd4a464f6997c1b8d88fb9dca85370f6ecf9",
-    "bytes": 2607
+    "sha256": "298fc02819295a7497553c797a9124f18f8005320e221e513e29d86518b80f7a",
+    "bytes": 2942
+  },
+  {
+    "path": "third_party/day-trader-skill/manifest.json",
+    "sha256": "2b1116429e2ad27033bb30144583d37fdf3c609c83c8967e6290dda63cc7b1c1",
+    "bytes": 9773
   },
   {
     "path": "third_party/licenses/addy-agent-skills/LICENSE",
@@ -14518,6 +14783,11 @@
     "path": "third_party/licenses/cloudflare-security-audit/LICENSE",
     "sha256": "e598e694aa506650c7192d5ea3be0e50aca0d356ea00551c53429f0b01eb6391",
     "bytes": 1078
+  },
+  {
+    "path": "third_party/licenses/day-trader-skill/LICENSE",
+    "sha256": "857c8d5276809c8196b3cd7cb3300324768bfc562b2b6281b06d6865058e186c",
+    "bytes": 1073
   },
   {
     "path": "third_party/licenses/deer-flow/LICENSE",

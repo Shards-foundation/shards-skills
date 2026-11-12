@@ -388,10 +388,13 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                             "Tracked credential-like symlink; review the target without following the link",
                             "CONFIRMED", "high", None) | {"target": state["target"]})
                     else:
-                        findings.append(_finding("SYMLINK-INTERNAL", "info", name, None,
-                                                 "Tracked symlink resolves inside the repository; content not read",
-                                                 "SYMLINK_INTERNAL_REVIEWED", "high",
-                                                 "destination verified inside repository; link not followed") | {"target": state["target"]})
+                        # A benign filename is not evidence of benign content.
+                        # In particular the resolved target may be untracked and
+                        # outside the configured source extensions. Never read
+                        # through the link; require review instead of exit 0.
+                        findings.append(_finding("SYMLINK-INTERNAL", "medium", name, None,
+                                                 "Internal symlink target was not inspected; review required before approval",
+                                                 "CONFIRMED", "medium", None) | {"target": state["target"]})
                 else:
                     findings.append(_finding("SYMLINK-UNRESOLVABLE", "medium", name, None,
                                              "Tracked symlink could not be resolved; review independently",

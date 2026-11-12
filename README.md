@@ -27,7 +27,7 @@ python scripts/vibecode_guard.py --repo /path/to/your/app
 ```
 
 The `plan` command returns controls to investigate, not results. The local guard uses
-**0 = no configured patterns found**, **1 = warnings found**, and **2 = blocked input**.
+**0 = complete scan with no actionable heuristic findings**, **1 = actionable warnings found**, and **2 = blocked or incomplete scan**. Contextually reviewed findings may remain in the JSON output even on exit 0; `--no-triage` retains signature-only warnings.
 A clean run is not an automatic security sign-off. For observed evidence and a
 reproducible assessment, follow [the evidence and assessment walkthrough](docs/security-assurance.md).
 

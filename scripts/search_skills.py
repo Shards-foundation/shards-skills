@@ -17,7 +17,10 @@ TOKENS = re.compile(r"[a-z0-9]+")
 # relevance scoring; retain the original task in the output. This is a
 # conservative lexical heuristic, NOT a semantic intent classifier.
 NEGATED_CLAUSE = re.compile(
-    r"\b(?:do\s+not|don['’]t|dont|never|without)\b[^,;.!?\n]*",
+    # Retain a positive instruction after "but", "and then", "instead",
+    # punctuation, or a newline rather than swallowing the whole task.
+    r"\b(?:do\s+not|don['’]t|dont|never|without)\b"
+    r"[^,;.!?\n]*?(?=\b(?:but|and\s+then|instead|then)\b|[,;.!?\n]|$)",
     re.IGNORECASE,
 )
 NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -139,6 +142,7 @@ def rank(entries: list[dict], query: str, *, category: str | None = None,
     # For example, "import skills; do not connect a broker" is an import
     # task, not an instruction to invoke a broker skill. If a request has
     # only negative instructions, recommend no skill.
+    negated_clauses = NEGATED_CLAUSE.findall(query)
     positive_query = NEGATED_CLAUSE.sub(" ", query)
     if not words(positive_query):
         return []
@@ -147,6 +151,12 @@ def rank(entries: list[dict], query: str, *, category: str | None = None,
     if raw_fallback:
         query_tokens = words(positive_query)
     term_words = words if raw_fallback else normalized_words
+    # Prevent a weak leftover word such as "trading" from resurfacing a
+    # specifically prohibited broker skill under --limit or --category.
+    # Preserve explicitly requested targets: "audit broker code; don't
+    # execute orders" still contains a positive "broker" reference.
+    negative_tokens = set().union(*(term_words(clause) for clause in negated_clauses))
+    excluded_name_tokens = negative_tokens - query_tokens
     ranked = []
     for item in entries:
         if category and item["category"] != category:
@@ -154,6 +164,8 @@ def rank(entries: list[dict], query: str, *, category: str | None = None,
         if status and item["status"] != status:
             continue
         name = item["name"].replace("-", " ").lower()
+        if excluded_name_tokens & term_words(name):
+            continue
         desc = item["description"].lower()
         hits_name = len(query_tokens & term_words(name))
         hits_desc = len(query_tokens & term_words(desc))

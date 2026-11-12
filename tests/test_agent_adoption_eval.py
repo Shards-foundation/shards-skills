@@ -71,6 +71,14 @@ class AgentAdoptionEvalTests(unittest.TestCase):
                  "procedure_applied": False, "trace_reference": "host:case-2", "task_outcome": "pass"}]})
         self.assertEqual(report["results"][1]["result"], "reported_false_trigger")
 
+    def test_unknown_opened_skill_is_unverified_not_a_false_trigger(self):
+        report = evaluator.host_report(self.cases, {"schema_version": 1,
+            "host": "Codex", "repository_commit": "e" * 40, "runs": [
+                {"case_id": "2", "selected_skill": None, "skill_opened": True,
+                 "procedure_applied": False, "trace_reference": "host:ambiguous",
+                 "task_outcome": "pass"}]})
+        self.assertEqual(report["results"][1]["result"], "not_demonstrated")
+
     def test_negative_abstention_requires_host_trace(self):
         report = evaluator.host_report(self.cases, {"schema_version": 1, "host": "Codex",
             "repository_commit": "c" * 40, "runs": [

@@ -15,7 +15,7 @@ Calibrated build (P0). Adds contextual triage to the pattern engine:
   * `--no-triage` reproduces the legacy signature-only behaviour for baseline
     comparison, so triage can never hide a previously emitted finding.
 
-Exit codes: 0 = no actionable finding, 1 = actionable warning, 2 = blocked input.
+Exit codes: 0 = complete scan/no actionable findings, 1 = actionable warnings, 2 = blocked or incomplete scan.
 """
 from __future__ import annotations
 
@@ -57,11 +57,8 @@ LIVE_CREDENTIAL = [
 
 TEST_DIR_NAMES = {"test", "tests", "spec", "specs", "__tests__", "testing"}
 FIXTURE_DIR_NAMES = {"fixtures", "fixture", "testdata", "test_data", "certs", "certs_test", "cassettes", "__fixtures__", "mocks"}
-TEST_ORG_MARKERS = (
-    "python-requests", "python software foundation", "psf", "localhost", "127.0.0.1",
-    "example", "dummy", "test", "invalid", "fake", "sample", "sandbox", "self-signed",
-)
-PEM_SUBJECT = re.compile(rb"\x06\x03\x55\x04\x0a")  # OID 2.5.4.10 (organizationName)
+TEST_IDENTITY_TOKENS = {"localhost", "127", "example", "dummy", "test", "invalid",
+                        "fake", "sample", "sandbox"}
 
 GENERATED_HINT = ("conftest.py", "pytest.ini", "tox.ini", "setup.cfg", "pyproject.toml")
 
@@ -155,7 +152,9 @@ class Repo:
             if safe_path.stat().st_size > MAX_FILE_BYTES:
                 return None
             blob = safe_path.read_bytes()
-            if not blob.lstrip().startswith(b"-----BEGIN CERTIFICATE-----"):
+            # A bundle containing private material must not be excused by a
+            # neighbouring/embedded test certificate identity.
+            if b"PRIVATE KEY-----" in blob or not blob.lstrip().startswith(b"-----BEGIN CERTIFICATE-----"):
                 return None
             cert = x509.load_pem_x509_certificate(blob)
         except Exception:
@@ -172,23 +171,12 @@ class Repo:
 def _test_identity(subject: dict | None) -> bool:
     if not subject:
         return False
-    joined = " ".join(str(v).lower() for v in subject.values())
-    return any(marker in joined for marker in TEST_ORG_MARKERS)
-
-
-def _sibling_test_identity(repo: Repo, name: str) -> tuple[bool, bool]:
-    """For key files: does a sibling certificate declare a test identity?
-
-    Returns (found_sibling_cert, sibling_says_test).
-    """
-    parent = Path(name).parent
-    for f in repo.files:
-        if Path(f).parent != parent or Path(f).suffix.lower() not in {".pem", ".crt", ".cer"}:
-            continue
-        subject = repo.cert_subject(repo.root / f)
-        if subject:
-            return True, _test_identity(subject)
-    return False, False
+    # Match complete subject tokens, never substrings ("latest" != "test").
+    # Project names and real organisations are not proof of test identity.
+    tokens = set()
+    for value in subject.values():
+        tokens.update(token for token in re.split(r"[\s.,_/-]+", str(value).casefold()) if token)
+    return bool(tokens & TEST_IDENTITY_TOKENS)
 
 
 def _expected_failure_context(lines: list[str], lineno: int, rule: str) -> tuple[str | None, bool]:
@@ -298,16 +286,22 @@ def triage_key_material(repo: Repo, name: str) -> dict:
 
     production = repo.production_references(name)
     source_complete = repo._source_scan_complete
+    # Never infer the safety of a private key from a neighbouring certificate.
+    # Preserve external-reference evidence without reading private-key bytes.
+    if suffix == ".key":
+        advice = base_advice
+        if production:
+            advice += "; referenced from non-test source"
+        elif not source_complete:
+            advice += "; production reference scan incomplete"
+        return _finding("TRACKED-KEY-MATERIAL", "high", name, None, advice,
+                        "CONFIRMED", "high" if source_complete else "low", None)
     subject = repo.cert_subject(path)
     if suffix in {".pem", ".crt", ".cer"} and subject is None:
         return _finding("TRACKED-KEY-MATERIAL", "high", name, None, base_advice,
                         "CONFIRMED", "medium", None)
 
-    if suffix == ".key":
-        found_sib, sib_test = _sibling_test_identity(repo, name)
-        identity_ok = found_sib and sib_test
-    else:
-        identity_ok = _test_identity(subject)
+    identity_ok = _test_identity(subject)
 
     signals = {
         "test_path": repo.is_test_path(name),
@@ -391,7 +385,11 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                 return report(findings, len(seen), consumed, truncated=True, triage=triage)
             continue
         if not path.is_file():
-            skipped.append({"path": name, "reason": "Tracked path missing or not a regular file"})
+            # Gitlink/submodule directories and unscanned README/media paths
+            # are not configured source inspections. Missing configured inputs
+            # still block a clean result.
+            if path.suffix.lower() in (SOURCE_EXT | KEY_EXT | CONTAINER_EXT) or path.name.startswith(".env"):
+                skipped.append({"path": name, "reason": "Tracked configured path missing or not a regular file"})
             continue
         if path.name.startswith(".env") and path.name not in {".env.example", ".env.sample", ".env.template"}:
             findings.append(_finding("TRACKED-ENV", "high", name, None,
@@ -458,7 +456,11 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
 def report(findings: list[dict], inspected: int, byte_count: int, truncated: bool,
            triage: bool = True, skipped: list[dict] | None = None) -> dict:
     skipped = skipped or []
-    actionable = [f for f in findings if f["classification"] in {"CONFIRMED", "TEST_CONTEXT_UNPROVEN", "LEGACY"}]
+    # Tracked key/certificate material is never silently suppressed on
+    # heuristic fixture evidence. The classification is advisory only.
+    actionable = [f for f in findings if f["id"] == "TRACKED-KEY-MATERIAL" or
+                  f["classification"] in {"CONFIRMED", "TEST_CONTEXT_UNPROVEN", "LEGACY",
+                                          "TEST_FIXTURE_UNCONFIRMED_DIRECTORY"}]
     suppressed = [f for f in findings if f not in actionable]
     if truncated or skipped:
         status = "INCOMPLETE_SCAN"

@@ -93,3 +93,14 @@ This index summarizes the curated imports. Each imported package is marked `revi
 - Declared license: MIT (repository-authored text only)
 - Imported packages: 1
 
+
+## day-trader-skill
+
+- Source: https://github.com/Jakeschincariol/day-trader-skill
+- Commit: `3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd`
+- Author: Jake Schincariol
+- Declared license: MIT
+- Imported packages: 11
+- Retrieved: 2026-11-12
+- Local status: review
+- File hashes and modifications: [manifest](day-trader-skill/manifest.json)

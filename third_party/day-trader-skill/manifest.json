@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "source": "https://github.com/Jakeschincariol/day-trader-skill",
+  "commit": "3d0f4ef6986f4984b7c6bd46f7ff4f87744c3abd",
+  "retrieved": "2026-11-12",
+  "license": "MIT",
+  "files": [
+    {
+      "upstream_path": "trader-alerts/SKILL.md",
+      "local_path": "skills/trader-alerts/SKILL.md",
+      "upstream_sha256": "48ba7c580fc64b48ee03b83a6206288641a97495c71dd78205c7f1c6e8b87d11",
+      "local_sha256": "3e1554fb2d2ca5b607e8bebb436f49db12d55146965280f2fe4a3622405e5afd",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-alerts/alerts.example.json",
+      "local_path": "skills/trader-alerts/alerts.example.json",
+      "upstream_sha256": "54d4be97231f618cb8766962ace66120c5388d2d69cff16580d43fe38c30f94e",
+      "local_sha256": "54d4be97231f618cb8766962ace66120c5388d2d69cff16580d43fe38c30f94e",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-alerts/alerts.py",
+      "local_path": "skills/trader-alerts/alerts.py",
+      "upstream_sha256": "2db22d8e9b27ff1776600dd53664e21b55fc8787ed1abdd9e6f1e79bcc80c74f",
+      "local_sha256": "2db22d8e9b27ff1776600dd53664e21b55fc8787ed1abdd9e6f1e79bcc80c74f",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-analyst/SKILL.md",
+      "local_path": "skills/trader-analyst/SKILL.md",
+      "upstream_sha256": "884edfcfcfe0c8c3392093e5eb25da5f37a3fed89ec15f8a968e3c782c8eb8d3",
+      "local_sha256": "b5bbcfd14c27ee64446b9aa80d28b0da06331c6b1894cca147a1449218fa3c4f",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-analyst/facts.py",
+      "local_path": "skills/trader-analyst/facts.py",
+      "upstream_sha256": "6cd7e24588e7389268cd6af6315768bd9c292032773fe1a7364e07696d7ac6b9",
+      "local_sha256": "6cd7e24588e7389268cd6af6315768bd9c292032773fe1a7364e07696d7ac6b9",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-analyst/metrics.example.json",
+      "local_path": "skills/trader-analyst/metrics.example.json",
+      "upstream_sha256": "e7929dd849a072cf444a085f26a7c32aaa99dcf23beac6ef8c81d39335767c7d",
+      "local_sha256": "e7929dd849a072cf444a085f26a7c32aaa99dcf23beac6ef8c81d39335767c7d",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-broker/SKILL.md",
+      "local_path": "skills/trader-broker/SKILL.md",
+      "upstream_sha256": "d1a34683814cce09c8074a978ac817c1e9f4e4790ad6804ad395c227d50b91b8",
+      "local_sha256": "b2c468cd7ab905ddfbcaa08790ecc7c51c8b641b147ce597946021c15358bef6",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-broker/claude_desktop_config.example.json",
+      "local_path": "skills/trader-broker/claude_desktop_config.example.json",
+      "upstream_sha256": "012ccc622a02dc818448a285651a875bef241a162341d12ba63dcc63d1d77b65",
+      "local_sha256": "012ccc622a02dc818448a285651a875bef241a162341d12ba63dcc63d1d77b65",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-broker/ticket.py",
+      "local_path": "skills/trader-broker/ticket.py",
+      "upstream_sha256": "9500300b3ceba93c1423c0e022654bc6283cbed9084c81b324778f062a5f6559",
+      "local_sha256": "9500300b3ceba93c1423c0e022654bc6283cbed9084c81b324778f062a5f6559",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-budget/SKILL.md",
+      "local_path": "skills/trader-budget/SKILL.md",
+      "upstream_sha256": "ce404e7877013eccbcc757c9db6926a4974d40ed3471696b929e253a27b81112",
+      "local_sha256": "8be2041f0ea9d3a347d7e0c79db3fa68cbbe0101cef8a461eb7c523cabd86c86",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-budget/config.example.json",
+      "local_path": "skills/trader-budget/config.example.json",
+      "upstream_sha256": "a889c0283ab24d30f16707b71e1a2e242ad97312a83731061255087f96697008",
+      "local_sha256": "a889c0283ab24d30f16707b71e1a2e242ad97312a83731061255087f96697008",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-budget/size.py",
+      "local_path": "skills/trader-budget/size.py",
+      "upstream_sha256": "2dcb2ef604a92fb022ca210eb67a9b28ef82fefe5f7a2382ce2592461a6d3cba",
+      "local_sha256": "2dcb2ef604a92fb022ca210eb67a9b28ef82fefe5f7a2382ce2592461a6d3cba",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-budget/targets.example.json",
+      "local_path": "skills/trader-budget/targets.example.json",
+      "upstream_sha256": "901df8a605f79a064a770a3a21a915e4852bb7a64eaca90a5df5c8e0fec3a6b8",
+      "local_sha256": "901df8a605f79a064a770a3a21a915e4852bb7a64eaca90a5df5c8e0fec3a6b8",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-entry/SKILL.md",
+      "local_path": "skills/trader-entry/SKILL.md",
+      "upstream_sha256": "e61e10c703915a7dad118b38d0a61fd6457d34e320e36f48abcac5f6ede1a5af",
+      "local_sha256": "398b0ae6fc6ed9218fa5f968e197cceb3a179489963703eff66f7f82bfd0177d",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-entry/entry.py",
+      "local_path": "skills/trader-entry/entry.py",
+      "upstream_sha256": "11518ca87e329520741044329e37066207d8a096d37809cd29ebed9f6d2776ec",
+      "local_sha256": "11518ca87e329520741044329e37066207d8a096d37809cd29ebed9f6d2776ec",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-exit/SKILL.md",
+      "local_path": "skills/trader-exit/SKILL.md",
+      "upstream_sha256": "4bccdfff09c8414eee3a486e239bff9602b219d8439e9b0f8bce4743a5999841",
+      "local_sha256": "47b9b2cc84d87d3969425404ed318807e2f8d26d106f973736932946d04db099",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-exit/exit.py",
+      "local_path": "skills/trader-exit/exit.py",
+      "upstream_sha256": "8183a2cc5c71cecef33d7ae6a401416a5d042aeb7d130a1f8d5e8a51642447fc",
+      "local_sha256": "8183a2cc5c71cecef33d7ae6a401416a5d042aeb7d130a1f8d5e8a51642447fc",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-news/SKILL.md",
+      "local_path": "skills/trader-news/SKILL.md",
+      "upstream_sha256": "6a26283452c15ac9001c8f41633cab829abd2e6d6c7ccc95d7d26af39ec6319b",
+      "local_sha256": "fa4503762956f8940cb85881efcc66453f3d1ca480f68f0dbb2c69d61e651d95",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-news/news.py",
+      "local_path": "skills/trader-news/news.py",
+      "upstream_sha256": "bf9e12a9c5962de3f661bf334e76f4df417a39879ff067426b338b7a063c71f3",
+      "local_sha256": "bf9e12a9c5962de3f661bf334e76f4df417a39879ff067426b338b7a063c71f3",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-pelosi/SKILL.md",
+      "local_path": "skills/trader-pelosi/SKILL.md",
+      "upstream_sha256": "960f2fb1c2a1921c3cbb70f837fd942a05b74a345e3ef05d0c90c7b2341f67bb",
+      "local_sha256": "1282b5bb4ce384fc88e790bf7eba138e9e826bcd97832b062bc8dfad110f6423",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-pelosi/ptr.py",
+      "local_path": "skills/trader-pelosi/ptr.py",
+      "upstream_sha256": "b325c8b56a9580f8ce6a447b5b5d3d9c34508bbed3d67d50d3f71603807e9fcc",
+      "local_sha256": "b325c8b56a9580f8ce6a447b5b5d3d9c34508bbed3d67d50d3f71603807e9fcc",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-risk/SKILL.md",
+      "local_path": "skills/trader-risk/SKILL.md",
+      "upstream_sha256": "e3671889e6b658ed769f3ccc2f117436ff54080c1378d5bfbbe29463da6c16d5",
+      "local_sha256": "e791d7db8f91a7f895150629666d976f87628551fc9590a88bdc972f8077a814",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-risk/check.py",
+      "local_path": "skills/trader-risk/check.py",
+      "upstream_sha256": "6faf9372c20d30b33dbc6175d0d81935f8dc88bc8e94aacd2ed0ae6919aafa18",
+      "local_sha256": "6faf9372c20d30b33dbc6175d0d81935f8dc88bc8e94aacd2ed0ae6919aafa18",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-scanner/SKILL.md",
+      "local_path": "skills/trader-scanner/SKILL.md",
+      "upstream_sha256": "8db022339f3ddd3a5f0574152040d154c484ef4c56f5dbc4a4d6c5768b8c92f7",
+      "local_sha256": "614de6c8dff8832eab7cf5c52fac6a3f91796083ff16772af2e3cf1772c9fd3b",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-scanner/scan.py",
+      "local_path": "skills/trader-scanner/scan.py",
+      "upstream_sha256": "2cc0d99a4f21d2b8a28b6917d527ca17e3a71dea0951365d5f82c6b5afcac913",
+      "local_sha256": "2cc0d99a4f21d2b8a28b6917d527ca17e3a71dea0951365d5f82c6b5afcac913",
+      "modified": false
+    },
+    {
+      "upstream_path": "trader-timemachine/SKILL.md",
+      "local_path": "skills/trader-timemachine/SKILL.md",
+      "upstream_sha256": "394e025b2584fee9e485c1c3ff5255ff8efefc816cad72c2a1b97e30107701dc",
+      "local_sha256": "043a1eb23ef8f923c36358fbbaf7e86611fef0a491007e84cc7dfa9701923e35",
+      "modified": true
+    },
+    {
+      "upstream_path": "trader-timemachine/timemachine.py",
+      "local_path": "skills/trader-timemachine/timemachine.py",
+      "upstream_sha256": "5e73d566c78e5e42142371319491eef6257b6fc31fab5a87aa62506d03e9b5a1",
+      "local_sha256": "5e73d566c78e5e42142371319491eef6257b6fc31fab5a87aa62506d03e9b5a1",
+      "modified": false
+    }
+  ]
+}

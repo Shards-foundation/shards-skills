@@ -191,13 +191,13 @@ class AgentHarnessTests(unittest.TestCase):
                 ))
 
     def test_dispatcher_timeout_and_start_failure_keep_attribution(self):
-        failures = (
-            ("timeout", lambda command, **kwargs: (
-                (_ for _ in ()).throw(
-                    subprocess.TimeoutExpired(command, kwargs["timeout"])))),
-            ("error", lambda command, **kwargs: (
-                (_ for _ in ()).throw(OSError("executable unavailable")))),
-        )
+        def timed_out(command, **kwargs):
+            raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+
+        def unavailable(command, **kwargs):
+            raise OSError("executable unavailable")
+
+        failures = (("timeout", timed_out), ("error", unavailable))
         for outcome, executor in failures:
             with self.subTest(outcome=outcome):
                 def delegated(plan):

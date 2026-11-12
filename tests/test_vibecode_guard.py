@@ -1,5 +1,8 @@
 """Non-execution and redaction contracts for the Shards vibe-code preflight."""
 import importlib.util
+import os
+from unittest.mock import patch
+from types import SimpleNamespace
 import tempfile
 import unittest
 from pathlib import Path
@@ -54,15 +57,39 @@ class VibeCodeGuardTests(unittest.TestCase):
         report = guard.inspect(self.root, ["tenancy.sql"])
         self.assertEqual(report["findings"][0]["id"], "PERMISSIVE-RLS")
 
-    def test_does_not_follow_symlink(self):
+    def test_does_not_follow_symlink_and_continues(self):
         original = self.file("real.py", "eval(input())")
         (self.root / "link.py").symlink_to(original)
-        with self.assertRaisesRegex(ValueError, "Symlinked"):
-            guard.inspect(self.root, ["link.py"])
+        report = guard.inspect(self.root, ["link.py", "real.py"])
+        self.assertEqual([x["id"] for x in report["findings"]],
+                         ["SKIPPED-UNSAFE-PATH", "DYNAMIC-EVAL"])
 
-    def test_cannot_escape_directory(self):
-        with self.assertRaisesRegex(ValueError, "Unsafe"):
-            guard.inspect(self.root, ["../outside.py"])
+    def test_unsafe_path_is_recorded_without_aborting(self):
+        self.file("safe.py", "eval(input())")
+        report = guard.inspect(self.root, ["../outside.py", "safe.py"])
+        self.assertIn("SKIPPED-UNSAFE-PATH", [x["id"] for x in report["findings"]])
+        self.assertIn("DYNAMIC-EVAL", [x["id"] for x in report["findings"]])
+
+    def test_non_utf8_git_path_is_retained_for_safe_skip(self):
+        fake = SimpleNamespace(returncode=0, stdout=b"valid.py\\0bad-\\xff.py\\0")
+        with patch.object(guard.subprocess, "run", return_value=fake):
+            names = guard.tracked(self.root)
+        self.assertEqual(len(names), 2)
+        self.assertEqual(names[0], "valid.py")
+
+    def test_git_disables_local_fsmonitor_and_untrusted_env(self):
+        fake = SimpleNamespace(returncode=0, stdout=b"")
+        with patch.dict(os.environ, {"GIT_CONFIG_PARAMETERS": "core.fsmonitor=bad",
+                                     "GIT_INDEX_FILE": "/tmp/untrusted-index"}):
+            with patch.object(guard.subprocess, "run", return_value=fake) as run:
+                guard.tracked(self.root)
+        args, kw = run.call_args
+        self.assertIn("core.fsmonitor=false", args[0])
+        self.assertIn("--no-optional-locks", args[0])
+        self.assertEqual(kw["env"]["GIT_CONFIG_NOSYSTEM"], "1")
+        self.assertNotIn("GIT_CONFIG_PARAMETERS", kw["env"])
+        self.assertNotIn("GIT_INDEX_FILE", kw["env"])
+
 
     def test_skips_unlisted_extensions(self):
         self.file("notes.txt", "eval(input())")

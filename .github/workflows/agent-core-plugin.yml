@@ -6,6 +6,12 @@ on:
       - 'skills/trader-*/**'
       - 'third_party/day-trader-skill/**'
       - 'docs/day-trader-skills.md'
+      - 'skills/shards-*/**'
+      - 'scripts/skill_improver.py'
+      - 'scripts/operating_ledger.py'
+      - 'tests/test_skill_improver.py'
+      - 'tests/test_operating_ledger.py'
+      - 'docs/operating-loop.md'
       - 'plugins/shards-core/**'
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'
@@ -28,6 +34,12 @@ on:
       - 'skills/trader-*/**'
       - 'third_party/day-trader-skill/**'
       - 'docs/day-trader-skills.md'
+      - 'skills/shards-*/**'
+      - 'scripts/skill_improver.py'
+      - 'scripts/operating_ledger.py'
+      - 'tests/test_skill_improver.py'
+      - 'tests/test_operating_ledger.py'
+      - 'docs/operating-loop.md'
       - 'plugins/shards-core/**'
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'
@@ -58,7 +70,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile Python entry points
-        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/shards_agent_harness.py scripts/search_skills.py scripts/verify_plugins.py
+        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/shards_agent_harness.py scripts/search_skills.py scripts/verify_plugins.py scripts/skill_improver.py scripts/operating_ledger.py
       - name: Validate existing skill metadata
         run: python scripts/validate_skills.py
       - name: Heuristic skill security lint

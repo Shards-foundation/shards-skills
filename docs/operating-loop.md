@@ -1,6 +1,6 @@
 # Shards operating loop: ten skills, one durable contract
 
-The operating skills live under `skills/shards-*/SKILL.md`. They are reusable procedures and do not confer permissions. Unlike the historical catalogue, these nine new workflows and the existing skill improver share an append-only task ledger. The ledger is local and portable, not a remote multi-agent database.
+The operating skills live under `skills/shards-*/SKILL.md`. They are reusable procedures and do not confer permissions. Unlike the historical catalogue, these nine new workflows use a common append-only task ledger. The skill improver has separate plan and backup files; operators must explicitly record its receipts in the ledger. The ledger is local and portable, not a remote multi-agent database.
 
 ## Execution order
 
@@ -65,7 +65,7 @@ For attempt/checkpoint/review/lesson/decision use JSON fields `criterion_id` (st
 
 An amendment requires `reason`, `authority` and `criteria` (new IDs only); original criteria are retained. Never amend merely to mask a failed task.
 
-Ledger rows are SHA-256 chained and append-only under `.shards/state/tasks` by default. This detects casual corruption, **not malicious edits by anyone who can rewrite the entire file**. A lock file rejects concurrent writers; a crash may leave a lock requiring operator inspection before recovery. The ledger does not replicate between hosts; transfer it using the organisation's approved artifact or repository-state mechanism, never secrets.
+Ledger rows are SHA-256 chained and append-only under `.shards/state/tasks` by default. This detects casual corruption, **not malicious edits by anyone who can rewrite the entire file**. A lock file rejects concurrent writers. If a crash leaves `<task>.lock`, first establish that no writer is running on that machine, verify the latest `show`/ledger hash chain, then manually remove only the matching stale lock file before retrying. Never delete the lock while a writer might be active. The ledger does not replicate between hosts; transfer it using the organisation's approved artifact or repository-state mechanism, never secrets.
 
 ## Host compatibility checklist
 

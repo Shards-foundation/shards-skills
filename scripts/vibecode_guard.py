@@ -194,7 +194,7 @@ def _expected_failure_context(lines: list[str], lineno: int, rule: str) -> tuple
     """
     try:
         tree = ast.parse("\n".join(lines))
-    except SyntaxError:
+    except (SyntaxError, RecursionError, MemoryError, ValueError):
         return None, False
     function = None
     for node in ast.walk(tree):
@@ -442,7 +442,10 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
         except UnicodeDecodeError:
             skipped.append({"path": name, "reason": "Source file is not UTF-8"})
             continue
-        lines = body.splitlines()
+        # Match Python tokenizer's physical-line boundaries (CRLF, CR, LF).
+        # str.splitlines() also splits on form feeds and Unicode separators,
+        # shifting AST lineno values and corrupting rule classification.
+        lines = re.split(r"\r\n|\r|\n", body)
         # Detect Python TLS bypasses spanning physical lines. The original
         # per-line rule remains for other languages and ordinary occurrences.
         # AST supplies correct source positions and ignores strings/comments.
@@ -451,6 +454,9 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                 syntax = ast.parse(body)
             except SyntaxError:
                 syntax = None
+            except (RecursionError, MemoryError, ValueError):
+                skipped.append({"path": name, "reason": "Python source too complex to parse for TLS checks"})
+                continue
             if syntax is not None:
                 for node in ast.walk(syntax):
                     if not isinstance(node, ast.Call):

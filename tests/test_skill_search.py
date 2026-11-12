@@ -183,9 +183,9 @@ class SkillSearchTests(unittest.TestCase):
         entries = discovery.catalogue_entries() + discovery.curated_entries()
         results = discovery.rank(entries, query)
         names = [item["name"] for item in results]
-        # The public CLI shows the first ten entries by default. Broad
-        # lexical matches far below the shortlist are not recommendations.
-        self.assertNotIn("trader-broker", names[:10])
+        # A category filter or larger --limit must not resurface a
+        # specifically prohibited target, even as a weak lexical hit.
+        self.assertNotIn("trader-broker", names)
         self.assertIn("skill-supply-chain-audit", names)
 
     def test_negative_only_instruction_does_not_trigger_skills(self):
@@ -211,6 +211,43 @@ class SkillSearchTests(unittest.TestCase):
         results = discovery.rank(
             entries, "Don't place broker orders; audit this third-party skill before installing")
         self.assertEqual([r["name"] for r in results], ["skill-supply-chain-audit"])
+
+    def test_conjunction_keeps_a_following_positive_task(self):
+        entries = [
+            {**self._entry("trader-broker", "Connect broker and place orders"),
+             "execution": "not-dispatchable"},
+            {**self._entry("skill-supply-chain-audit",
+                           "Audit third-party skills and imported packages"),
+             "execution": "not-dispatchable"},
+        ]
+        prompts = (
+            "Do not connect a broker but audit imported third-party skills",
+            "Never place broker orders and then audit imported third-party skills",
+            "Without connecting a broker, audit imported third-party skills",
+            "Do not connect a broker; instead audit imported third-party skills",
+        )
+        for prompt in prompts:
+            with self.subTest(prompt=prompt):
+                self.assertEqual(
+                    [x["name"] for x in discovery.rank(entries, prompt)],
+                    ["skill-supply-chain-audit"],
+                )
+
+    def test_negated_skill_does_not_resurface_under_category_filter(self):
+        entries = discovery.catalogue_entries()
+        query = ("Import day-trading skill files into the catalogue; "
+                 "do not connect a broker or place orders")
+        results = discovery.rank(entries, query, category="finance")
+        self.assertNotIn("trader-broker", [r["name"] for r in results])
+
+    def test_explicit_broker_review_is_not_hidden_by_no_execution_instruction(self):
+        entries = [
+            {**self._entry("trader-broker", "Audit broker integration safely"),
+             "execution": "not-dispatchable"}
+        ]
+        results = discovery.rank(
+            entries, "Audit the trader-broker integration; do not place orders")
+        self.assertEqual([r["name"] for r in results], ["trader-broker"])
 
     def test_inflections_match_base_forms_with_final_e(self):
         for query, base in (("releases", "release"), ("images", "image"),

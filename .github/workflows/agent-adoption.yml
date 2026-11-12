@@ -49,8 +49,27 @@ jobs:
           print('Recall@3:', report['recall_at_3'])
           print('Recall@5:', report['recall_at_5'])
           PY
+      - name: Discover, plan, and execute a governed first-party skill
+        run: |
+          SKILL=$(python scripts/search_skills.py --query "repository health" --status curated --limit 1 | python -c 'import json,sys; print(json.load(sys.stdin)["results"][0]["name"])')
+          test "$SKILL" = "shards-repository-health"
+          PLAN_SHA=$(python scripts/dispatch_skills.py plan --skill "$SKILL" | python -c 'import json,sys; print(json.load(sys.stdin)["plan_sha256"])')
+          python scripts/dispatch_skills.py run --skill "$SKILL" --execute --expect-plan-sha256 "$PLAN_SHA" --save-receipt > governed-skill-execution.json
+          python - <<'PY'
+          import json
+          with open('governed-skill-execution.json', encoding='utf-8') as stream:
+              run = json.load(stream)
+          assert run['skill'] == 'shards-repository-health'
+          assert run['executed'] is True
+          assert run['observation']['status'] == 'pass'
+          assert run['observation']['exit_code'] == 0
+          assert run['production_verified'] is False
+          print('Governed Shards skill executed with pinned plan; local pass recorded.')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: skill-retrieval-diagnostics
-          path: agent-retrieval-report.json
+          path: |
+            agent-retrieval-report.json
+            governed-skill-execution.json
           retention-days: 7

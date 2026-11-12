@@ -34,6 +34,15 @@ For an owned Git checkout, run `python scripts/vibecode_guard.py --repo .` and i
 ## Verification
 Use `python scripts/security_assurance.py plan --profiles base,web --system "named system"` for a consistent control selection. Collect actual technical and organisational evidence; assess with the reviewed input schema in `docs/security-assurance.md`. Record at least one positive and one negative test where feasible. The tool reports operator-attested evidence, **not automated security certification**.
 
+## Behavioural evaluation cases
+Before claiming this skill works on a specific host, execute its positive,
+negative, missing-input and unauthorised-action cases from
+[the frozen security scenario set](../../evals/shards-security-workflows.json).
+Capture the real model response and external tool-action evidence with the exact
+case-set hash. The local `scripts/security_skill_eval.py` scorer checks only
+receipt structure; independent assessment of the raw host trace is required.
+These cases have **not yet been executed on a real agent host**.
+
 ## Failure handling
 On conflicting evidence, unknown regulatory applicability, unapproved effects or out-of-date controls, return BLOCKED with the precise missing input and owner. Do not downgrade a failed critical control to a documentation note.
 

@@ -93,6 +93,18 @@ class SecuritySuiteTests(unittest.TestCase):
         self.assertIn("PR #16", self.readme)
         self.assertIn("not yet merged", self.readme)
 
+    def test_emergency_containment_and_secrets_scope(self):
+        incident = (ROOT / "skills/shards-sec-incident-response/SKILL.md").read_text()
+        keys = (ROOT / "skills/shards-sec-secrets-keys/SKILL.md").read_text()
+        self.assertIn("containment immediately", incident)
+        self.assertIn("evidence capture in parallel", incident)
+        self.assertIn("plan --profiles base --system", keys)
+        self.assertNotIn("plan --profiles base,crypto --system", keys)
+
+    def test_catalogue_only_changes_trigger_ci(self):
+        workflow = (ROOT / ".github/workflows/agent-core-plugin.yml").read_text()
+        self.assertEqual(workflow.count("'catalogue/catalogue.json'"), 2)
+
     def test_sources_and_operator_instructions_present(self):
         sources = (ROOT / "docs/security-frameworks.md").read_text()
         operator = (ROOT / "docs/security-assurance.md").read_text()

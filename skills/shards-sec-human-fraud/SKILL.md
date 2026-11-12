@@ -29,7 +29,7 @@ people and workflows at risk, payment approvals, identity channels and verificat
 A human-centred fraud playbook, verification steps, escalation contacts and training evidence. Each finding includes **ID, severity, affected asset, observation, evidence reference, recommended control, owner, status (PASS/FAIL/BLOCKED/NOT_APPLICABLE), and next verification step**. Keep absent evidence BLOCKED. Report the exact revision, environment and timestamp; separate planned, implemented, tested and independently verified.
 
 ## Verification
-Use `python scripts/security_assurance.py plan --profiles base,fintech --system "named system"` for a consistent control selection. Collect actual technical and organisational evidence; assess with the reviewed input schema in `docs/security-assurance.md`. Record at least one positive and one negative test where feasible. The tool reports operator-attested evidence, **not automated security certification**.
+Use `python scripts/security_assurance.py plan --profiles base --system "named system"` for a consistent control selection. Collect actual technical and organisational evidence; assess with the reviewed input schema in `docs/security-assurance.md`. Include `fintech` only when the assessed organisation handles regulated financial services or in-scope money movement. Record at least one positive and one negative test where feasible. The tool reports operator-attested evidence, **not automated security certification**.
 
 ## Failure handling
 On conflicting evidence, unknown regulatory applicability, unapproved effects or out-of-date controls, return BLOCKED with the precise missing input and owner. Do not downgrade a failed critical control to a documentation note.

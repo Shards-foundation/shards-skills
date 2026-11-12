@@ -155,6 +155,33 @@ class ReviewerRegressionTests(unittest.TestCase):
                     self.assertEqual(report["status"], "INCOMPLETE_SCAN")
                     self.assertEqual(report["skipped_paths"][0]["path"], "source.py")
 
+    def test_benign_named_symlink_to_untracked_credential_requires_review(self):
+        """Manus counterexample: never approve an unread internal target."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "config").mkdir()
+            (root / "secret.txt").write_text(
+                "AKIAIOSFODNN7EXAMPLE\n-----BEGIN PRIVATE KEY-----\nsynthetic\n"
+            )
+            (root / "config" / "settings.txt").symlink_to("../secret.txt")
+            subprocess.run(["git", "-C", str(root), "init", "-q"], check=True, timeout=5)
+            subprocess.run(["git", "-C", str(root), "add", "config/settings.txt"],
+                           check=True, timeout=5)
+            proc = subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "vibecode_guard.py"),
+                 "--repo", str(root)],
+                capture_output=True, text=True, timeout=5,
+            )
+            self.assertEqual(proc.returncode, 1)
+            result = json.loads(proc.stdout)
+            self.assertEqual(result["status"], "WARNINGS_FOUND")
+            self.assertEqual(result["summary"]["actionable"], 1)
+            finding = result["findings"][0]
+            self.assertEqual(finding["id"], "SYMLINK-INTERNAL")
+            self.assertEqual(finding["classification"], "CONFIRMED")
+            self.assertNotIn("AKIAIOSFODNN7EXAMPLE", proc.stdout)
+            self.assertNotIn("synthetic", proc.stdout)
+
     def test_nested_function_inside_expected_ssl_error_is_not_suppressed(self):
         source = '''import pytest, requests
 

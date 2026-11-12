@@ -15,6 +15,14 @@ python scripts/security_assurance.py list
 python scripts/security_assurance.py plan --system "My application" --profiles web,ai
 ```
 
+For beginners with their own Git checkout, the **read-only local preflight** flags a small set of dangerous coding patterns without running the application or printing secret values:
+
+```bash
+python scripts/vibecode_guard.py --repo .
+```
+
+A clean heuristic result is **not** a security audit. [Preflight limitations and workflow](docs/security-assurance.md).
+
 The offline [assurance CLI](scripts/security_assurance.py) draws from [45 versioned Shards controls](catalogue/shards-security-controls.json) spanning eight profiles. It does **not** automatically test a running app or certify security. See the [operator guide](docs/security-assurance.md) and [source/version register](docs/security-frameworks.md).
 
 ### Shards Security & Governance Suite — 25 first-party workflows

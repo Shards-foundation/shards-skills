@@ -143,6 +143,23 @@ class SecurityAssuranceTests(unittest.TestCase):
         self.assertIn('"status": "BLOCKED"', err.getvalue())
         self.assertNotIn("Traceback", err.getvalue())
 
+    def test_scope_survives_in_review_ready_report(self):
+        observations = self.evidence()
+        report = mod.assess(self.registry, self.registry_sha,
+                            self.payload(observations), "a" * 64)
+        self.assertEqual(report["verdict"], "REVIEW_READY_NOT_CERTIFIED")
+        self.assertEqual(report["scope"], self.scope)
+        self.assertEqual(report["scope"]["owner"], "test operator")
+        self.assertEqual(report["scope"]["environment"], "test")
+        self.assertEqual(report["scope"]["authorised_scope"], "synthetic local test")
+
+    def test_scope_survives_in_blocked_report(self):
+        report = mod.assess(self.registry, self.registry_sha,
+                            self.payload(), "b" * 64)
+        self.assertEqual(report["verdict"], "HOLD")
+        self.assertEqual(set(report["scope"]), set(self.scope))
+        self.assertEqual(report["scope"]["revision"], self.scope["revision"])
+
     def test_output_is_create_only(self):
         f = self.tmp / "result.json"
         mod.emit({"hello": "world"}, str(f))

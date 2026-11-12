@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,6 +116,28 @@ class ReviewerRegressionTests(unittest.TestCase):
             self.assertIn("source.py", [x["path"] for x in report["skipped_paths"]])
             self.assertTrue(any(x["id"] == "TRACKED-KEY-MATERIAL"
                                 for x in report["findings"]))
+
+    def test_form_feed_does_not_shift_python_ast_line_numbers(self):
+        source = "import requests\nmarker = 1\f\nrequests.get('https://x', verify=False)\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "source.py").write_text(source)
+            report = guard.inspect(root, ["source.py"])
+            matches = [f for f in report["findings"] if f["id"] == "TLS-VERIFY-DISABLED"]
+            self.assertEqual(len(matches), 1)
+            self.assertEqual(matches[0]["line"], 3)
+            self.assertEqual(report["status"], "WARNINGS_FOUND")
+
+    def test_parser_resource_failure_marks_incomplete_instead_of_exiting_clean(self):
+        for error in (RecursionError, MemoryError, ValueError):
+            with self.subTest(error=error):
+                with tempfile.TemporaryDirectory() as d:
+                    root = Path(d)
+                    (root / "source.py").write_text("print('hello')\n")
+                    with patch.object(guard.ast, "parse", side_effect=error("synthetic parser limit")):
+                        report = guard.inspect(root, ["source.py"])
+                    self.assertEqual(report["status"], "INCOMPLETE_SCAN")
+                    self.assertEqual(report["skipped_paths"][0]["path"], "source.py")
 
     def test_nested_function_inside_expected_ssl_error_is_not_suppressed(self):
         source = '''import pytest, requests

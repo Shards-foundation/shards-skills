@@ -17,7 +17,7 @@ TOKENS = re.compile(r"[a-z0-9]+")
 # relevance scoring; retain the original task in the output. This is a
 # conservative lexical heuristic, NOT a semantic intent classifier.
 NEGATED_CLAUSE = re.compile(
-    r"\\b(?:do\\s+not|don['’]t|dont|never|without)\\b[^,;.!?\\n]*",
+    r"\b(?:do\s+not|don['’]t|dont|never|without)\b[^,;.!?\n]*",
     re.IGNORECASE,
 )
 NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")

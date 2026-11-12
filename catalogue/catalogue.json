@@ -3,7 +3,7 @@
   "name": "Shards Skills",
   "version": "0.1.0",
   "status": "bootstrap",
-  "skill_count": 305,
+  "skill_count": 314,
   "categories": [
     "agents",
     "blockchain",
@@ -301,7 +301,16 @@
     "skills/scientific-agent-skills-zarr-python",
     "skills/scientific-research",
     "skills/secure-code-review",
+    "skills/shards-context-recovery",
+    "skills/shards-evidence-verification",
+    "skills/shards-host-compatibility",
+    "skills/shards-learning-capture",
+    "skills/shards-progress-control",
+    "skills/shards-review-resolution",
+    "skills/shards-skill-evaluation",
     "skills/shards-skill-improver",
+    "skills/shards-task-contract",
+    "skills/shards-tool-selection",
     "skills/skill-supply-chain-audit",
     "skills/smart-contract-review",
     "skills/systematic-debugging",
@@ -2597,9 +2606,81 @@
       "version": "0.1.0"
     },
     {
+      "name": "shards-context-recovery",
+      "path": "skills/shards-context-recovery",
+      "description": "Use after interruptions, session changes or agent handovers to restore a task from durable records and revalidate changing facts.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-evidence-verification",
+      "path": "skills/shards-evidence-verification",
+      "description": "Use before reporting completion to tie each acceptance criterion to observable artifacts and distinguish deployment from local tests.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-host-compatibility",
+      "path": "skills/shards-host-compatibility",
+      "description": "Use when adapting shared Shards skills to Codex, Claude or another agent host without assuming uniform tools or permissions.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-learning-capture",
+      "path": "skills/shards-learning-capture",
+      "description": "Use after a repeated failure or measured improvement to preserve a compact, provenance-linked lesson for later agents.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-progress-control",
+      "path": "skills/shards-progress-control",
+      "description": "Use during multi-step work to detect loops, scope creep and no-evidence retries while keeping the next action focused.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-review-resolution",
+      "path": "skills/shards-review-resolution",
+      "description": "Use to triage and resolve independent code-review findings without conflating comments, patches and verified fixes.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-skill-evaluation",
+      "path": "skills/shards-skill-evaluation",
+      "description": "Use when comparing agent skill versions with representative tasks and predefined metrics before accepting an improvement.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
       "name": "shards-skill-improver",
       "path": "skills/shards-skill-improver",
       "description": "Use to propose, evaluate and explicitly apply evidence-based revisions to first-party agent skills while preserving rollback and approval boundaries.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-task-contract",
+      "path": "skills/shards-task-contract",
+      "description": "Use when starting or resuming work to pin the requested outcome, authorised scope and stable acceptance criteria before tools are used.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-tool-selection",
+      "path": "skills/shards-tool-selection",
+      "description": "Use before expensive repository or external-tool operations to select the least costly permitted route and reuse validated observations.",
       "category": "agents",
       "status": "draft",
       "version": "0.1.0"

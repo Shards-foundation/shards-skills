@@ -20,6 +20,35 @@ def words(value: str) -> set[str]:
     return set(TOKENS.findall(value.lower()))
 
 
+# Common task prose is not useful evidence of skill relevance.
+# Use conservative, deterministic inflection reduction; never execute skill code.
+STOPWORDS = set(
+    "a an the in on at to for of is are was were with into when by from and or "
+    "but without not no do does dont should have has had this that those these "
+    "who which your my me us our it its all any as before after just only please "
+    "there what how would could can".split()
+)
+
+
+def normalized_words(value: str) -> set[str]:
+    result = set()
+    for token in words(value):
+        if token in STOPWORDS or len(token) <= 2:
+            continue
+        if token.endswith("ies") and len(token) > 4:
+            token = token[:-3] + "y"
+        elif token.endswith("ing") and len(token) > 6:
+            token = token[:-3]
+        elif token.endswith("ed") and len(token) > 5:
+            token = token[:-2]
+        elif token.endswith("es") and len(token) > 5:
+            token = token[:-2]
+        elif token.endswith("s") and len(token) > 3:
+            token = token[:-1]
+        result.add(token)
+    return result
+
+
 def catalogue_entries(root: Path = ROOT) -> list[dict]:
     """Read metadata only. Never import, execute, or parse imported skill code."""
     source = Path(root) / "catalogue" / "catalogue.json"
@@ -92,10 +121,9 @@ def curated_entries(root: Path = ROOT) -> list[dict]:
 
 def rank(entries: list[dict], query: str, *, category: str | None = None,
          status: str | None = None) -> list[dict]:
-    query_tokens = words(query)
-    if not query_tokens:
+    if not words(query):
         raise ValueError("Query must contain at least one letter or number")
-    phrase = " ".join(query.lower().split())
+    query_tokens = normalized_words(query) or words(query)
     ranked = []
     for item in entries:
         if category and item["category"] != category:
@@ -104,11 +132,11 @@ def rank(entries: list[dict], query: str, *, category: str | None = None,
             continue
         name = item["name"].replace("-", " ").lower()
         desc = item["description"].lower()
-        hits_name = len(query_tokens & words(name))
-        hits_desc = len(query_tokens & words(desc))
-        hits_cat = len(query_tokens & words(item["category"]))
-        score = (12 * (phrase in name) + 6 * (phrase in desc) +
-                 6 * hits_name + 2 * hits_desc + 2 * hits_cat)
+        hits_name = len(query_tokens & normalized_words(name))
+        hits_desc = len(query_tokens & normalized_words(desc))
+        hits_cat = len(query_tokens & normalized_words(item["category"]))
+        # Short skill names are high-signal; generic prose overlap is not.
+        score = 10 * hits_name + 4 * hits_desc + 2 * hits_cat
         if score == 0:
             continue
         ranked.append({**item, "score": score})

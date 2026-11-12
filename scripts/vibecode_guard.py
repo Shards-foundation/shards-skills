@@ -115,7 +115,9 @@ class Repo:
             self._source_cache = {}
             source_bytes = 0
             for f in self.files:
-                if self.is_test_path(f) or Path(f).suffix.lower() not in SOURCE_EXT:
+                if self.is_test_path(f) or not (Path(f).suffix.lower() in SOURCE_EXT or
+                                               Path(f).name in {"Dockerfile", "Containerfile", "Makefile"} or
+                                               Path(f).name.startswith(("Dockerfile.", "Containerfile."))):
                     continue
                 try:
                     # Never traverse a tracked symlink or symlinked ancestor.
@@ -385,6 +387,10 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                 return report(findings, len(seen), consumed, truncated=True, triage=triage)
             continue
         if not path.is_file():
+            if path.is_dir():
+                # A tracked gitlink is a separate repository boundary, not a
+                # missing source file. Do not recurse into it.
+                continue
             # Gitlink/submodule directories and unscanned README/media paths
             # are not configured source inspections. Missing configured inputs
             # still block a clean result.
@@ -420,6 +426,38 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
             skipped.append({"path": name, "reason": "Source file is not UTF-8"})
             continue
         lines = body.splitlines()
+        # Detect Python TLS bypasses spanning physical lines. The original
+        # per-line rule remains for other languages and ordinary occurrences.
+        # AST supplies correct source positions and ignores strings/comments.
+        if path.suffix.lower() == ".py":
+            try:
+                syntax = ast.parse(body)
+            except SyntaxError:
+                syntax = None
+            if syntax is not None:
+                for node in ast.walk(syntax):
+                    if not isinstance(node, ast.Call):
+                        continue
+                    for kw in node.keywords:
+                        if kw.arg != "verify" or not isinstance(kw.value, ast.Constant) or kw.value.value is not False:
+                            continue
+                        number = kw.value.lineno
+                        if number == kw.value.end_lineno and RULES[0][2].search(lines[number - 1]):
+                            continue
+                        classification, confidence, reason = "CONFIRMED", "high", None
+                        if triage and repo.is_test_path(name):
+                            fname, expected = _expected_failure_context(lines, number, "TLS-VERIFY-DISABLED")
+                            if expected and fname:
+                                classification, confidence = "EXPECTED_NEGATIVE_TEST", "high"
+                                reason = f"test file; enclosing test {fname}() asserts an expected exception"
+                            elif fname:
+                                classification, confidence = "TEST_CONTEXT_UNPROVEN", "low"
+                                reason = f"test file and enclosing test {fname}(), but no expected-failure assertion found"
+                        findings.append(_finding("TLS-VERIFY-DISABLED", "high", name, number,
+                                                "Review TLS certificate verification; this may permit interception",
+                                                classification, confidence, reason))
+                        if len(findings) >= MAX_FINDINGS:
+                            return report(findings, len(seen), consumed, truncated=True, triage=triage)
         for number, line in enumerate(lines, 1):
             # Credentials are actionable anywhere, including inside tests.
             for code, pattern, severity in LIVE_CREDENTIAL:

@@ -11,7 +11,7 @@
 
 The actual original catalogue has 329 indexed entries, of which 44 are original Shards Foundation drafts. Imported skills remain metadata-only and **not dispatchable**.
 
-Acceptance: a search returning up to ten matches must **not recommend** `trader-broker` for this import request; negative-only requests return no skills; a positive request for a broker still retrieves its metadata without executing it; existing CI remains green.
+Acceptance: the full ranking (including category-filtered and enlarged lists) must **not include** `trader-broker` for this import request; negative-only requests return no skills; a positive request for a broker still retrieves its metadata without executing it; existing CI remains green.
 
 ## Original skill 1: `systematic-debugging`
 
@@ -28,16 +28,16 @@ Acceptance: a search returning up to ten matches must **not recommend** `trader-
 
 [Source](../skills/test-driven-development/SKILL.md). The applicable steps were writing tests before implementation, seeing the expected failures, applying the narrowest code change, and rerunning focused and repository-wide checks.
 
-Four focused cases in `tests/test_skill_search.py`:
+Seven focused test methods in `tests/test_skill_search.py`:
 
 | Case | Pre-fix | Final corrected logic |
 | --- | --- | --- |
-| Import skills while expressly forbidding broker actions | FAIL: broker first | PASS: broker outside top-ten shortlist |
+| Import skills while expressly forbidding broker actions | FAIL: broker first | PASS: broker absent from full ranking |
 | Only a prohibition, with no affirmative task | FAIL: returned candidates | PASS: no matches |
 | A legitimate request to connect a broker and place approved orders | PASS: metadata is retrievable, not dispatchable | PASS: preserved |
 | Prohibited broker action followed by affirmative third-party skill audit | FAIL: wrong skill first | PASS: audit skill first |
 
-The implementation strips bounded **explicit negative clauses** only from query relevance scoring. It does not edit descriptions, metadata or the allowlisted execution registry. It is a lexical heuristic, not a comprehensive semantic intent model.
+The implementation strips bounded **explicit negative clauses** from relevance scoring, preserves affirmative tasks joined by `but`, `and then`, `instead` and punctuation, and excludes skill names that match uniquely negated terms. It preserves explicit positive requests to inspect broker integrations. It does not edit descriptions, metadata or the allowlisted execution registry. It is a lexical heuristic, not a comprehensive semantic intent model.
 
 **Observed evidence:** [Agent Core Plugin Gates #125](https://github.com/Shards-foundation/shards-skills/actions/runs/43312209442), commit `16933ea4c6ae4d7207cead4cf274243fd0d172b8`: **182 tests, OK**. [Agent Skill Adoption Evidence #21](https://github.com/Shards-foundation/shards-skills/actions/runs/43312209565): **10 tests, OK**, and the governed first-party repository-health skill smoke executed successfully.
 
@@ -50,7 +50,7 @@ The implementation strips bounded **explicit negative clauses** only from query 
 1. **Positive intent:** `trader-broker` remains discoverable when explicitly requested; its `execution: not-dispatchable` flag remains unchanged.
 2. **Negative intent:** `don't`, `do not`, `never`, and `without` clauses are excluded from relevance scoring, bounded by punctuation. A negative-only request produces no recommendation.
 3. **Trust boundary:** This change is metadata-only; it does not launch scripts, connect external accounts, trade, or infer execution authority from a descriptor.
-4. **Critical distinction discovered in verification:** broad lexical ranking still contains some weakly related results, including `trader-broker`, far below the user-facing shortlist. The relevant acceptance criterion is no prohibited skill **in the top-ten recommendations**, not an impossibly broad claim of no token overlap anywhere.
+4. **Critical issue found by the repository's automatic reviewers:** hiding a broker skill below the default top-ten results was insufficient; a larger `--limit` or `--category finance` could resurface it. The implementation now excludes that skill name for the observed prohibited request, and additional tests cover conjunctions and filtered searches.
 5. **Residual limitations:** quoted negation, nested clauses and long/implicit prohibitions are not fully understood by regex; positive intent, negative intent and relevance are not guaranteed to be semantically correct. Shards-authored skills can still rank behind imported catalogue entries.
 
 **Judgement:** The code-review procedure identified a real over-broad assertion in the first test, prevented an unsupported blanket safety claim, and retained regression coverage. No independent reviewer or blinded A/B control evaluated the procedure's incremental benefit.
@@ -61,7 +61,7 @@ The implementation strips bounded **explicit negative clauses** only from query 
 | --- | --- |
 | Real checkout baseline failure | **Reproduced in GitHub Actions** |
 | Fix applied in same PR | **Yes** |
-| Regression testing | **4 focused scenarios pass** |
+| Regression testing | **7 focused test methods pass** |
 | Full unit suite at tested code head | **182/182 pass** |
 | Existing adoption smoke (local CI host) | **PASS** |
 | External host autonomously choosing original skills | **NOT TESTED** |

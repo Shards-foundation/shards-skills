@@ -333,6 +333,13 @@ class PortableSkillTests(unittest.TestCase):
         errors, _ = pack.audit_skill(self.base / "alias" / "demo-skill")
         self.assertEqual(errors, [])
 
+    def test_external_uppercase_schemes_do_not_fail_link_audit(self):
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   "\n[website](HTTPS://example.com/scripts/tool.js)\n"
+                                   "[resource]: MAILTO:hello@example.com\n"
+                                   '<a href="HTTP://example.com/references/guide.md">site</a>\n')
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
     def test_existing_shards_problem_framing_is_self_contained(self):
         errors, files = pack.audit_skill(ROOT / "skills" / "problem-framing")
         self.assertEqual(errors, [])

@@ -230,7 +230,8 @@ def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
     files: list[Path] = []
     if folder.is_symlink() or not folder.is_dir():
         return ["skill root is missing, not a directory or is a symlink"], files
-    root = folder.resolve()
+    folder = folder.resolve()  # canonicalise symlinked parent directories
+    root = folder
     if not _safe_archive_name(Path(folder.name)):
         errors.append("unsafe cross-platform skill directory name")
     descriptor = folder / "SKILL.md"
@@ -273,9 +274,9 @@ def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
             errors.append(f"case-insensitive or Unicode-normalized member collision: {relative_name}")
         names_seen.add(normalized)
     if len(files) > MAX_FILES:
-        errors.append(f"package exceeds {MAX_FILES} files")
+        return [f"package exceeds {MAX_FILES} files"], files
     if sum(p.stat().st_size for p in files) > MAX_BYTES:
-        errors.append(f"package exceeds {MAX_BYTES} bytes")
+        return [f"package exceeds {MAX_BYTES} bytes"], files
 
     # Read all packaged Markdown, including nested references, not just SKILL.md.
     for file in files:
@@ -286,37 +287,21 @@ def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
         except (OSError, UnicodeError):
             errors.append(f"undecodable packaged Markdown: {file.relative_to(root)}")
             continue
-        for raw in (
-            LINKS.findall(markdown)
-            + REFERENCE_LINKS.findall(markdown)
-            + HTML_LINKS.findall(markdown)
-        ):
-            link = raw.split("#", 1)[0].strip()
-            if not link:
-                continue
-            if link.startswith(("https://", "http://", "mailto:")):
-                continue
-            if (re.match(r"^[a-z][a-z0-9+.-]*:", link, re.I) or
-                    link.startswith("//") or
-                    "%" in link or
-                    (" " in link and not (file.parent / link).exists())):
-                errors.append(f"unsupported or ambiguous local link: {raw}")
-                continue
-            target = (file.parent / link).resolve()
-            if not target.is_relative_to(root):
-                errors.append(f"out-of-package link: {raw}")
-            elif not target.exists() or (file.parent / link).is_symlink():
-                errors.append(f"missing or symlinked package link: {raw}")
-        # Include ../scripts, ./scripts and bare repo-root references.
-        scrubbed = EXTERNAL_URLS.sub("", markdown)
-        # Markdown/HTML link destinations were already checked relative to the
-        # containing Markdown file; avoid resolving them again from the root.
-        scrubbed = LINKS.sub("", scrubbed)
-        scrubbed = HTML_LINKS.sub("", scrubbed)
-        scrubbed = REFERENCE_LINKS.sub("", scrubbed)
-        for ref in sorted(set(PATHS.findall(scrubbed))):
-            # Bare scripts/ and references/ paths are specified relative to
-            # SKILL.md root, while ./ or ../ are relative to the Markdown file.
+        inline, inline_spans = _inline_destinations(markdown)
+        references, reference_spans = _reference_destinations(markdown)
+        html = list(HTML_LINKS.finditer(markdown))
+        for raw in inline + references + [m.group(1) for m in html]:
+            finding = _validate_target(raw, file, root)
+            if finding:
+                errors.append(finding)
+        scrubbed = list(markdown)
+        for start, end in inline_spans + reference_spans:
+            scrubbed[start:end] = " " * (end - start)
+        for m in html:
+            start, end = m.span()
+            scrubbed[start:end] = " " * (end - start)
+        clean = EXTERNAL_URLS.sub("", "".join(scrubbed))
+        for ref in sorted(set(PATHS.findall(clean))):
             explicit_relative = ref.startswith(("./", "../"))
             candidate = (file.parent if explicit_relative else root) / ref
             target = candidate.resolve()

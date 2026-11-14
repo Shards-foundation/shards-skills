@@ -55,7 +55,10 @@ jobs:
           mkdir -p dist
           python scripts/build_portable_security_skill.py --zip dist/shards-sec-ai-agent-boundaries.zip
           sha256sum dist/shards-sec-ai-agent-boundaries.zip
-      - name: Publish reviewable ZIP
+      # PRs execute the same acceptance tests but do not publish an installable
+      # artifact. Only the reviewed, landed main branch may distribute it.
+      - name: Publish trusted main-branch ZIP
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: portable-manus-skill

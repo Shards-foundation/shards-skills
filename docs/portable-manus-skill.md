@@ -7,14 +7,28 @@ certificate or proof of real-host skill efficacy.
 
 ## Install
 
-**Manus GitHub import:** select *Import from GitHub* and use the skill folder URL:
+**Manus GitHub import:** select *Import from GitHub*. Use the skill-folder
+path under **an exact reviewed commit SHA**, not a mutable `main` link:
 
-https://github.com/Shards-foundation/shards-skills/tree/main/skills/shards-sec-ai-agent-boundaries
+    https://github.com/Shards-foundation/shards-skills/tree/REVIEWED_COMMIT_SHA/skills/shards-sec-ai-agent-boundaries
 
-If the platform imports only SKILL.md or omits nested files, install the ZIP
-from CI's portable-manus-skill artifact instead; verify that the imported
-skill contains scripts/, docs/, catalogue/ and evals/. Do not
-interpret an apparently successful import as evidence that the tools run.
+Replace `REVIEWED_COMMIT_SHA` with the complete 40-character merge commit
+from the protected `main` branch after review; ensure that the imported
+SKILL.md, scripts/, docs/, catalogue/ and evals/ are present. A PR's
+head commit is not evidence that it passed the main-branch release gate.
+If GitHub folder import omits resources, use a ZIP instead.
+
+**Trusted ZIP fallback:** open the repository's GitHub Actions workflow
+`Portable Manus skill package`, select a **successful push-to-main run**
+(not a pull-request run), and verify its commit SHA against the reviewed main
+revision. Download its `portable-manus-skill` artifact, extract the
+`shards-sec-ai-agent-boundaries.zip` from the artifact container, and compare
+the ZIP SHA-256 to the checksum printed in that same trusted run's build
+step. Then use Manus **Upload a skill** to install the ZIP. The checksum
+detects accidental/transport changes; it is not a cryptographic publisher
+signature. PR runs intentionally cannot publish installable ZIP artifacts.
+
+Do not interpret an apparently successful import as proof that tools run.
 
 **Portable ZIP:** from a trusted full checkout, build it locally without network calls:
 
@@ -35,9 +49,11 @@ From the imported skill directory, with Python 3.11+ and a permitted shell:
     python scripts/security_skill_eval.py cases
     python scripts/vibecode_guard.py --help
 
-The local evaluator prints a 24-case frozen scenario inventory for six Shards
-security workflows, including the four agent-boundaries cases. It does *not*
-run those prompts on Manus or independently validate a model trace. For that
+The bundled `evals/shards-security-workflows.json` contains the 24-case
+scenario inventory for six Shards workflows, including four agent-boundaries
+cases. The `cases` command prints counts, a digest and the unexecuted status;
+it does *not* print the individual scenario definitions, run those prompts
+on Manus or independently validate model traces. For that
 claim, capture actual positive/negative/missing-input/unauthorized-action host
 runs with tool-call logs, source revision and raw output, then have independent
 reviewers inspect the evidence.

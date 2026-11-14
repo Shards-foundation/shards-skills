@@ -41,7 +41,7 @@ negative, missing-input and unauthorised-action cases from
 Capture the real model response and external tool-action evidence with the exact
 case-set hash. The local `scripts/security_skill_eval.py` scorer checks only
 receipt structure; independent assessment of the raw host trace is required.
-The bundled fixture spans 24 cases for six Shards security skills, including the four agent-boundary cases. The evaluator only checks operator-supplied receipt structure; it cannot execute model tests or authenticate tool traces. Do not claim real-host behavioural evaluation without a captured original host trace.
+These cases have **not yet been executed on a real agent host** as part of this portable-package acceptance. The bundled fixture spans 24 cases for six Shards security skills, including the four agent-boundary cases. The evaluator only checks operator-supplied receipt structure; it cannot execute model tests or authenticate tool traces. Do not claim real-host behavioural evaluation without a captured original host trace.
 
 ## Failure handling
 On conflicting evidence, uncertain legal applicability, unapproved effects or stale controls, return BLOCKED with the precise missing input. Never down-classify a critical failure to an informational comment.

@@ -92,7 +92,11 @@ jobs:
               echo "BLOCKED: missing installed skill at $dir"; exit 1;
             }
             grep -q '^name: systematic-debugging' "$dir/systematic-debugging/SKILL.md"
-            echo "PASS separate-project install: $dir"
+            INSTALLED_HASH=$(sha256sum "$dir/systematic-debugging/SKILL.md" | cut -d' ' -f1)
+            test "$SOURCE_HASH" = "$INSTALLED_HASH" || {
+              echo "BLOCKED: installed content differs from source at $dir"; exit 1;
+            }
+            echo "PASS verified byte-identical installed skill: $dir"
           done
           # OpenClaw's skills/ location must be NEW, not source checkout.
           test "$TARGET" != "$GITHUB_WORKSPACE"
@@ -100,6 +104,32 @@ jobs:
           test -f skills-lock.json
           test "$SOURCE_HASH" = "$(sha256sum "$GITHUB_WORKSPACE/skills/systematic-debugging/SKILL.md" | cut -d' ' -f1)"
           git -C "$GITHUB_WORKSPACE" diff --exit-code -- skills/systematic-debugging/SKILL.md
+
+      - name: Build and verify standalone ZIP and install extracted skill
+        run: |
+          mkdir -p "$RUNNER_TEMP/zip-artifacts" "$RUNNER_TEMP/zip-extracted" "$RUNNER_TEMP/zip-install-smoke"
+          python scripts/package_agent_skill.py --skill systematic-debugging --out-dir "$RUNNER_TEMP/zip-artifacts"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import zipfile
+          base = pathlib.Path(os.environ["RUNNER_TEMP"])
+          archive = base / "zip-artifacts/systematic-debugging.zip"
+          receipt = json.loads((base / "zip-artifacts/systematic-debugging.receipt.json").read_text())
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == receipt["sha256"]
+          with zipfile.ZipFile(archive) as z:
+              assert z.testzip() is None
+              assert "systematic-debugging/SKILL.md" in z.namelist()
+              z.extractall(base / "zip-extracted")
+          src = pathlib.Path(os.environ["GITHUB_WORKSPACE"]) / "skills/systematic-debugging/SKILL.md"
+          extracted = base / "zip-extracted/systematic-debugging/SKILL.md"
+          assert extracted.read_bytes() == src.read_bytes()
+          PY
+          cd "$RUNNER_TEMP/zip-install-smoke"
+          "$RUNNER_TEMP/shards-skills-cli/node_modules/.bin/skills" add "$RUNNER_TEMP/zip-extracted/systematic-debugging" -a codex --copy -y
+          cmp "$GITHUB_WORKSPACE/skills/systematic-debugging/SKILL.md" ".agents/skills/systematic-debugging/SKILL.md"
 
   export:
     if: github.event_name == 'workflow_dispatch'

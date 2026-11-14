@@ -1,0 +1,74 @@
+name: Portable Agent Skills ZIP
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/package_agent_skill.py'
+      - 'tests/test_portable_skill_export.py'
+      - '.github/workflows/portable-agent-skills.yml'
+      - 'docs/portable-agent-skills.md'
+  workflow_dispatch:
+    inputs:
+      skill:
+        description: Select a verified self-contained, instruction-only Shards skill to package
+        required: true
+        type: choice
+        options:
+          - problem-framing
+          - implementation-planning
+          - systematic-debugging
+          - test-driven-development
+          - code-review
+          - secure-code-review
+          - evidence-based-research
+
+permissions:
+  contents: read
+
+jobs:
+  portability-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run offline portability unit tests
+        run: python -m unittest discover -s tests -p 'test_portable_skill_export.py' -v
+      - name: Verify selected first-party instruction packages
+        run: |
+          for skill in problem-framing implementation-planning systematic-debugging test-driven-development code-review secure-code-review evidence-based-research; do
+            python scripts/package_agent_skill.py --skill "$skill" --check
+          done
+
+  export:
+    if: github.event_name == 'workflow_dispatch'
+    needs: portability-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build self-contained ZIP with integrity receipt
+        env:
+          SKILL_NAME: ${{ inputs.skill }}
+        run: |
+          case "$SKILL_NAME" in
+            problem-framing|implementation-planning|systematic-debugging|test-driven-development|code-review|secure-code-review|evidence-based-research) ;;
+            *) echo "BLOCKED: skill not in reviewed export selection"; exit 2 ;;
+          esac
+          python scripts/package_agent_skill.py --skill "$SKILL_NAME" --out-dir dist/portable-skills
+      - name: Upload ZIP and sha256 receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: shards-portable-skill
+          path: dist/portable-skills/
+          if-no-files-found: error
+          retention-days: 7

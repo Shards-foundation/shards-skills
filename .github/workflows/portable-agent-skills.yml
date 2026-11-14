@@ -44,6 +44,47 @@ jobs:
             python scripts/package_agent_skill.py --skill "$skill" --check
           done
 
+  installer-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      DISABLE_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
+      - name: Install pinned official skills CLI without lifecycle scripts
+        run: |
+          mkdir -p "$RUNNER_TEMP/shards-skills-cli"
+          npm install --ignore-scripts --no-save --prefix "$RUNNER_TEMP/shards-skills-cli" skills@1.8.1
+      - name: Copy first-party skill into all documented project client directories
+        run: |
+          "$RUNNER_TEMP/shards-skills-cli/node_modules/.bin/skills" add ./skills/systematic-debugging \
+            -a codex -a claude-code -a cursor -a minimax-code -a mistral-vibe \
+            -a grok -a replit -a openclaw -a hermes-agent -a kimi-code-cli \
+            -a devin --copy -y
+          for dir in \
+            .agents/skills \
+            .claude/skills \
+            .minimax/skills \
+            .vibe/skills \
+            .grok/skills \
+            skills \
+            .hermes/skills \
+            .devin/skills; do
+            test -f "$dir/systematic-debugging/SKILL.md" || {
+              echo "BLOCKED: missing installed skill at $dir"; exit 1;
+            }
+            grep -q '^name: systematic-debugging' "$dir/systematic-debugging/SKILL.md"
+          done
+      - name: Validate installer receipt and no source alteration
+        run: |
+          test -f skills-lock.json
+          git diff --exit-code -- skills/systematic-debugging/SKILL.md
+
   export:
     if: github.event_name == 'workflow_dispatch'
     needs: portability-tests

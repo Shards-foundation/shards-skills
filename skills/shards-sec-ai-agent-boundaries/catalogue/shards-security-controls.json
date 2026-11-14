@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "name": "Shards Foundation Security Assurance Controls",
+  "status": "draft",
+  "scope_note": "Defensive reference controls. Not regulatory certification. Applicability requires operator and legal assessment.",
+  "profiles": [
+    "base",
+    "web",
+    "ai",
+    "crypto",
+    "fintech",
+    "cloud",
+    "privacy",
+    "governance"
+  ],
+  "controls": [
+    {
+      "id": "GOV-01",
+      "profile": "base",
+      "title": "Asset ownership and authorised scope",
+      "severity": "high",
+      "evidence": "Owner and scope record",
+      "framework": "NIST-CSF-GV"
+    },
+    {
+      "id": "GOV-02",
+      "profile": "base",
+      "title": "Risk register, review and decision owner",
+      "severity": "high",
+      "evidence": "Dated risks with treatment decisions",
+      "framework": "NIST-CSF-GV"
+    },
+    {
+      "id": "ID-01",
+      "profile": "base",
+      "title": "Asset and service inventory",
+      "severity": "high",
+      "evidence": "Inventory with environment and revision",
+      "framework": "NIST-CSF-ID"
+    },
+    {
+      "id": "ID-02",
+      "profile": "base",
+      "title": "Data flows, data classification and boundaries",
+      "severity": "high",
+      "evidence": "Flow map of users, data and suppliers",
+      "framework": "NIST-CSF-ID"
+    },
+    {
+      "id": "PR-01",
+      "profile": "base",
+      "title": "Privileged MFA and identity lifecycle",
+      "severity": "critical",
+      "evidence": "MFA, deprovision and break-glass test evidence",
+      "framework": "NIST-CSF-PR"
+    },
+    {
+      "id": "PR-02",
+      "profile": "base",
+      "title": "Server-side least-privilege access control",
+      "severity": "critical",
+      "evidence": "Negative authorisation tests per role",
+      "framework": "OWASP-ASVS-5"
+    },
+    {
+      "id": "PR-03",
+      "profile": "base",
+      "title": "Secrets isolation and lifecycle",
+      "severity": "critical",
+      "evidence": "Redacted inventory, scopes and rotation test",
+      "framework": "NIST-SSDF-1.1"
+    },
+    {
+      "id": "PR-04",
+      "profile": "base",
+      "title": "Encryption and key stewardship",
+      "severity": "high",
+      "evidence": "Encryption configuration and access evidence",
+      "framework": "NIST-CSF-PR"
+    },
+    {
+      "id": "DE-01",
+      "profile": "base",
+      "title": "Security event auditability and alert response",
+      "severity": "high",
+      "evidence": "Redacted audit events and responder test",
+      "framework": "NIST-CSF-DE"
+    },
+    {
+      "id": "RS-01",
+      "profile": "base",
+      "title": "Incident plan, containment authority and contacts",
+      "severity": "high",
+      "evidence": "Tabletop or response drill report",
+      "framework": "NIST-CSF-RS"
+    },
+    {
+      "id": "RC-01",
+      "profile": "base",
+      "title": "Backup restoration and continuity validation",
+      "severity": "high",
+      "evidence": "Measured restoration with data integrity results",
+      "framework": "NIST-CSF-RC"
+    },
+    {
+      "id": "WEB-01",
+      "profile": "web",
+      "title": "Broken object-level authorisation negative cases",
+      "severity": "critical",
+      "evidence": "Two-tenant IDOR and direct object denial tests",
+      "framework": "OWASP-ASVS-5"
+    },
+    {
+      "id": "WEB-02",
+      "profile": "web",
+      "title": "Input validation, encoding and safe uploads",
+      "severity": "high",
+      "evidence": "Endpoint and file handling security tests",
+      "framework": "OWASP-ASVS-5"
+    },
+    {
+      "id": "WEB-03",
+      "profile": "web",
+      "title": "Session, CSRF and token lifecycle",
+      "severity": "high",
+      "evidence": "Session expiry/revocation and cookie tests",
+      "framework": "OWASP-ASVS-5"
+    },
+    {
+      "id": "WEB-04",
+      "profile": "web",
+      "title": "Rate limits, replay protection and webhook signatures",
+      "severity": "critical",
+      "evidence": "Replay tests and idempotency receipts",
+      "framework": "OWASP-ASVS-5"
+    },
+    {
+      "id": "WEB-05",
+      "profile": "web",
+      "title": "Dependency and component risk checks",
+      "severity": "high",
+      "evidence": "Pinned dependencies and triaged advisories",
+      "framework": "NIST-SSDF-1.1"
+    },
+    {
+      "id": "AI-01",
+      "profile": "ai",
+      "title": "Tool-to-action least privilege and allowlists",
+      "severity": "critical",
+      "evidence": "Host-enforced tool/parameter permission matrix",
+      "framework": "OWASP-AGENTIC-2026"
+    },
+    {
+      "id": "AI-02",
+      "profile": "ai",
+      "title": "Untrusted instructions and prompt-injection boundaries",
+      "severity": "critical",
+      "evidence": "Safe injection tests with denial receipts",
+      "framework": "OWASP-AGENTIC-2026"
+    },
+    {
+      "id": "AI-03",
+      "profile": "ai",
+      "title": "Effectful action human approval and revocation",
+      "severity": "critical",
+      "evidence": "Out-of-model approval and revocation test",
+      "framework": "OWASP-AGENTIC-2026"
+    },
+    {
+      "id": "AI-04",
+      "profile": "ai",
+      "title": "Agent identity and cross-agent isolation",
+      "severity": "high",
+      "evidence": "Distinct identity/tenant test evidence",
+      "framework": "OWASP-AGENTIC-2026"
+    },
+    {
+      "id": "AI-05",
+      "profile": "ai",
+      "title": "Auditable action and failure reconciliation",
+      "severity": "high",
+      "evidence": "Tool receipts, failure and retry tests",
+      "framework": "NIST-CSF-GV"
+    },
+    {
+      "id": "CRY-01",
+      "profile": "crypto",
+      "title": "Signer custody, recovery and key compromise",
+      "severity": "critical",
+      "evidence": "Signer policy and recovery exercise",
+      "framework": "NIST-CSF-PR"
+    },
+    {
+      "id": "CRY-02",
+      "profile": "crypto",
+      "title": "Chain, destination, value and calldata binding",
+      "severity": "critical",
+      "evidence": "Wrong-chain and address substitution denial tests",
+      "framework": "OWASP-SC"
+    },
+    {
+      "id": "CRY-03",
+      "profile": "crypto",
+      "title": "Contract authority and invariant assurance",
+      "severity": "critical",
+      "evidence": "Invariant/fuzz and role-access test outcomes",
+      "framework": "OWASP-SC"
+    },
+    {
+      "id": "CRY-04",
+      "profile": "crypto",
+      "title": "Oracle, bridge and financial mechanism stress cases",
+      "severity": "high",
+      "evidence": "Adversarial oracle and liquidation simulations",
+      "framework": "OWASP-SC"
+    },
+    {
+      "id": "CRY-05",
+      "profile": "crypto",
+      "title": "Upgrades, pause, timelock and governance protection",
+      "severity": "high",
+      "evidence": "Upgrade/freeze rehearsals and role separation",
+      "framework": "OWASP-SC"
+    },
+    {
+      "id": "CRY-06",
+      "profile": "crypto",
+      "title": "Treasury accounting and reconciliation",
+      "severity": "critical",
+      "evidence": "Independent on-chain/accounting reconciliation",
+      "framework": "NIST-CSF-ID"
+    },
+    {
+      "id": "FIN-01",
+      "profile": "fintech",
+      "title": "Transaction authorisation and beneficiary integrity",
+      "severity": "critical",
+      "evidence": "Authorised transfer and tampered instruction tests",
+      "framework": "NIST-CSF-PR"
+    },
+    {
+      "id": "FIN-02",
+      "profile": "fintech",
+      "title": "Idempotent settlements and independently reconciled ledgers",
+      "severity": "critical",
+      "evidence": "Duplicate/partial-failure reconciliation tests",
+      "framework": "NIST-CSF-RC"
+    },
+    {
+      "id": "FIN-03",
+      "profile": "fintech",
+      "title": "Fraud monitoring and customer escalation",
+      "severity": "high",
+      "evidence": "Synthetic alert and case lifecycle tests",
+      "framework": "NIST-CSF-DE"
+    },
+    {
+      "id": "FIN-04",
+      "profile": "fintech",
+      "title": "Licensing and regulator applicability assessment",
+      "severity": "critical",
+      "evidence": "Dated legal perimeter assessment and signoff",
+      "framework": "DORA-MICA-FATF"
+    },
+    {
+      "id": "FIN-05",
+      "profile": "fintech",
+      "title": "AML/CFT and sanctions applicability triage",
+      "severity": "high",
+      "evidence": "Jurisdiction-specific compliance owner and procedure",
+      "framework": "FATF-R15"
+    },
+    {
+      "id": "CLD-01",
+      "profile": "cloud",
+      "title": "Cloud IAM, networks and data store isolation",
+      "severity": "critical",
+      "evidence": "Denied access and private-network evidence",
+      "framework": "NIST-CSF-PR"
+    },
+    {
+      "id": "CLD-02",
+      "profile": "cloud",
+      "title": "CI workload identity and least-privilege tokens",
+      "severity": "high",
+      "evidence": "OIDC and permission reviews",
+      "framework": "NIST-SSDF-1.1"
+    },
+    {
+      "id": "CLD-03",
+      "profile": "cloud",
+      "title": "Build provenance, SBOM and dependency pinning",
+      "severity": "high",
+      "evidence": "Pinned image/build source plus inventory",
+      "framework": "NIST-SSDF-1.1"
+    },
+    {
+      "id": "CLD-04",
+      "profile": "cloud",
+      "title": "Environment separation and secrets boundaries",
+      "severity": "critical",
+      "evidence": "Staging/production isolation tests",
+      "framework": "NIST-CSF-PR"
+    },
+    {
+      "id": "CLD-05",
+      "profile": "cloud",
+      "title": "Drift, patching and incident monitoring",
+      "severity": "high",
+      "evidence": "Drift sample and patch SLA evidence",
+      "framework": "NIST-CSF-DE"
+    },
+    {
+      "id": "PRI-01",
+      "profile": "privacy",
+      "title": "Controller/processor roles and personal data inventory",
+      "severity": "high",
+      "evidence": "Data inventory and processing purposes",
+      "framework": "ICO-DPIA"
+    },
+    {
+      "id": "PRI-02",
+      "profile": "privacy",
+      "title": "DPIA screening and high-risk assessment",
+      "severity": "high",
+      "evidence": "Dated screening and DPO signoff where relevant",
+      "framework": "ICO-DPIA"
+    },
+    {
+      "id": "PRI-03",
+      "profile": "privacy",
+      "title": "Retention, rights and deletion mechanisms",
+      "severity": "high",
+      "evidence": "Retention schedule and rights request test",
+      "framework": "ICO-DPIA"
+    },
+    {
+      "id": "PRI-04",
+      "profile": "privacy",
+      "title": "Breach and transfer assessment",
+      "severity": "high",
+      "evidence": "Processor and transfer inventory, incident procedure",
+      "framework": "ICO-DPIA"
+    },
+    {
+      "id": "POL-01",
+      "profile": "governance",
+      "title": "Approved and versioned security policies",
+      "severity": "high",
+      "evidence": "Approver, version and review schedule",
+      "framework": "NIST-CSF-GV"
+    },
+    {
+      "id": "POL-02",
+      "profile": "governance",
+      "title": "Governed third-party services",
+      "severity": "high",
+      "evidence": "Vendor due diligence and exit evidence",
+      "framework": "NIST-CSF-GV"
+    },
+    {
+      "id": "POL-03",
+      "profile": "governance",
+      "title": "Jurisdiction review with authoritative sources",
+      "severity": "critical",
+      "evidence": "Legal entity/activity matrix and signed applicability",
+      "framework": "DORA-MICA-FATF"
+    },
+    {
+      "id": "POL-04",
+      "profile": "governance",
+      "title": "Control exception expiry and independent review",
+      "severity": "high",
+      "evidence": "Exception owner, rationale and expiry date",
+      "framework": "NIST-CSF-GV"
+    }
+  ]
+}

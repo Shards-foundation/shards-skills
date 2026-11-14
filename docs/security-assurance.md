@@ -4,7 +4,7 @@ Status: **first-party draft workflow**. This is an offline, read-only, dependenc
 
 ## First 60 seconds
 
-From the Shards Skills repository root:
+From either the Shards Skills repository root or a self-contained imported skill directory containing these scripts:
 
 ```bash
 python scripts/security_assurance.py list
@@ -20,11 +20,11 @@ Before assessing, review system ownership, authorisation, target revision, envir
 For an **owned Git checkout**, the Shards vibe-coding gate can run a conservative local heuristic:
 
 ```bash
-python scripts/vibecode_guard.py --repo .
-python scripts/vibecode_guard.py --repo . --output local-preflight.json
+python scripts/vibecode_guard.py --repo /path/to/owned-git-checkout
+python scripts/vibecode_guard.py --repo /path/to/owned-git-checkout --output local-preflight.json
 ```
 
-The preflight enumerates tracked files and reads bounded source text without running application code, installing packages, sending network requests, scanning websites or printing matched code/secrets. It flags selected patterns such as tracked .env/key files, disabled TLS checks, dynamic evaluation, unsafe YAML loaders, overly broad CI permissions, public CORS indicators and permissive row policies. Findings contain **rule IDs, file paths, line numbers and remediation hints**, never source snippets. Each finding requires human verification; legitimate code may be flagged. A clear result is only `CLEAR_HEURISTICS_ONLY`, never SAFE. Exit status 0 means no heuristic findings; 1 means warnings; 2 means tool blocked.
+The preflight enumerates tracked files and reads bounded source text without running application code, installing packages, sending network requests, scanning websites or printing matched code/secrets. It flags selected patterns such as tracked .env/key files, TLS certificate verification configured off (rule TLS-VERIFY-DISABLED), dynamic evaluation, unsafe YAML loaders, overly broad CI permissions, public CORS indicators and permissive row policies. Findings contain **rule IDs, file paths, line numbers and remediation hints**, never source snippets. Each finding requires human verification; legitimate code may be flagged. A clear result is only `CLEAR_HEURISTICS_ONLY`, never SAFE. Exit status 0 means no heuristic findings; 1 means warnings; 2 means tool blocked.
 
 This is intentionally narrower than a true static-analysis pipeline, dynamic scan or penetration test. For sensitive products add reviewed tooling, API/authorization negative tests, cloud controls and specialist review. Do not point it at a codebase you do not have permission to inspect.
 
@@ -156,7 +156,7 @@ Human-readable PASS means a *specific test passed*; it is not a declaration that
 ## Safety and trust boundaries
 
 - The 45-control register is `catalogue/shards-security-controls.json`; every report pins its SHA-256 digest to help detect version drift. Registry contents are not legal requirements or authoritative audit conclusions.
-- The security skills in `skills/shards-sec-*/SKILL.md` are **instructions**. They neither install a scanner nor grant permissions. They must run only inside the permissions of the host.
+- Security skill instructions are located at `skills/shards-sec-*/SKILL.md` in the full source repository, or at `SKILL.md` in an imported standalone skill. They neither grant permissions nor install an agent sandbox; they must run only inside the permissions of the host.
 - Assessment input is untrusted; keep it below 1 MB. The CLI rejects direct symlink inputs, unusually shaped fields, common key formats and credentials in short text fields, but these are not complete secret detection safeguards.
 - No external scanning, vulnerability exploitation, financial transaction or live-wallet signing occurs.
 - A risk reviewer must validate that each evidence reference resolves to a real artifact and that the artifact proves the control in this exact environment and date.

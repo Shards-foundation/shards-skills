@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,7 +62,7 @@ class PortableSkillTests(unittest.TestCase):
             outside = work / "outside"
             source.rename(outside)
             source.symlink_to(outside, target_is_directory=True)
-            with self.assertRaisesRegex(ValueError, "symlinked path component"):
+            with self.assertRaisesRegex(ValueError, "symlinked"):
                 portable.verify(work)
             with self.assertRaisesRegex(ValueError, "symlinked path component"):
                 portable.sync(work)
@@ -87,9 +88,52 @@ class PortableSkillTests(unittest.TestCase):
             self.assertEqual(portable.verify(work)[portable.SOURCES[1]],
                              hashlib.sha256((work / portable.SOURCES[1]).read_bytes()).hexdigest())
 
+    def test_no_overwrite_existing_output_or_bundle_input(self):
+        with tempfile.TemporaryDirectory() as location:
+            output = Path(location).resolve() / "existing.zip"
+            output.write_bytes(b"keep-existing-file")
+            with self.assertRaises(FileExistsError):
+                portable.build_zip(ROOT, output)
+            self.assertEqual(output.read_bytes(), b"keep-existing-file")
+            source = ROOT / "skills" / portable.NAME / "SKILL.md"
+            before = source.read_bytes()
+            with self.assertRaises(FileExistsError):
+                portable.build_zip(ROOT, source)
+            self.assertEqual(source.read_bytes(), before)
+
+    def test_unlisted_skill_files_and_links_fail_closed(self):
+        with tempfile.TemporaryDirectory() as location:
+            work = Path(location).resolve()
+            self._stage(work)
+            rogue = work / "skills" / portable.NAME / "unexpected.txt"
+            rogue.write_text("not reviewed")
+            with self.assertRaisesRegex(ValueError, "Unexpected"):
+                portable.verify(work)
+            rogue.unlink()
+            skill = work / "skills" / portable.NAME / "SKILL.md"
+            skill.write_text(skill.read_text() + "\n[Missing](docs/not-present.md)\n")
+            with self.assertRaisesRegex(ValueError, "Missing or external"):
+                portable.verify(work)
+
+    def test_input_change_between_verify_and_stage_blocks_without_output(self):
+        with tempfile.TemporaryDirectory() as location:
+            work = Path(location).resolve()
+            self._stage(work)
+            output = work / "attempt.zip"
+            original_verify = portable.verify
+            def changed_after_verify(root):
+                hashes = original_verify(root)
+                destination = work / "skills" / portable.NAME / portable.SOURCES[0]
+                destination.write_bytes(b"modified-after-verification")
+                return hashes
+            with patch.object(portable, "verify", side_effect=changed_after_verify):
+                with self.assertRaisesRegex(ValueError, "Changed skill input"):
+                    portable.build_zip(work, output)
+            self.assertFalse(output.exists())
+
     def test_zip_is_deterministic_and_manifest_matches_files(self):
         with tempfile.TemporaryDirectory() as location:
-            a, b = Path(location) / "a.zip", Path(location) / "b.zip"
+            a, b = Path(location).resolve() / "a.zip", Path(location).resolve() / "b.zip"
             portable.build_zip(ROOT, a)
             portable.build_zip(ROOT, b)
             self.assertEqual(a.read_bytes(), b.read_bytes())

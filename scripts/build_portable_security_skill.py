@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import zipfile
 from pathlib import Path
@@ -40,8 +41,23 @@ def verify(root: Path) -> dict[str, str]:
     header = checked_file(skill / "SKILL.md")
     if not header.startswith(b"---\nname: shards-sec-ai-agent-boundaries\n"):
         raise ValueError("Unexpected SKILL.md header")
-    if b"../../evals/" in header:
-        raise ValueError("SKILL.md still references a resource outside its bundle")
+    if b"../" in header:
+        raise ValueError("SKILL.md contains out-of-bundle parent-directory reference")
+    # Check every local Markdown file link used by this skill, not just one path.
+    for target in re.findall(rb"\]\(([^)#?]+)(?:[?#][^)]*)?\)", header):
+        if b"://" in target or target.startswith((b"mailto:", b"#")):
+            continue
+        reference = target.decode("utf-8")
+        if reference.startswith("/") or not (skill / reference).is_file():
+            raise ValueError(f"Missing or external SKILL.md reference: {reference}")
+    allowed = {"SKILL.md", *SOURCES}
+    allowed_dirs = {str(Path(item).parent) for item in SOURCES}
+    for item in skill.rglob("*"):
+        relative = item.relative_to(skill).as_posix()
+        if item.is_symlink() or (item.is_dir() and relative not in allowed_dirs) or (item.is_file() and relative not in allowed):
+            raise ValueError(f"Unexpected or symlinked skill folder entry: {relative}")
+        if not item.is_dir() and not item.is_file():
+            raise ValueError(f"Unsupported skill folder entry: {relative}")
     if b"python scripts/security_assurance.py" not in header:
         raise ValueError("SKILL.md omits the local plan entry point")
     output = {"SKILL.md": hashlib.sha256(header).hexdigest()}
@@ -71,15 +87,26 @@ def build_zip(root: Path, target: Path) -> dict[str, str]:
     if not target.parent.is_dir():
         raise ValueError("ZIP output directory does not exist")
     files = ("SKILL.md",) + SOURCES
+    # Stage verified bytes before opening the output. Abort if inputs changed
+    # after the source-vs-bundle check; never emit a mismatched manifest.
+    staged = {}
+    for relative in files:
+        data = checked_file(root / "skills" / NAME / relative)
+        if hashlib.sha256(data).hexdigest() != hashes[relative]:
+            raise ValueError(f"Changed skill input during packaging: {relative}")
+        staged[relative] = data
     manifest = json.dumps({"schema_version": 1, "name": NAME, "file_sha256": hashes,
                            "host_traces_verified": False}, indent=2, sort_keys=True).encode() + b"\n"
-    with zipfile.ZipFile(target, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for relative in (*files, "MANIFEST.json"):
-            entry = zipfile.ZipInfo(NAME + "/" + relative, date_time=(1980, 1, 1, 0, 0, 0))
-            entry.compress_type = zipfile.ZIP_DEFLATED
-            entry.external_attr = (0o100644 << 16)
-            data = manifest if relative == "MANIFEST.json" else checked_file(root / "skills" / NAME / relative)
-            archive.writestr(entry, data)
+    # Exclusive creation prevents overwriting any canonical source, bundle
+    # input, or unrelated existing user file (including hardlinked files).
+    with target.open("xb") as stream:
+        with zipfile.ZipFile(stream, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for relative in (*files, "MANIFEST.json"):
+                entry = zipfile.ZipInfo(NAME + "/" + relative, date_time=(1980, 1, 1, 0, 0, 0))
+                entry.create_system = 3  # stable Unix ZIP metadata across hosts
+                entry.compress_type = zipfile.ZIP_DEFLATED
+                entry.external_attr = (0o100644 << 16)
+                archive.writestr(entry, manifest if relative == "MANIFEST.json" else staged[relative])
     return hashes
 
 

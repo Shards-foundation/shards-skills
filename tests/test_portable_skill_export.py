@@ -113,20 +113,20 @@ class PortableSkillTests(unittest.TestCase):
 
     def test_reject_parent_script_reference(self):
         self.descriptor.write_text(self.descriptor.read_text() +
-                                   "\\nRun python ../../scripts/runner.py\\n")
+                                   "\nRun python ../../scripts/runner.py\n")
         self.assertTrue(any("out-of-package resource" in x
                             for x in pack.audit_skill(self.skill)[0]))
 
     def test_reject_dot_slash_missing_script(self):
         self.descriptor.write_text(self.descriptor.read_text() +
-                                   "\\nRun python ./scripts/missing.py\\n")
+                                   "\nRun python ./scripts/missing.py\n")
         self.assertTrue(any("external or missing packaged resource" in x
                             for x in pack.audit_skill(self.skill)[0]))
 
     def test_nested_markdown_link_scanned(self):
         ref = self.skill / "references" / "notes.md"
         ref.parent.mkdir()
-        ref.write_text("Follow [bad](../../outside.md)\\n")
+        ref.write_text("Follow [bad](../../outside.md)\n")
         self.assertTrue(any("out-of-package link" in x
                             for x in pack.audit_skill(self.skill)[0]))
 

@@ -237,6 +237,102 @@ class PortableSkillTests(unittest.TestCase):
         guide.write_text("[run]: scripts/check.py\n")
         self.assertEqual(pack.audit_skill(self.skill)[0], [])
 
+    def test_invalid_plain_yaml_scalar_values_fail_closed(self):
+        bad = ["null", "~", "true", "false", "42", "Use: this skill", "0x42"]
+        for value in bad:
+            with self.subTest(value=value):
+                text = self.descriptor.read_text().replace(
+                    "Use for a deterministic offline demonstration.", value)
+                self.descriptor.write_text(text)
+                errors, _ = pack.audit_skill(self.skill)
+                self.assertTrue(errors, value)
+                self.descriptor.write_text(text.replace(
+                    "description: " + value,
+                    "description: Use for a deterministic offline demonstration."))
+
+    def test_quoted_yaml_string_values_are_accepted(self):
+        for value in ['"Use: this skill"', "'null'"]:
+            with self.subTest(value=value):
+                text = self.descriptor.read_text().replace(
+                    "Use for a deterministic offline demonstration.", value)
+                self.descriptor.write_text(text)
+                self.assertEqual(pack.audit_skill(self.skill)[0], [])
+                self.descriptor.write_text(text.replace(
+                    "description: " + value,
+                    "description: Use for a deterministic offline demonstration."))
+
+    def test_deep_unmatched_brackets_do_not_cause_quadratic_scan(self):
+        import time
+        self.descriptor.write_text(self.descriptor.read_text() + "[" * 100000)
+        started = time.monotonic()
+        errors, _ = pack.audit_skill(self.skill)
+        self.assertEqual(errors, [])
+        self.assertLess(time.monotonic() - started, 5.0)
+
+    def test_nested_image_outer_link_escape_is_blocked(self):
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   "\n[![image](references/img.png)](../../outside.md)\n")
+        (self.skill / "references").mkdir()
+        (self.skill / "references/img.png").write_bytes(b"dummy")
+        self.assertTrue(any("out-of-package link" in x
+                            for x in pack.audit_skill(self.skill)[0]))
+
+    def test_spaced_reference_destinations_are_not_silently_skipped(self):
+        for destination in ["<references/absent guide.md>",
+                            "references/absent guide.md"]:
+            with self.subTest(destination=destination):
+                text = self.descriptor.read_text() + "\n[guide]: " + destination + "\n"
+                self.descriptor.write_text(text)
+                self.assertTrue(pack.audit_skill(self.skill)[0])
+                self.descriptor.write_text(text[:text.rfind("\n[guide]:")])
+
+    def test_empty_directory_is_not_exportable_as_link_target(self):
+        (self.skill / "references/empty").mkdir(parents=True)
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   "\n[dir](references/empty)\n")
+        self.assertTrue(any("missing or symlinked" in x
+                            for x in pack.audit_skill(self.skill)[0]))
+
+    def test_additional_resource_extensions_are_checked(self):
+        for ref in ("references/missing.txt", "scripts/tool.js",
+                    "assets/table.csv", "assets/img.png", "../AGENTS.md"):
+            with self.subTest(ref=ref):
+                text = self.descriptor.read_text() + "\nUse " + ref + " now.\n"
+                self.descriptor.write_text(text)
+                self.assertTrue(pack.audit_skill(self.skill)[0], ref)
+                self.descriptor.write_text(text[:text.rfind("\nUse ")])
+
+    def test_oversized_content_is_rejected_before_markdown_scan(self):
+        (self.skill / "big.md").write_bytes(b"\xff" * (26 * 1024 * 1024))
+        errors, _ = pack.audit_skill(self.skill)
+        self.assertTrue(any("exceeds" in e for e in errors))
+        self.assertFalse(any("undecodable" in e for e in errors))
+
+    def test_titled_markdown_link_is_accepted(self):
+        guide = self.skill / "references" / "guide.md"
+        guide.parent.mkdir()
+        guide.write_text("Evidence")
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   '\n[guide](references/guide.md "A title")\n')
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
+    def test_bom_frontmatter_does_not_crash_audit(self):
+        self.descriptor.write_text("\ufeff" + self.descriptor.read_text())
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
+    def test_symlinked_ancestor_does_not_raise(self):
+        real = self.base / "real"
+        real.mkdir()
+        (real / "demo-skill").mkdir()
+        (real / "demo-skill" / "SKILL.md").write_text(
+            self.descriptor.read_text())
+        try:
+            (self.base / "alias").symlink_to(real, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks unsupported")
+        errors, _ = pack.audit_skill(self.base / "alias" / "demo-skill")
+        self.assertEqual(errors, [])
+
     def test_existing_shards_problem_framing_is_self_contained(self):
         errors, files = pack.audit_skill(ROOT / "skills" / "problem-framing")
         self.assertEqual(errors, [])

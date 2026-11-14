@@ -238,6 +238,8 @@ def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
     if descriptor.is_symlink() or not descriptor.is_file():
         return ["SKILL.md missing or is a symlink"], files
     try:
+        if descriptor.stat().st_size > MAX_BYTES:
+            return [f"package exceeds {MAX_BYTES} bytes"], files
         text = descriptor.read_text(encoding="utf-8")
         metadata, body = parse_strict_skill_header(text)
     except (OSError, UnicodeError, ValueError) as exc:

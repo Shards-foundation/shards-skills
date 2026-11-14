@@ -22,8 +22,15 @@ SOURCES = (
 )
 
 
+def reject_symlink_path(path: Path) -> None:
+    for component in (path, *path.parents):
+        if component.is_symlink():
+            raise ValueError(f"Refusing symlinked path component: {component}")
+
+
 def checked_file(path: Path) -> bytes:
-    if path.is_symlink() or not path.is_file():
+    reject_symlink_path(path)
+    if not path.is_file():
         raise ValueError(f"Missing, unsafe or symlinked file: {path}")
     return path.read_bytes()
 
@@ -53,16 +60,14 @@ def sync(root: Path) -> None:
     for relative in SOURCES:
         data = checked_file(root / relative)
         destination = target / relative
-        if destination.is_symlink():
-            raise ValueError(f"Refusing symlinked destination: {destination}")
+        reject_symlink_path(destination)
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(data)
 
 
 def build_zip(root: Path, target: Path) -> dict[str, str]:
     hashes = verify(root)
-    if target.exists() and target.is_symlink():
-        raise ValueError("Refusing symlinked ZIP destination")
+    reject_symlink_path(target)
     if not target.parent.is_dir():
         raise ValueError("ZIP output directory does not exist")
     files = ("SKILL.md",) + SOURCES

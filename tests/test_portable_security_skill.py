@@ -53,6 +53,30 @@ class PortableSkillTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "symlinked"):
                 portable.verify(work)
 
+    def test_symlinked_parent_directory_is_rejected_for_sync_and_verify(self):
+        with tempfile.TemporaryDirectory() as location:
+            work = Path(location)
+            self._stage(work)
+            source = work / "skills" / portable.NAME / "scripts"
+            outside = work / "outside"
+            source.rename(outside)
+            source.symlink_to(outside, target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "symlinked path component"):
+                portable.verify(work)
+            with self.assertRaisesRegex(ValueError, "symlinked path component"):
+                portable.sync(work)
+
+    def test_dangling_output_symlink_is_rejected(self):
+        with tempfile.TemporaryDirectory() as location:
+            work = Path(location)
+            target = work / "skill.zip"
+            redirected = work / "outside.zip"
+            target.symlink_to(redirected)
+            self.assertFalse(redirected.exists())
+            with self.assertRaisesRegex(ValueError, "symlinked path component"):
+                portable.build_zip(ROOT, target)
+            self.assertFalse(redirected.exists())
+
     def test_sync_repairs_drift_only_from_canonical_source(self):
         with tempfile.TemporaryDirectory() as location:
             work = Path(location)

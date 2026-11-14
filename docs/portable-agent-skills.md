@@ -37,7 +37,7 @@ and lock-file content hashes. Prefer pinning the source to a reviewed commit
 when distributing into regulated or production environments. Native clients
 must still be restarted/refreshed where their skill discovery requires it.
 
-**Important:** `npx skills --all` is intentionally **not** recommended for this
+**Important:** `npx skills add Shards-foundation/shards-skills --all` is intentionally **not** recommended for this
 repository; it can include unreviewed imported skill packages.
 
 ## Target compatibility and boundaries
@@ -87,7 +87,7 @@ Once the **Portable Agent Skills ZIP** Action is merged onto the default branch:
 5. Verify installation by listing available skills on the host, explicitly
    invoking the skill, and recording the real output and tool traces.
 
-Seven preselected instruction-only skills are exposed in the Action:
+Seven structurally checked instruction-only skills are exposed in the Action:
 `problem-framing`, `implementation-planning`, `systematic-debugging`,
 `test-driven-development`, `code-review`, `secure-code-review`,
 `evidence-based-research`. This is deliberately narrower than the repository's
@@ -110,10 +110,12 @@ Ambiguous links or missing resources are **BLOCKED**, not silently omitted.
 This is a bounded static test; it cannot prove that every implicit runtime
 dependency has been packaged.
 
-Many current `shards-sec-*` skills and curated executable workflows still
+Many current `shards-sec-*` skills, executable adapters and curated workflows still
 refer to repo-root scripts, evaluation fixtures or the plugin dispatcher.
-The bundler correctly blocks a ZIP export until these dependencies become
-self-contained, or the package is explicitly restructured and retested. This
+The export allowlist is deliberately limited to seven instruction-only skills.
+Other skills remain **blocked from ZIP export**, even when their local Markdown
+passes a structural audit, until every transitive runtime dependency is packaged
+and tested in a clean extracted environment. This
 is especially important for Manus and Claude upload workflows.
 
 ## Acceptance gates for each platform

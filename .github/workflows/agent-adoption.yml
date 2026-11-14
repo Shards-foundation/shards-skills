@@ -3,29 +3,35 @@ on:
   pull_request:
     paths:
       - 'scripts/agent_adoption_eval.py'
+      - 'scripts/host_ab_eval.py'
       - 'scripts/search_skills.py'
       - 'catalogue/catalogue.json'
       - 'skills/**/SKILL.md'
       - 'plugins/shards-core/skills/**/SKILL.md'
       - 'scripts/dispatch_skills.py'
       - 'tests/test_agent_adoption_eval.py'
+      - 'tests/test_host_ab_eval.py'
       - 'tests/test_skill_search.py'
       - 'evals/trigger-cases.json'
       - 'docs/agent-adoption.md'
+      - 'docs/host-ab-evaluation.md'
       - '.github/workflows/agent-adoption.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/agent_adoption_eval.py'
+      - 'scripts/host_ab_eval.py'
       - 'scripts/search_skills.py'
       - 'catalogue/catalogue.json'
       - 'skills/**/SKILL.md'
       - 'plugins/shards-core/skills/**/SKILL.md'
       - 'scripts/dispatch_skills.py'
       - 'tests/test_agent_adoption_eval.py'
+      - 'tests/test_host_ab_eval.py'
       - 'tests/test_skill_search.py'
       - 'evals/trigger-cases.json'
       - 'docs/agent-adoption.md'
+      - 'docs/host-ab-evaluation.md'
       - '.github/workflows/agent-adoption.yml'
   workflow_dispatch:
 
@@ -45,8 +51,9 @@ jobs:
           python-version: '3.11'
       - name: Compile and test evaluation tool
         run: |
-          python -m py_compile scripts/agent_adoption_eval.py
+          python -m py_compile scripts/agent_adoption_eval.py scripts/host_ab_eval.py
           python -m unittest discover -s tests -p 'test_agent_adoption_eval.py' -v
+          python -m unittest discover -s tests -p 'test_host_ab_eval.py' -v
       - name: Produce actual retrieval diagnostics (not host invocation claims)
         run: |
           python scripts/agent_adoption_eval.py > agent-retrieval-report.json

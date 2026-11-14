@@ -93,7 +93,11 @@ def parse_strict_skill_header(text: str) -> tuple[dict[str, str], str]:
         key, val = m.groups()
         if key in meta:
             raise ValueError("duplicate metadata key")
-        meta[key] = _yaml_string(val)
+        # SemVer with two dots is a YAML string, unlike scalar numbers/dates.
+        if key == "version" and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?", val):
+            meta[key] = val
+        else:
+            meta[key] = _yaml_string(val)
     return meta, "\n".join(rows[end + 1:])
 
 

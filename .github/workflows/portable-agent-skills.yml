@@ -73,7 +73,8 @@ jobs:
           TARGET="$RUNNER_TEMP/shards-agent-install-smoke"
           mkdir -p "$TARGET"
           cd "$TARGET"
-          printf '%s\\n' '{"name":"shards-agent-install-smoke","private":true}' > package.json
+          printf '%s\n' '{"name":"shards-agent-install-smoke","private":true}' > package.json
+          node -e 'JSON.parse(require("fs").readFileSync("package.json","utf8"))'
           "$RUNNER_TEMP/shards-skills-cli/node_modules/.bin/skills" add "$GITHUB_WORKSPACE/skills/systematic-debugging" \
             -a codex -a claude-code -a cursor -a minimax-code -a mistral-vibe \
             -a grok -a replit -a openclaw -a hermes-agent -a kimi-code-cli \

@@ -59,8 +59,10 @@ class PortableSkillTests(unittest.TestCase):
         self.descriptor.write_text(self.descriptor.read_text() +
                                    "\nSee [guide](references/guide.md).\n")
         self.assertEqual(pack.audit_skill(self.skill)[0], [])
-        with zipfile.ZipFile(self.base / "out.zip", "w"):
-            pass
+        pack.bundle_skill(self.skill, self.base / "out")
+        with zipfile.ZipFile(self.base / "out" / "demo-skill.zip") as zf:
+            self.assertIn("demo-skill/references/guide.md", zf.namelist())
+            self.assertEqual(zf.read("demo-skill/references/guide.md"), b"Evidence template.")
 
     def test_out_of_package_link_fails_closed(self):
         self.descriptor.write_text(self.descriptor.read_text() +
@@ -108,6 +110,63 @@ class PortableSkillTests(unittest.TestCase):
     def test_unknown_or_imported_skill_is_not_selectable(self):
         with self.assertRaises(ValueError):
             pack.source_path("addy-agent-skills-code-review-and-quality")
+
+    def test_reject_parent_script_reference(self):
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   "\\nRun python ../../scripts/runner.py\\n")
+        self.assertTrue(any("out-of-package resource" in x
+                            for x in pack.audit_skill(self.skill)[0]))
+
+    def test_reject_dot_slash_missing_script(self):
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   "\\nRun python ./scripts/missing.py\\n")
+        self.assertTrue(any("external or missing packaged resource" in x
+                            for x in pack.audit_skill(self.skill)[0]))
+
+    def test_nested_markdown_link_scanned(self):
+        ref = self.skill / "references" / "notes.md"
+        ref.parent.mkdir()
+        ref.write_text("Follow [bad](../../outside.md)\\n")
+        self.assertTrue(any("out-of-package link" in x
+                            for x in pack.audit_skill(self.skill)[0]))
+
+    def test_malformed_yaml_is_blocked(self):
+        self.descriptor.write_text(self.descriptor.read_text().replace(
+            "description: Use for a deterministic offline demonstration.",
+            "description: [unterminated"))
+        self.assertTrue(any("invalid SKILL.md frontmatter" in x
+                            for x in pack.audit_skill(self.skill)[0]))
+
+    def test_cross_platform_filename_is_rejected(self):
+        (self.skill / "..\\\\escape.txt").write_text("archive escape attempt")
+        self.assertTrue(any("unsafe ZIP member" in x
+                            for x in pack.audit_skill(self.skill)[0]))
+        with self.assertRaises(ValueError):
+            pack.bundle_skill(self.skill, self.base / "out")
+
+    def test_receipt_symlink_replacement_cannot_overwrite_target(self):
+        dest = self.base / "out"
+        dest.mkdir()
+        outside = self.base / "outside.txt"
+        outside.write_text("untouched")
+        symlink = dest / "demo-skill.receipt.json"
+        try:
+            symlink.symlink_to(outside)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks not available")
+        with self.assertRaises(FileExistsError):
+            pack.bundle_skill(self.skill, dest)
+        report = pack.bundle_skill(self.skill, dest, replace=True)
+        self.assertEqual(report["result"], "PACKAGE_CREATED_NOT_HOST_VERIFIED")
+        self.assertEqual(outside.read_text(), "untouched")
+        self.assertFalse(symlink.is_symlink())
+        self.assertEqual(json.loads(symlink.read_text())["skill"], "demo-skill")
+
+    def test_repo_dependent_adapter_not_exportable(self):
+        with self.assertRaises(ValueError):
+            pack.source_path("release-readiness")
+        with self.assertRaises(ValueError):
+            pack.source_path("shards-repository-health")
 
     def test_existing_shards_problem_framing_is_self_contained(self):
         errors, files = pack.audit_skill(ROOT / "skills" / "problem-framing")

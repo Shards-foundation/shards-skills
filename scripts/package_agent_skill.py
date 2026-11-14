@@ -31,7 +31,7 @@ PATHS = re.compile(
     r"(?<![A-Za-z0-9_./:-])"
     r"((?:(?:\.\./)|(?:\./))*(?:scripts|references|assets|docs|evals)/"
     r"[A-Za-z0-9_./-]+\.[A-Za-z0-9_-]+|"
-    r"(?:\.\./)[A-Za-z0-9_./-]+)"
+    r"(?:\.\./)[A-Za-z0-9_./-]*[A-Za-z0-9_/-])"
 )
 HTML_LINKS = re.compile(r"""(?i)\b(?:href|src)\s*=\s*["']([^"']+)["']""")
 EXTERNAL_URLS = re.compile(r"""(?i)(?:https?://|mailto:|www\.|//)[^\s<>)'"]+""")
@@ -58,9 +58,13 @@ def _yaml_string(value: str) -> str:
         if "'" in inner.replace("''", ""):
             raise ValueError("invalid single-quoted YAML escape")
         return inner.replace("''", "'")
-    if (value[0] in "[{|>&*!%@" or value[0] == chr(96) or
+    if (value[0] in "[{|>&*!%@#" or value[0] == chr(96) or
             value[-1] in "\"'" or re.search(r":(?:\s|$)|\s#", value) or
-            value.strip() != value):
+            value.strip() != value or
+            re.match(r"^[-?:](?:\s|$)", value) or
+            re.match(r"^[+.-]?(?:\d|\.\d)", value) or
+            re.match(r"^\d{4}-\d{2}-\d{2}(?:$|[Tt ]|[Zz])", value) or
+            re.match(r"^\d+(?::\d+)+$", value)):
         raise ValueError("ambiguous or unsupported unquoted YAML")
     if (value.lower() in {"null", "~", "true", "false", "yes", "no", "on", "off",
                           ".nan", ".inf", "+.inf", "-.inf"} or
@@ -72,11 +76,11 @@ def _yaml_string(value: str) -> str:
 
 def parse_strict_skill_header(text: str) -> tuple[dict[str, str], str]:
     """Parse the conservative Agent Skills YAML scalar subset."""
-    rows = text.lstrip("\ufeff").splitlines()
-    if not rows or rows[0].strip() != "---":
+    rows = text.splitlines()
+    if not rows or rows[0] != "---":
         raise ValueError("frontmatter must begin on first line")
     try:
-        end = next(i for i in range(1, len(rows)) if rows[i].strip() == "---")
+        end = next(i for i in range(1, len(rows)) if rows[i] == "---")
     except StopIteration as exc:
         raise ValueError("frontmatter closing delimiter missing") from exc
     meta: dict[str, str] = {}

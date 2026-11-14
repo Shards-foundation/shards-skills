@@ -168,6 +168,47 @@ class PortableSkillTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             pack.source_path("shards-repository-health")
 
+    def test_external_web_urls_are_not_local_script_dependencies(self):
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   "\n[docs](https://example.com/docs/guide.md)\n"
+                                   "See https://example.com/scripts/run.py\n")
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
+    def test_nested_markdown_bare_paths_resolve_at_skill_root(self):
+        guide = self.skill / "references" / "guide.md"
+        guide.parent.mkdir()
+        guide.write_text("Run scripts/check.py for a local check.\n")
+        script = self.skill / "scripts" / "check.py"
+        script.parent.mkdir()
+        script.write_text("print('ok')\n")
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+        report = pack.bundle_skill(self.skill, self.base / "out")
+        with zipfile.ZipFile(report["archive"]) as zf:
+            self.assertIn("demo-skill/scripts/check.py", zf.namelist())
+
+    def test_frontmatter_triple_dash_inside_description_is_not_delimiter(self):
+        self.descriptor.write_text(self.descriptor.read_text().replace(
+            "Use for a deterministic offline demonstration.",
+            "Use for inputs --- outputs in a deterministic task."))
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
+    def test_case_insensitive_duplicate_member_names_are_blocked(self):
+        (self.skill / "guide.md").write_text("hello")
+        (self.skill / "GUIDE.md").write_text("world")
+        self.assertTrue(any("collision" in x for x in pack.audit_skill(self.skill)[0]))
+
+    def test_reference_style_link_respects_package_boundary(self):
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   "\n[guide]: ../outside.md\n")
+        self.assertTrue(any("out-of-package link" in x
+                            for x in pack.audit_skill(self.skill)[0]))
+
+    def test_html_href_missing_file_is_blocked(self):
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   '\n<a href="references/absent.md">Open</a>\n')
+        self.assertTrue(any("missing or symlinked package link" in x
+                            for x in pack.audit_skill(self.skill)[0]))
+
     def test_existing_shards_problem_framing_is_self_contained(self):
         errors, files = pack.audit_skill(ROOT / "skills" / "problem-framing")
         self.assertEqual(errors, [])

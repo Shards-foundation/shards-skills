@@ -104,7 +104,7 @@ python -m unittest discover -s tests -p 'test_portable_skill_export.py' -v
 
 The bundler does **not** execute skill code or run installers. It validates
 required frontmatter, matching names, local files, Markdown links and obvious
-referenced scripts, forbids symlinks/out-of-package links, limits archive size,
+referenced scripts, forbids symlinks/out-of-package links, limits file count and uncompressed package bytes,
 emits deterministic ZIP bytes and records per-file and archive SHA-256 hashes.
 Ambiguous links or missing resources are **BLOCKED**, not silently omitted.
 This is a bounded static test; it cannot prove that every implicit runtime

@@ -187,7 +187,7 @@ def _validate_target(raw: str, file: Path, root: Path) -> str | None:
         return f"unsupported or ambiguous local link: {raw}: {exc}"
     if not link:
         return None
-    if link.startswith(("http://", "https://", "mailto:", "//", "www.")):
+    if link.lower().startswith(("http://", "https://", "mailto:", "//", "www.")):
         return None
     if re.match(r"^[a-z][a-z0-9+.-]*:", link, re.I) or "%" in link:
         return f"unsupported or ambiguous local link: {raw}"

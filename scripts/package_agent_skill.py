@@ -33,7 +33,10 @@ PATHS = re.compile(
     r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.(?:py|md|json|sh|yml|yaml))"
 )
 LINKS = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
-REFERENCE_LINKS = re.compile(r"(?m)^\s{0,3}\[[^\]]+\]:\s*(\S+)")
+REFERENCE_LINKS = re.compile(
+    r"(?m)^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?([^\s<>]+)>?"
+    r"""(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*$"""
+)
 HTML_LINKS = re.compile(r"""\b(?:href|src)\s*=\s*["']([^"']+)["']""", re.I)
 # The URL span must be removed only for scanning free-text local resource names.
 EXTERNAL_URLS = re.compile(r"(?i)(?:https?://|mailto:)[^\s<>)'\"]+")
@@ -183,6 +186,11 @@ def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
                 errors.append(f"missing or symlinked package link: {raw}")
         # Include ../scripts, ./scripts and bare repo-root references.
         scrubbed = EXTERNAL_URLS.sub("", markdown)
+        # Markdown/HTML link destinations were already checked relative to the
+        # containing Markdown file; avoid resolving them again from the root.
+        scrubbed = LINKS.sub("", scrubbed)
+        scrubbed = HTML_LINKS.sub("", scrubbed)
+        scrubbed = REFERENCE_LINKS.sub("", scrubbed)
         for ref in sorted(set(PATHS.findall(scrubbed))):
             # Bare scripts/ and references/ paths are specified relative to
             # SKILL.md root, while ./ or ../ are relative to the Markdown file.

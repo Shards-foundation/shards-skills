@@ -1,0 +1,161 @@
+name: Portable Agent Skills ZIP
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/package_agent_skill.py'
+      - 'tests/test_portable_skill_export.py'
+      - '.github/workflows/portable-agent-skills.yml'
+      - 'docs/portable-agent-skills.md'
+      - 'skills/problem-framing/**'
+      - 'skills/implementation-planning/**'
+      - 'skills/systematic-debugging/**'
+      - 'skills/test-driven-development/**'
+      - 'skills/code-review/**'
+      - 'skills/secure-code-review/**'
+      - 'skills/evidence-based-research/**'
+  workflow_dispatch:
+    inputs:
+      skill:
+        description: Select a structurally checked instruction-only Shards skill to package
+        required: true
+        type: choice
+        options:
+          - problem-framing
+          - implementation-planning
+          - systematic-debugging
+          - test-driven-development
+          - code-review
+          - secure-code-review
+          - evidence-based-research
+
+permissions:
+  contents: read
+
+jobs:
+  portability-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run offline portability unit tests
+        run: python -m unittest discover -s tests -p 'test_portable_skill_export.py' -v
+      - name: Verify selected first-party instruction packages
+        run: |
+          for skill in problem-framing implementation-planning systematic-debugging test-driven-development code-review secure-code-review evidence-based-research; do
+            python scripts/package_agent_skill.py --skill "$skill" --check
+          done
+
+  installer-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      DISABLE_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
+      - name: Install pinned official skills CLI without lifecycle scripts
+        run: |
+          mkdir -p "$RUNNER_TEMP/shards-skills-cli"
+          npm install --ignore-scripts --no-save --prefix "$RUNNER_TEMP/shards-skills-cli" skills@1.8.1
+      - name: Install into a genuinely separate clean agent project
+        run: |
+          SOURCE_HASH=$(sha256sum skills/systematic-debugging/SKILL.md | cut -d' ' -f1)
+          TARGET="$RUNNER_TEMP/shards-agent-install-smoke"
+          mkdir -p "$TARGET"
+          cd "$TARGET"
+          printf '%s\n' '{"name":"shards-agent-install-smoke","private":true}' > package.json
+          node -e 'JSON.parse(require("fs").readFileSync("package.json","utf8"))'
+          "$RUNNER_TEMP/shards-skills-cli/node_modules/.bin/skills" add "$GITHUB_WORKSPACE/skills/systematic-debugging" \
+            -a codex -a claude-code -a cursor -a minimax-code -a mistral-vibe \
+            -a grok -a replit -a openclaw -a hermes-agent -a kimi-code-cli \
+            -a devin --copy -y
+          for dir in \
+            .agents/skills \
+            .claude/skills \
+            .minimax/skills \
+            .vibe/skills \
+            .grok/skills \
+            skills \
+            .hermes/skills \
+            .devin/skills; do
+            test -f "$dir/systematic-debugging/SKILL.md" || {
+              echo "BLOCKED: missing installed skill at $dir"; exit 1;
+            }
+            grep -q '^name: systematic-debugging' "$dir/systematic-debugging/SKILL.md"
+            INSTALLED_HASH=$(sha256sum "$dir/systematic-debugging/SKILL.md" | cut -d' ' -f1)
+            test "$SOURCE_HASH" = "$INSTALLED_HASH" || {
+              echo "BLOCKED: installed content differs from source at $dir"; exit 1;
+            }
+            echo "PASS verified byte-identical installed skill: $dir"
+          done
+          # OpenClaw's skills/ location must be NEW, not source checkout.
+          test "$TARGET" != "$GITHUB_WORKSPACE"
+          test -f "$TARGET/skills/systematic-debugging/SKILL.md"
+          test -f skills-lock.json
+          test "$SOURCE_HASH" = "$(sha256sum "$GITHUB_WORKSPACE/skills/systematic-debugging/SKILL.md" | cut -d' ' -f1)"
+          git -C "$GITHUB_WORKSPACE" diff --exit-code -- skills/systematic-debugging/SKILL.md
+
+      - name: Build and verify standalone ZIP and install extracted skill
+        run: |
+          mkdir -p "$RUNNER_TEMP/zip-artifacts" "$RUNNER_TEMP/zip-extracted" "$RUNNER_TEMP/zip-install-smoke"
+          python scripts/package_agent_skill.py --skill systematic-debugging --out-dir "$RUNNER_TEMP/zip-artifacts"
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import zipfile
+          base = pathlib.Path(os.environ["RUNNER_TEMP"])
+          archive = base / "zip-artifacts/systematic-debugging.zip"
+          receipt = json.loads((base / "zip-artifacts/systematic-debugging.receipt.json").read_text())
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == receipt["sha256"]
+          with zipfile.ZipFile(archive) as z:
+              assert z.testzip() is None
+              assert "systematic-debugging/SKILL.md" in z.namelist()
+              z.extractall(base / "zip-extracted")
+          src = pathlib.Path(os.environ["GITHUB_WORKSPACE"]) / "skills/systematic-debugging/SKILL.md"
+          extracted = base / "zip-extracted/systematic-debugging/SKILL.md"
+          assert extracted.read_bytes() == src.read_bytes()
+          PY
+          cd "$RUNNER_TEMP/zip-install-smoke"
+          "$RUNNER_TEMP/shards-skills-cli/node_modules/.bin/skills" add "$RUNNER_TEMP/zip-extracted/systematic-debugging" -a codex --copy -y
+          cmp "$GITHUB_WORKSPACE/skills/systematic-debugging/SKILL.md" ".agents/skills/systematic-debugging/SKILL.md"
+
+  export:
+    if: github.event_name == 'workflow_dispatch'
+    needs: portability-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build self-contained ZIP with integrity receipt
+        env:
+          SKILL_NAME: ${{ inputs.skill }}
+        run: |
+          case "$SKILL_NAME" in
+            problem-framing|implementation-planning|systematic-debugging|test-driven-development|code-review|secure-code-review|evidence-based-research) ;;
+            *) echo "BLOCKED: skill not in reviewed export selection"; exit 2 ;;
+          esac
+          python scripts/package_agent_skill.py --skill "$SKILL_NAME" --out-dir dist/portable-skills
+      - name: Upload ZIP and sha256 receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: shards-portable-skill
+          path: dist/portable-skills/
+          if-no-files-found: error
+          retention-days: 7

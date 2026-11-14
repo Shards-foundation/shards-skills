@@ -4,6 +4,24 @@
 
 > **Usable now:** First-party skills are written procedures that an agent can read and apply immediately. The `draft` metadata records the limits of independent host-level evaluation; it does **not** disable use. The Python preflight and assurance tools run locally. Imported skills remain separate and subject to their own provenance reviews.
 
+## Install across Codex, Claude, Cursor, OpenClaw, Hermes and other agents
+
+**[Universal install and host compatibility guide](docs/portable-agent-skills.md)** — use the maintained
+`npx skills` installer for supported coding agents, or create a self-contained ZIP
+with SHA-256 receipt for a platform that offers manual skill upload. Do **not**
+bulk-install the mixed catalogue: first-party, curated and third-party imports
+carry different trust and execution boundaries.
+
+```bash
+npx skills add Shards-foundation/shards-skills --skill systematic-debugging -a codex -a claude-code -a cursor --copy -y
+npx skills list
+```
+
+For Android-only operators, the **Portable Agent Skills ZIP** GitHub Action
+provides a manual, no-local-Python export of seven reviewed instruction-only
+first-party skills. ZIP structural validity is not proof of host discovery,
+execution or measurable usefulness.
+
 ## Get a useful result — no paid AI credits required
 
 This repository has **two distinct capabilities**: instructions for agents (the

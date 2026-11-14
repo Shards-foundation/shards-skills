@@ -16,38 +16,20 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+from validate_skills import parse_frontmatter
 
 ROOT = Path(__file__).resolve().parents[1]
+# A narrow release allowlist. Other Shards packages are NOT yet standalone:
+# several first-party adapters depend on the repository-level runtime.
 FIRST_PARTY = set("""
 problem-framing implementation-planning systematic-debugging
-test-driven-development code-review secure-code-review threat-modeling
-skill-supply-chain-audit smart-contract-review release-readiness
-incident-runbook agent-system-design tool-contract-design
-evidence-based-research reproducible-data-analysis
-frontend-accessibility-review web-application-testing writing-skill-packages
-shards-sec-intake shards-sec-vibecoding-gate
-shards-sec-business-threat-model shards-sec-identity-access
-shards-sec-secrets-keys shards-sec-web-api shards-sec-cloud-devsecops
-shards-sec-supply-chain shards-sec-vulnerability-management
-shards-sec-incident-response shards-sec-detection-response
-shards-sec-human-fraud shards-sec-privacy-dpia
-shards-sec-governance-policy shards-sec-jurisdiction-scope
-shards-sec-compliance-evidence shards-sec-third-party-risk
-shards-sec-resilience-recovery shards-sec-fintech-payments
-shards-sec-crypto-custody shards-sec-defi-protocol
-shards-sec-ai-agent-boundaries shards-sec-prompt-injection
-shards-sec-authorized-testing shards-sec-crypto-fincrime
+test-driven-development code-review secure-code-review evidence-based-research
 """.split())
-CURATED = set("""
-shards-repository-health shards-skill-audit shards-release-gate
-shards-agent-handoff shards-automation-operator shards-catalogue-sync
-shards-skill-dispatch shards-a2a-harness shards-dual-channel
-shards-subagents shards-parallel-swarm
-""".split())
+CURATED: set[str] = set()  # not independently exportable yet
 NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 PATHS = re.compile(
-    r"(?<![A-Za-z0-9_./-])"
-    r"((?:scripts|references|assets|docs|evals)/"
+    r"(?<![A-Za-z0-9_-])"
+    r"((?:(?:\.\./)|(?:\./))*(?:scripts|references|assets|docs|evals)/"
     r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.(?:py|md|json|sh|yml|yaml))"
 )
 LINKS = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
@@ -63,82 +45,101 @@ def source_path(name: str) -> Path:
     raise ValueError("not in the explicit Shards first-party allowlist")
 
 
+def _safe_archive_name(path: Path) -> bool:
+    """Protect against ZIP traversal and cross-platform filename reinterpretation."""
+    if path.is_absolute():
+        return False
+    reserved = {"CON", "PRN", "AUX", "NUL"}
+    reserved.update(f"COM{i}" for i in range(1, 10))
+    reserved.update(f"LPT{i}" for i in range(1, 10))
+    for part in path.parts:
+        if (part in {"", ".", ".."} or "\\" in part or ":" in part
+                or part.endswith((".", " "))
+                or any(ord(char) < 32 for char in part)
+                or part.upper().split(".", 1)[0] in reserved):
+            return False
+    return True
+
+
 def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
-    """Validate a skill as an independent upload, not merely within a checkout."""
+    """Validate conservative, standalone instruction-only uploads; no script execution."""
     errors: list[str] = []
     files: list[Path] = []
     if folder.is_symlink() or not folder.is_dir():
         return ["skill root is missing, not a directory or is a symlink"], files
     root = folder.resolve()
+    if not _safe_archive_name(Path(folder.name)):
+        errors.append("unsafe cross-platform skill directory name")
     descriptor = folder / "SKILL.md"
     if descriptor.is_symlink() or not descriptor.is_file():
         return ["SKILL.md missing or is a symlink"], files
     try:
         text = descriptor.read_text(encoding="utf-8")
-    except (OSError, UnicodeError):
-        return ["SKILL.md cannot be decoded as UTF-8"], files
-    lines = text.splitlines()
-    if not lines or lines[0] != "---":
-        errors.append("SKILL.md must start with YAML frontmatter")
-    else:
-        try:
-            end = lines.index("---", 1)
-        except ValueError:
-            errors.append("SKILL.md has no closing frontmatter delimiter")
-        else:
-            metadata: dict[str, str] = {}
-            for line in lines[1:end]:
-                if not line.strip() or line.lstrip().startswith("#"):
-                    continue
-                if line[0].isspace() or ":" not in line:
-                    continue  # Nested optional YAML is permitted by the standard.
-                key, value = line.split(":", 1)
-                if key in metadata:
-                    errors.append(f"duplicate metadata field: {key}")
-                metadata[key] = value.strip().strip("'\"")
-            name = metadata.get("name", "")
-            description = metadata.get("description", "")
-            if not NAME.fullmatch(name) or len(name) > 64 or name != folder.name:
-                errors.append("frontmatter name must match kebab-case directory (max 64)")
-            if not 1 <= len(description) <= 1024:
-                errors.append("description must contain 1-1024 characters")
-            if not "\n".join(lines[end + 1:]).strip():
-                errors.append("SKILL.md requires a nonempty instruction body")
+        metadata, body = parse_frontmatter(text)
+    except (OSError, UnicodeError, ValueError) as exc:
+        return [f"invalid SKILL.md frontmatter: {exc}"], files
+    name = metadata.get("name", "")
+    description = metadata.get("description", "")
+    if not NAME.fullmatch(name) or len(name) > 64 or name != folder.name:
+        errors.append("frontmatter name must match kebab-case directory (max 64)")
+    if not 1 <= len(description) <= 1024:
+        errors.append("description must contain 1-1024 characters")
+    if not body.strip():
+        errors.append("SKILL.md requires a nonempty instruction body")
 
     for p in sorted(folder.rglob("*")):
+        rel = p.relative_to(folder)
         if p.is_symlink():
-            errors.append(f"symlink is forbidden in portable bundle: {p.relative_to(folder)}")
+            errors.append(f"symlink forbidden in portable bundle: {rel}")
+            continue
+        if not _safe_archive_name(rel):
+            errors.append(f"unsafe ZIP member path: {rel}")
             continue
         if not p.resolve().is_relative_to(root):
-            errors.append("package path escapes skill root")
+            errors.append(f"package path escapes skill root: {rel}")
             continue
         if p.is_file():
             files.append(p)
         elif not p.is_dir():
-            errors.append(f"unsupported file type: {p.relative_to(folder)}")
+            errors.append(f"unsupported file type: {rel}")
     if len(files) > MAX_FILES:
         errors.append(f"package exceeds {MAX_FILES} files")
     if sum(p.stat().st_size for p in files) > MAX_BYTES:
         errors.append(f"package exceeds {MAX_BYTES} bytes")
 
-    for raw in LINKS.findall(text):
-        link = raw.split("#", 1)[0].strip()
-        if not link or re.match(r"^[a-z][a-z0-9+.-]*:", link, re.I) or link.startswith("//"):
+    # Read all packaged Markdown, including nested references, not just SKILL.md.
+    for file in files:
+        if file.suffix.lower() != ".md":
             continue
-        # URL-escaped paths and links with titles need review, not an invented pass.
-        if "%" in link or (" " in link and not (folder / link).exists()):
-            errors.append(f"cannot resolve portable relative link: {raw}")
+        try:
+            markdown = file.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            errors.append(f"undecodable packaged Markdown: {file.relative_to(root)}")
             continue
-        target = (root / link).resolve()
-        if not target.is_relative_to(root):
-            errors.append(f"out-of-package link: {raw}")
-        elif not target.exists() or target.is_symlink():
-            errors.append(f"missing or symlinked package link: {raw}")
-    # Catch bare repo-root script/reference commands that are not Markdown links.
-    for ref in sorted(set(PATHS.findall(text))):
-        target = root / ref
-        if not target.is_file() or target.is_symlink():
-            errors.append(f"external or missing packaged resource: {ref}")
+        for raw in LINKS.findall(markdown):
+            link = raw.split("#", 1)[0].strip()
+            if not link:
+                continue
+            if link.startswith(("https://", "http://", "mailto:")):
+                continue
+            if (re.match(r"^[a-z][a-z0-9+.-]*:", link, re.I) or
+                    link.startswith("//") or
+                    "%" in link or
+                    (" " in link and not (file.parent / link).exists())):
+                errors.append(f"unsupported or ambiguous local link: {raw}")
+                continue
+            target = (file.parent / link).resolve()
+            if not target.is_relative_to(root):
+                errors.append(f"out-of-package link: {raw}")
+            elif not target.exists() or (file.parent / link).is_symlink():
+                errors.append(f"missing or symlinked package link: {raw}")
+        # Include ../scripts, ./scripts and bare repo-root references.
+        for ref in sorted(set(PATHS.findall(markdown))):
+            target = (file.parent / ref).resolve()
+            if not target.is_relative_to(root):
+                errors.append(f"out-of-package resource: {ref}")
+            elif not target.is_file() or (file.parent / ref).is_symlink():
+                errors.append(f"external or missing packaged resource: {ref}")
 
     return sorted(set(errors)), sorted(files, key=lambda p: p.relative_to(root).as_posix())
 
@@ -154,13 +155,15 @@ def bundle_skill(folder: Path, out_dir: Path, replace: bool = False) -> dict:
     dest.mkdir(parents=True, exist_ok=True)
     archive = dest / f"{folder.name}.zip"
     receipt = dest / f"{folder.name}.receipt.json"
-    if not replace and (archive.exists() or receipt.exists()):
+    if not replace and (os.path.lexists(archive) or os.path.lexists(receipt)):
         raise FileExistsError("output exists; use --replace after reviewing it")
     file_hashes = {}
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for file in files:
             rel = file.relative_to(root).as_posix()
+            if not _safe_archive_name(Path(rel)) or file.is_symlink() or not file.resolve().is_relative_to(root):
+                raise ValueError(f"unsafe resource changed during packaging: {rel}")
             data = file.read_bytes()
             file_hashes[rel] = hashlib.sha256(data).hexdigest()
             info = zipfile.ZipInfo(f"{folder.name}/{rel}", (1980, 1, 1, 0, 0, 0))
@@ -179,15 +182,21 @@ def bundle_skill(folder: Path, out_dir: Path, replace: bool = False) -> dict:
         "note": "ZIP validated for structural portability only; no tool permissions or host execution tested.",
     }
     receipt_bytes = (json.dumps(result, indent=2, sort_keys=True) + "\n").encode("utf-8")
-    fd, tmp = tempfile.mkstemp(prefix=".shards-skill-", dir=dest)
+    # Prepare both files before publishing either; os.replace replaces symlinks
+    # instead of writing through them. Two-file replacement is not transactional.
+    staged: list[tuple[str, Path]] = []
     try:
-        with os.fdopen(fd, "wb") as handle:
-            handle.write(payload)
-        os.replace(tmp, archive)
-        receipt.write_bytes(receipt_bytes)
+        for data, final in ((payload, archive), (receipt_bytes, receipt)):
+            fd, temporary = tempfile.mkstemp(prefix=".shards-skill-", dir=dest)
+            staged.append((temporary, final))
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(data)
+        for temporary, final in staged:
+            os.replace(temporary, final)
     finally:
-        if os.path.exists(tmp):
-            os.unlink(tmp)
+        for temporary, _ in staged:
+            if os.path.lexists(temporary):
+                os.unlink(temporary)
     return result
 
 

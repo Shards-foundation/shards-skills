@@ -340,6 +340,12 @@ class PortableSkillTests(unittest.TestCase):
                                    '<a href="HTTP://example.com/references/guide.md">site</a>\n')
         self.assertEqual(pack.audit_skill(self.skill)[0], [])
 
+    def test_oversized_skill_md_is_blocked_before_utf8_decode(self):
+        self.descriptor.write_bytes(b"\xff" * (26 * 1024 * 1024))
+        errors, _ = pack.audit_skill(self.skill)
+        self.assertTrue(any("exceeds" in e for e in errors))
+        self.assertFalse(any("cannot be decoded" in e for e in errors))
+
     def test_existing_shards_problem_framing_is_self_contained(self):
         errors, files = pack.audit_skill(ROOT / "skills" / "problem-framing")
         self.assertEqual(errors, [])

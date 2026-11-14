@@ -171,6 +171,79 @@ class PortableSkillTests(unittest.TestCase):
                                     cwd=skillroot, capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_security_inputs_reject_duplicate_keys_and_boolean_schema(self):
+        def load(name, path):
+            spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
+        assurance = load("assurance", "security_assurance.py")
+        evaluator = load("skill_evaluator", "security_skill_eval.py")
+        with tempfile.TemporaryDirectory() as location:
+            work = Path(location).resolve()
+            receipt = work / "receipt.json"
+            receipt.write_text('{"schema_version":1,"schema_version":true}')
+            with self.assertRaisesRegex(ValueError, "Duplicate JSON object key"):
+                assurance.read_json(receipt)
+            with self.assertRaisesRegex(ValueError, "Duplicate JSON object key"):
+                evaluator.read(receipt)
+            original_registry = json.loads((ROOT / "catalogue/shards-security-controls.json").read_text())
+            original_registry["schema_version"] = True
+            receipt.write_text(json.dumps(original_registry))
+            with patch.object(assurance, "REGISTRY", receipt):
+                with self.assertRaisesRegex(ValueError, "Unsupported control registry"):
+                    assurance.registry()
+            original_registry["schema_version"] = 1
+            original_registry["controls"] = []
+            receipt.write_text(json.dumps(original_registry))
+            with patch.object(assurance, "REGISTRY", receipt):
+                with self.assertRaisesRegex(ValueError, "Unsupported control registry"):
+                    assurance.registry()
+
+    def test_frozen_cases_cannot_be_redefined_silently(self):
+        spec = importlib.util.spec_from_file_location("evaluator_case", ROOT / "scripts/security_skill_eval.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as location:
+            fixture = Path(location).resolve() / "cases.json"
+            original = json.loads((ROOT / "evals/shards-security-workflows.json").read_text())
+            original["cases"][0]["prompt"] = "Modified prompt for a different test."
+            fixture.write_text(json.dumps(original))
+            with patch.object(module, "FIXTURE", fixture):
+                with self.assertRaisesRegex(ValueError, "digest changed"):
+                    module.caseset()
+            original["variants"] = {v: 1 for v in original["variants"]}
+            fixture.write_text(json.dumps(original))
+            digest = hashlib.sha256(fixture.read_bytes()).hexdigest()
+            with patch.object(module, "FIXTURE", fixture), patch.object(module, "FROZEN_CASESET_SHA256", digest):
+                with self.assertRaisesRegex(ValueError, "Unrecognized evaluator labels"):
+                    module.caseset()
+
+    def test_source_guard_rejects_partial_checkouts_and_oversized_skips(self):
+        spec = importlib.util.spec_from_file_location("guard", ROOT / "scripts/vibecode_guard.py")
+        guard = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(guard)
+        with tempfile.TemporaryDirectory() as location:
+            root = Path(location).resolve()
+            subprocess.run(["git", "init", "-q", str(root)], check=True, capture_output=True)
+            (root / "nested").mkdir()
+            (root / "nested" / "small.py").write_text("print(1)")
+            (root / "huge.py").write_text("a" * (guard.MAX_FILE_BYTES + 1))
+            (root / ".env").write_text("synthetic")
+            subprocess.run(["git", "-C", str(root), "add", "--", "."], check=True, capture_output=True)
+            with self.assertRaisesRegex(ValueError, "exact Git repository top-level"):
+                guard.tracked(root / "nested")
+            report = guard.inspect(root, guard.tracked(root))
+            self.assertEqual(report["status"], "WARNINGS_FOUND")
+            self.assertIn("SKIPPED-OVERSIZE-SOURCE", {x["id"] for x in report["findings"]})
+            self.assertIn("TRACKED-ENV", {x["id"] for x in report["findings"]})
+            # For special-file findings, the report cap also applies.
+            for i in range(guard.MAX_FINDINGS + 2):
+                (root / (".env_" + str(i))).write_text("dummy")
+            list_report = guard.inspect(root, [".env_" + str(i) for i in range(guard.MAX_FINDINGS + 2)])
+            self.assertTrue(list_report["truncated"])
+            self.assertLessEqual(len(list_report["findings"]), guard.MAX_FINDINGS)
+
     @staticmethod
     def _stage(work):
         for path in ("skills/" + portable.NAME + "/SKILL.md", *portable.SOURCES):

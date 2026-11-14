@@ -209,6 +209,34 @@ class PortableSkillTests(unittest.TestCase):
         self.assertTrue(any("missing or symlinked package link" in x
                             for x in pack.audit_skill(self.skill)[0]))
 
+    def test_gfm_footnote_is_not_a_reference_link(self):
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   "\n[^1]: Gruber, J. Evidence cited elsewhere.\n")
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
+    def test_non_link_bracket_definition_is_not_treated_as_link(self):
+        self.descriptor.write_text(self.descriptor.read_text() +
+                                   "\n[key]: [value]\n")
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
+    def test_nested_markdown_link_resolves_only_relative_to_file(self):
+        guide = self.skill / "references" / "guide.md"
+        guide.parent.mkdir()
+        scripts = guide.parent / "scripts"
+        scripts.mkdir()
+        (scripts / "check.py").write_text("print('ok')\n")
+        guide.write_text("[run](scripts/check.py)\n")
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
+    def test_nested_reference_link_resolves_only_relative_to_file(self):
+        guide = self.skill / "references" / "guide.md"
+        guide.parent.mkdir()
+        scripts = guide.parent / "scripts"
+        scripts.mkdir()
+        (scripts / "check.py").write_text("print('ok')\n")
+        guide.write_text("[run]: scripts/check.py\n")
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
     def test_existing_shards_problem_framing_is_self_contained(self):
         errors, files = pack.audit_skill(ROOT / "skills" / "problem-framing")
         self.assertEqual(errors, [])

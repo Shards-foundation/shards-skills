@@ -101,24 +101,41 @@ class VibeCodeGuardTests(unittest.TestCase):
         self.assertFalse(sentinel.exists(), "The untrusted fsmonitor command executed")
 
     def test_non_utf8_git_path_is_retained_for_safe_skip(self):
-        fake = SimpleNamespace(returncode=0, stdout=b"valid.py" + bytes([0]) + b"bad-" + bytes([255]) + b".py" + bytes([0]))
-        with patch.object(guard.subprocess, "run", return_value=fake):
+        raw = b"valid.py" + bytes([0]) + b"bad-" + bytes([255]) + b".py" + bytes([0])
+        def fake_run(args, **kwargs):
+            if args[-1] == "--show-toplevel":
+                return SimpleNamespace(returncode=0, stdout=str(self.root.resolve()).encode())
+            if args[-3:] == ["ls-files", "-z", "--cached"]:
+                kwargs["stdout"].write(raw)
+                return SimpleNamespace(returncode=0, stdout=None)
+            raise AssertionError("Unexpected Git command")
+        with patch.object(guard.subprocess, "run", side_effect=fake_run) as runner:
             names = guard.tracked(self.root)
+        self.assertEqual(runner.call_count, 2)
         self.assertEqual(len(names), 2)
         self.assertEqual(names[0], "valid.py")
+        self.assertEqual(names[1].encode("utf-8", "surrogateescape"), b"bad-\xff.py")
 
     def test_git_disables_local_fsmonitor_and_untrusted_env(self):
-        fake = SimpleNamespace(returncode=0, stdout=b"")
+        def fake_run(args, **kwargs):
+            if args[-1] == "--show-toplevel":
+                return SimpleNamespace(returncode=0, stdout=str(self.root.resolve()).encode())
+            if args[-3:] == ["ls-files", "-z", "--cached"]:
+                kwargs["stdout"].write(b"")
+                return SimpleNamespace(returncode=0, stdout=None)
+            raise AssertionError("Unexpected Git command")
         with patch.dict(os.environ, {"GIT_CONFIG_PARAMETERS": "core.fsmonitor=bad",
                                      "GIT_INDEX_FILE": "/tmp/untrusted-index"}):
-            with patch.object(guard.subprocess, "run", return_value=fake) as run:
+            with patch.object(guard.subprocess, "run", side_effect=fake_run) as runner:
                 guard.tracked(self.root)
-        args, kw = run.call_args
-        self.assertIn("core.fsmonitor=false", args[0])
-        self.assertIn("--no-optional-locks", args[0])
-        self.assertEqual(kw["env"]["GIT_CONFIG_NOSYSTEM"], "1")
-        self.assertNotIn("GIT_CONFIG_PARAMETERS", kw["env"])
-        self.assertNotIn("GIT_INDEX_FILE", kw["env"])
+        self.assertEqual(runner.call_count, 2)
+        for call in runner.call_args_list:
+            args, kw = call
+            self.assertIn("core.fsmonitor=false", args[0])
+            self.assertIn("--no-optional-locks", args[0])
+            self.assertEqual(kw["env"]["GIT_CONFIG_NOSYSTEM"], "1")
+            self.assertNotIn("GIT_CONFIG_PARAMETERS", kw["env"])
+            self.assertNotIn("GIT_INDEX_FILE", kw["env"])
 
 
     def test_skips_unlisted_extensions(self):

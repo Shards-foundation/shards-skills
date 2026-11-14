@@ -28,18 +28,13 @@ test-driven-development code-review secure-code-review evidence-based-research
 CURATED: set[str] = set()  # not independently exportable yet
 NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 PATHS = re.compile(
-    r"(?<![A-Za-z0-9_-])"
+    r"(?<![A-Za-z0-9_./:-])"
     r"((?:(?:\.\./)|(?:\./))*(?:scripts|references|assets|docs|evals)/"
-    r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.(?:py|md|json|sh|yml|yaml))"
+    r"[A-Za-z0-9_./-]+\.[A-Za-z0-9_-]+|"
+    r"(?:\.\./)[A-Za-z0-9_./-]+)"
 )
-LINKS = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
-REFERENCE_LINKS = re.compile(
-    r"(?m)^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?([^\s<>\[\]]+)>?"
-    r"""(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*$"""
-)
-HTML_LINKS = re.compile(r"""\b(?:href|src)\s*=\s*["']([^"']+)["']""", re.I)
-# The URL span must be removed only for scanning free-text local resource names.
-EXTERNAL_URLS = re.compile(r"(?i)(?:https?://|mailto:)[^\s<>)'\"]+")
+HTML_LINKS = re.compile(r"""(?i)\b(?:href|src)\s*=\s*["']([^"']+)["']""")
+EXTERNAL_URLS = re.compile(r"""(?i)(?:https?://|mailto:|www\.|//)[^\s<>)'"]+""")
 MAX_FILES = 1000
 MAX_BYTES = 25 * 1024 * 1024
 
@@ -96,6 +91,113 @@ def parse_strict_skill_header(text: str) -> tuple[dict[str, str], str]:
             raise ValueError("duplicate metadata key")
         meta[key] = _yaml_string(val)
     return meta, "\n".join(rows[end + 1:])
+
+
+def _inline_destinations(markdown: str) -> tuple[list[str], list[tuple[int, int]]]:
+    """Linear scan for nested Markdown inline links without regex backtracking."""
+    links: list[str] = []
+    spans: list[tuple[int, int]] = []
+    opened: list[int] = []
+    i = 0
+    n = len(markdown)
+    while i < n:
+        ch = markdown[i]
+        if ch == "\\":
+            i += 2
+            continue
+        if ch == "[":
+            opened.append(i)
+        elif ch == "]" and opened:
+            begin = opened.pop()
+            if i + 1 < n and markdown[i + 1] == "(":
+                start = i + 2
+                j, depth, angle, quote = start, 1, False, None
+                while j < n:
+                    cj = markdown[j]
+                    if cj == "\\":
+                        j += 2
+                        continue
+                    if cj == "<" and not quote:
+                        angle = True
+                    elif cj == ">" and not quote:
+                        angle = False
+                    elif cj in ("'", '"') and not angle:
+                        quote = None if quote == cj else (quote or cj)
+                    elif not angle and not quote:
+                        if cj == "(":
+                            depth += 1
+                        elif cj == ")":
+                            depth -= 1
+                            if depth == 0:
+                                break
+                    j += 1
+                if j < n:
+                    links.append(markdown[start:j])
+                    spans.append((begin, j + 1))
+                    i = j
+                else:
+                    links.append("UNTERMINATED_MARKDOWN_LINK(")
+                    i = n
+                    continue
+        i += 1
+    return links, spans
+
+
+def _reference_destinations(markdown: str) -> tuple[list[str], list[tuple[int, int]]]:
+    links: list[str] = []
+    spans: list[tuple[int, int]] = []
+    offset = 0
+    for line in markdown.splitlines(keepends=True):
+        match = re.match(r"^[ \t]{0,3}\[([^\]\n]+)\]:[ \t]*(.*)$",
+                         line.rstrip("\r\n"))
+        if match and not match.group(1).startswith("^") and not match.group(2).startswith("["):
+            raw = match.group(2).strip()
+            if raw:
+                links.append(raw)
+                spans.append((offset, offset + len(line)))
+        offset += len(line)
+    return links, spans
+
+
+def _target(raw: str) -> str:
+    value = raw.strip()
+    if not value:
+        raise ValueError("empty link destination")
+    if value.startswith("<"):
+        end = value.find(">")
+        if end < 1:
+            raise ValueError("unterminated bracketed destination")
+        dest, rest = value[1:end], value[end + 1:].strip()
+    else:
+        parts = value.split(None, 1)
+        dest = parts[0]
+        rest = parts[1].strip() if len(parts) > 1 else ""
+    if rest and not (
+        len(rest) >= 2 and rest[0] == rest[-1] and rest[0] in ("'", '"')
+        or rest.startswith("(") and rest.endswith(")")
+    ):
+        raise ValueError("ambiguous destination or unquoted title")
+    return dest
+
+
+def _validate_target(raw: str, file: Path, root: Path) -> str | None:
+    try:
+        link = _target(raw).split("#", 1)[0]
+    except ValueError as exc:
+        return f"unsupported or ambiguous local link: {raw}: {exc}"
+    if not link:
+        return None
+    if link.startswith(("http://", "https://", "mailto:", "//", "www.")):
+        return None
+    if re.match(r"^[a-z][a-z0-9+.-]*:", link, re.I) or "%" in link:
+        return f"unsupported or ambiguous local link: {raw}"
+    candidate = file.parent / link
+    resolved = candidate.resolve()
+    if not resolved.is_relative_to(root):
+        return f"out-of-package link: {raw}"
+    if not resolved.is_file() or candidate.is_symlink():
+        return f"missing or symlinked package link: {raw}"
+    return None
 
 
 def source_path(name: str) -> Path:

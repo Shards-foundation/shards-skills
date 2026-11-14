@@ -44,36 +44,57 @@ MAX_FILES = 1000
 MAX_BYTES = 25 * 1024 * 1024
 
 
-def parse_strict_skill_header(text: str) -> tuple[dict[str, str], str]:
-    """Parse the supported plain-scalar YAML subset using delimiter *lines*.
+def _yaml_string(value: str) -> str:
+    """Fail closed on ambiguous YAML scalars; the packager supports flat strings."""
+    if not value:
+        raise ValueError("empty YAML scalar")
+    if value[0] == '"':
+        try:
+            parsed = json.loads(value)
+        except ValueError as exc:
+            raise ValueError("invalid double-quoted YAML scalar") from exc
+        if not isinstance(parsed, str):
+            raise ValueError("expected YAML string")
+        return parsed
+    if value[0] == "'":
+        if len(value) < 2 or value[-1] != "'":
+            raise ValueError("unterminated single-quoted YAML scalar")
+        inner = value[1:-1]
+        if "'" in inner.replace("''", ""):
+            raise ValueError("invalid single-quoted YAML escape")
+        return inner.replace("''", "'")
+    if (value[0] in "[{|>&*!%@" or value[0] == chr(96) or
+            value[-1] in "\"'" or re.search(r":(?:\s|$)|\s#", value) or
+            value.strip() != value):
+        raise ValueError("ambiguous or unsupported unquoted YAML")
+    if (value.lower() in {"null", "~", "true", "false", "yes", "no", "on", "off",
+                          ".nan", ".inf", "+.inf", "-.inf"} or
+            re.fullmatch(r"[-+]?(?:0[xX][0-9a-fA-F]+|0[oO][0-7]+|0[bB][01]+|"
+                         r"[0-9][0-9_]*(?:\.[0-9_]*)?(?:[eE][-+]?[0-9]+)?)", value)):
+        raise ValueError("YAML scalar is not unambiguously a string")
+    return value
 
-    Complex YAML is rejected rather than incompletely packaged. This supports
-    first-party instruction-only skills, not every legal YAML extension.
-    """
-    rows = text.splitlines()
-    if not rows or rows[0] != "---":
+
+def parse_strict_skill_header(text: str) -> tuple[dict[str, str], str]:
+    """Parse the conservative Agent Skills YAML scalar subset."""
+    rows = text.lstrip("\ufeff").splitlines()
+    if not rows or rows[0].strip() != "---":
         raise ValueError("frontmatter must begin on first line")
     try:
-        end = rows.index("---", 1)
-    except ValueError as exc:
+        end = next(i for i in range(1, len(rows)) if rows[i].strip() == "---")
+    except StopIteration as exc:
         raise ValueError("frontmatter closing delimiter missing") from exc
     meta: dict[str, str] = {}
     for row in rows[1:end]:
         if not row.strip() or row.lstrip().startswith("#"):
             continue
-        m = re.fullmatch(r"([a-zA-Z][a-zA-Z0-9_-]*):\s*(.*)", row)
+        m = re.fullmatch(r"([a-zA-Z][a-zA-Z0-9_-]*):[ \t]*(.*)", row)
         if not m:
             raise ValueError("unsupported or malformed YAML frontmatter field")
         key, val = m.groups()
-        if key in meta or val.startswith(("[", "{", "|", ">")):
-            raise ValueError("duplicate key or unsupported YAML scalar")
-        if val.startswith(("'", '"')):
-            if len(val) < 2 or val[-1] != val[0]:
-                raise ValueError("unterminated YAML quoted value")
-            val = val[1:-1]
-        elif val.endswith(("'", '"')):
-            raise ValueError("malformed YAML quoted value")
-        meta[key] = val
+        if key in meta:
+            raise ValueError("duplicate metadata key")
+        meta[key] = _yaml_string(val)
     return meta, "\n".join(rows[end + 1:])
 
 

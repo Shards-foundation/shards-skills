@@ -316,9 +316,9 @@ class PortableSkillTests(unittest.TestCase):
                                    '\n[guide](references/guide.md "A title")\n')
         self.assertEqual(pack.audit_skill(self.skill)[0], [])
 
-    def test_bom_frontmatter_does_not_crash_audit(self):
+    def test_bom_frontmatter_is_rejected_before_export(self):
         self.descriptor.write_text("\ufeff" + self.descriptor.read_text())
-        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+        self.assertTrue(pack.audit_skill(self.skill)[0])
 
     def test_symlinked_ancestor_does_not_raise(self):
         real = self.base / "real"
@@ -345,6 +345,40 @@ class PortableSkillTests(unittest.TestCase):
         errors, _ = pack.audit_skill(self.skill)
         self.assertTrue(any("exceeds" in e for e in errors))
         self.assertFalse(any("cannot be decoded" in e for e in errors))
+
+    def test_implicit_yaml_types_and_malformed_plain_values_blocked(self):
+        bad = (".5", "-.5", "1:30", "2024-01-01", "2026-11-14",
+               "# TODO", "- Use this skill", "? x", ": x")
+        for value in bad:
+            with self.subTest(value=value):
+                original = self.descriptor.read_text()
+                self.descriptor.write_text(original.replace(
+                    "Use for a deterministic offline demonstration.", value))
+                self.assertTrue(pack.audit_skill(self.skill)[0], value)
+                self.descriptor.write_text(original)
+
+    def test_yamls_with_indented_or_whitespace_delimiters_are_blocked(self):
+        original = self.descriptor.read_text()
+        for changed in ("  " + original, original.replace("---\n# Demo", "--- \n# Demo"),
+                        original.replace("---\nname:", "--- \nname:")):
+            with self.subTest(text=changed[:24]):
+                self.descriptor.write_text(changed)
+                self.assertTrue(pack.audit_skill(self.skill)[0])
+        self.descriptor.write_text(original)
+
+    def test_bare_parent_path_sentence_punctuation_is_ignored(self):
+        reference = self.skill / "references" / "guide.md"
+        reference.parent.mkdir()
+        reference.write_text("Return to ../SKILL.md.\n")
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
+
+    def test_unquoted_semver_is_yaml_string(self):
+        original = self.descriptor.read_text()
+        self.descriptor.write_text(original.replace(
+            "description: Use for a deterministic offline demonstration.",
+            "version: 0.1.0\n"
+            "description: Use for a deterministic offline demonstration."))
+        self.assertEqual(pack.audit_skill(self.skill)[0], [])
 
     def test_existing_shards_problem_framing_is_self_contained(self):
         errors, files = pack.audit_skill(ROOT / "skills" / "problem-framing")

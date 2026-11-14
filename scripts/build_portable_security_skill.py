@@ -39,6 +39,7 @@ def checked_file(path: Path) -> bytes:
 
 
 def verify(root: Path) -> dict[str, str]:
+    root = root.resolve()  # canonicalise trusted system-directory aliases (e.g. macOS /var)
     skill = root / "skills" / NAME
     header = checked_file(skill / "SKILL.md")
     if not header.startswith(b"---\nname: shards-sec-ai-agent-boundaries\n"):
@@ -73,6 +74,7 @@ def verify(root: Path) -> dict[str, str]:
 
 
 def sync(root: Path) -> None:
+    root = root.resolve()
     target = root / "skills" / NAME
     checked_file(target / "SKILL.md")
     for relative in SOURCES:
@@ -84,6 +86,11 @@ def sync(root: Path) -> None:
 
 
 def build_zip(root: Path, target: Path) -> dict[str, str]:
+    root = root.resolve()
+    target = Path(target)
+    if target.is_symlink():
+        raise ValueError("Refusing symlinked ZIP destination")
+    target = target.parent.resolve() / target.name
     hashes = verify(root)
     reject_symlink_path(target)
     if not target.parent.is_dir():

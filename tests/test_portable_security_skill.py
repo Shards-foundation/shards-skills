@@ -74,7 +74,7 @@ class PortableSkillTests(unittest.TestCase):
             redirected = work / "outside.zip"
             target.symlink_to(redirected)
             self.assertFalse(redirected.exists())
-            with self.assertRaisesRegex(ValueError, "symlinked path component"):
+            with self.assertRaisesRegex(ValueError, "symlinked ZIP destination"):
                 portable.build_zip(ROOT, target)
             self.assertFalse(redirected.exists())
 
@@ -100,6 +100,22 @@ class PortableSkillTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 portable.build_zip(ROOT, source)
             self.assertEqual(source.read_bytes(), before)
+
+    def test_trusted_symlinked_system_directory_alias_is_usable(self):
+        with tempfile.TemporaryDirectory() as location:
+            original = Path(location).resolve()
+            alias = original / "trusted-alias"
+            source = original / "real-output"
+            source.mkdir()
+            try:
+                alias.symlink_to(source, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlink not available")
+            target = alias / "safe.zip"
+            portable.build_zip(ROOT, target)
+            self.assertTrue((source / "safe.zip").is_file())
+            with zipfile.ZipFile(source / "safe.zip") as archive:
+                self.assertIn(f"{portable.NAME}/SKILL.md", archive.namelist())
 
     def test_partial_archive_failure_cleans_up_without_source_damage(self):
         with tempfile.TemporaryDirectory() as location:

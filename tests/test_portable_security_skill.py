@@ -35,7 +35,7 @@ class PortableSkillTests(unittest.TestCase):
 
     def test_corrupt_copy_fails_closed(self):
         with tempfile.TemporaryDirectory() as location:
-            work = Path(location)
+            work = Path(location).resolve()
             self._stage(work)
             target = work / "skills" / portable.NAME / portable.SOURCES[0]
             target.write_text("tampered")
@@ -44,7 +44,7 @@ class PortableSkillTests(unittest.TestCase):
 
     def test_missing_or_symlinked_dependency_fails_closed(self):
         with tempfile.TemporaryDirectory() as location:
-            work = Path(location)
+            work = Path(location).resolve()
             self._stage(work)
             target = work / "skills" / portable.NAME / portable.SOURCES[0]
             target.unlink()
@@ -56,7 +56,7 @@ class PortableSkillTests(unittest.TestCase):
 
     def test_symlinked_parent_directory_is_rejected_for_sync_and_verify(self):
         with tempfile.TemporaryDirectory() as location:
-            work = Path(location)
+            work = Path(location).resolve()
             self._stage(work)
             source = work / "skills" / portable.NAME / "scripts"
             outside = work / "outside"
@@ -69,7 +69,7 @@ class PortableSkillTests(unittest.TestCase):
 
     def test_dangling_output_symlink_is_rejected(self):
         with tempfile.TemporaryDirectory() as location:
-            work = Path(location)
+            work = Path(location).resolve()
             target = work / "skill.zip"
             redirected = work / "outside.zip"
             target.symlink_to(redirected)
@@ -80,7 +80,7 @@ class PortableSkillTests(unittest.TestCase):
 
     def test_sync_repairs_drift_only_from_canonical_source(self):
         with tempfile.TemporaryDirectory() as location:
-            work = Path(location)
+            work = Path(location).resolve()
             self._stage(work)
             target = work / "skills" / portable.NAME / portable.SOURCES[1]
             target.write_bytes(b"stale")
@@ -100,6 +100,18 @@ class PortableSkillTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 portable.build_zip(ROOT, source)
             self.assertEqual(source.read_bytes(), before)
+
+    def test_partial_archive_failure_cleans_up_without_source_damage(self):
+        with tempfile.TemporaryDirectory() as location:
+            output = Path(location).resolve() / "incomplete.zip"
+            with patch.object(portable.zipfile, "ZipFile", side_effect=OSError("synthetic disk write failure")):
+                with self.assertRaises(OSError):
+                    portable.build_zip(ROOT, output)
+            self.assertFalse(output.exists())
+            self.assertFalse(list(output.parent.glob(".portable-skill-*.zip")))
+            portable.build_zip(ROOT, output)
+            with zipfile.ZipFile(output) as archive:
+                self.assertIn(f"{portable.NAME}/SKILL.md", archive.namelist())
 
     def test_unlisted_skill_files_and_links_fail_closed(self):
         with tempfile.TemporaryDirectory() as location:
@@ -147,7 +159,7 @@ class PortableSkillTests(unittest.TestCase):
 
     def test_isolated_zip_runs_real_offline_plan_and_frozen_cases(self):
         with tempfile.TemporaryDirectory() as location:
-            path = Path(location)
+            path = Path(location).resolve()
             archive = path / "skill.zip"
             portable.build_zip(ROOT, archive)
             with zipfile.ZipFile(archive) as skill:
@@ -159,7 +171,7 @@ class PortableSkillTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 return json.loads(result.stdout)
             capabilities = cli("security_assurance.py", "list")
-            self.assertIn("ai", json.dumps(capabilities))
+            self.assertIn("ai", capabilities["profiles"])
             plan = cli("security_assurance.py", "plan", "--system", "Sandbox agent",
                        "--profiles", "base,ai")
             self.assertIn("ai", json.dumps(plan))

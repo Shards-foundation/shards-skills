@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import tempfile
 import re
 import sys
 import zipfile
@@ -99,14 +101,22 @@ def build_zip(root: Path, target: Path) -> dict[str, str]:
                            "host_traces_verified": False}, indent=2, sort_keys=True).encode() + b"\n"
     # Exclusive creation prevents overwriting any canonical source, bundle
     # input, or unrelated existing user file (including hardlinked files).
-    with target.open("xb") as stream:
-        with zipfile.ZipFile(stream, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
-            for relative in (*files, "MANIFEST.json"):
-                entry = zipfile.ZipInfo(NAME + "/" + relative, date_time=(1980, 1, 1, 0, 0, 0))
-                entry.create_system = 3  # stable Unix ZIP metadata across hosts
-                entry.compress_type = zipfile.ZIP_DEFLATED
-                entry.external_attr = (0o100644 << 16)
-                archive.writestr(entry, manifest if relative == "MANIFEST.json" else staged[relative])
+    # Write to an exclusive temp file in the *same* directory, then atomically
+    # link the complete archive into place without clobbering existing files.
+    # Failed writes never leave a misleading partial target for a later install.
+    fd, temp_name = tempfile.mkstemp(prefix=".portable-skill-", suffix=".zip", dir=target.parent)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            with zipfile.ZipFile(stream, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+                for relative in (*files, "MANIFEST.json"):
+                    entry = zipfile.ZipInfo(NAME + "/" + relative, date_time=(1980, 1, 1, 0, 0, 0))
+                    entry.create_system = 3  # stable Unix ZIP metadata across hosts
+                    entry.compress_type = zipfile.ZIP_DEFLATED
+                    entry.external_attr = (0o100644 << 16)
+                    archive.writestr(entry, manifest if relative == "MANIFEST.json" else staged[relative])
+        os.link(temp_name, target)  # atomic create-only publication
+    finally:
+        Path(temp_name).unlink(missing_ok=True)
     return hashes
 
 

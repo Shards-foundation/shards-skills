@@ -15,8 +15,8 @@ import re
 import sys
 import tempfile
 import zipfile
+import unicodedata
 from pathlib import Path
-from validate_skills import parse_frontmatter
 
 ROOT = Path(__file__).resolve().parents[1]
 # A narrow release allowlist. Other Shards packages are NOT yet standalone:
@@ -33,8 +33,45 @@ PATHS = re.compile(
     r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.(?:py|md|json|sh|yml|yaml))"
 )
 LINKS = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+REFERENCE_LINKS = re.compile(r"(?m)^\s{0,3}\[[^\]]+\]:\s*(\S+)")
+HTML_LINKS = re.compile(r"""\b(?:href|src)\s*=\s*["']([^"']+)["']""", re.I)
+# The URL span must be removed only for scanning free-text local resource names.
+EXTERNAL_URLS = re.compile(r"(?i)(?:https?://|mailto:)[^\s<>)'\"]+")
 MAX_FILES = 1000
 MAX_BYTES = 25 * 1024 * 1024
+
+
+def parse_strict_skill_header(text: str) -> tuple[dict[str, str], str]:
+    """Parse the supported plain-scalar YAML subset using delimiter *lines*.
+
+    Complex YAML is rejected rather than incompletely packaged. This supports
+    first-party instruction-only skills, not every legal YAML extension.
+    """
+    rows = text.splitlines()
+    if not rows or rows[0] != "---":
+        raise ValueError("frontmatter must begin on first line")
+    try:
+        end = rows.index("---", 1)
+    except ValueError as exc:
+        raise ValueError("frontmatter closing delimiter missing") from exc
+    meta: dict[str, str] = {}
+    for row in rows[1:end]:
+        if not row.strip() or row.lstrip().startswith("#"):
+            continue
+        m = re.fullmatch(r"([a-zA-Z][a-zA-Z0-9_-]*):\s*(.*)", row)
+        if not m:
+            raise ValueError("unsupported or malformed YAML frontmatter field")
+        key, val = m.groups()
+        if key in meta or val.startswith(("[", "{", "|", ">")):
+            raise ValueError("duplicate key or unsupported YAML scalar")
+        if val.startswith(("'", '"')):
+            if len(val) < 2 or val[-1] != val[0]:
+                raise ValueError("unterminated YAML quoted value")
+            val = val[1:-1]
+        elif val.endswith(("'", '"')):
+            raise ValueError("malformed YAML quoted value")
+        meta[key] = val
+    return meta, "\n".join(rows[end + 1:])
 
 
 def source_path(name: str) -> Path:
@@ -75,7 +112,7 @@ def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
         return ["SKILL.md missing or is a symlink"], files
     try:
         text = descriptor.read_text(encoding="utf-8")
-        metadata, body = parse_frontmatter(text)
+        metadata, body = parse_strict_skill_header(text)
     except (OSError, UnicodeError, ValueError) as exc:
         return [f"invalid SKILL.md frontmatter: {exc}"], files
     name = metadata.get("name", "")
@@ -102,6 +139,13 @@ def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
             files.append(p)
         elif not p.is_dir():
             errors.append(f"unsupported file type: {rel}")
+    names_seen: set[str] = set()
+    for p in files:
+        relative_name = p.relative_to(root).as_posix()
+        normalized = unicodedata.normalize("NFC", relative_name).casefold()
+        if normalized in names_seen:
+            errors.append(f"case-insensitive or Unicode-normalized member collision: {relative_name}")
+        names_seen.add(normalized)
     if len(files) > MAX_FILES:
         errors.append(f"package exceeds {MAX_FILES} files")
     if sum(p.stat().st_size for p in files) > MAX_BYTES:
@@ -116,7 +160,11 @@ def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
         except (OSError, UnicodeError):
             errors.append(f"undecodable packaged Markdown: {file.relative_to(root)}")
             continue
-        for raw in LINKS.findall(markdown):
+        for raw in (
+            LINKS.findall(markdown)
+            + REFERENCE_LINKS.findall(markdown)
+            + HTML_LINKS.findall(markdown)
+        ):
             link = raw.split("#", 1)[0].strip()
             if not link:
                 continue
@@ -134,11 +182,16 @@ def audit_skill(folder: Path) -> tuple[list[str], list[Path]]:
             elif not target.exists() or (file.parent / link).is_symlink():
                 errors.append(f"missing or symlinked package link: {raw}")
         # Include ../scripts, ./scripts and bare repo-root references.
-        for ref in sorted(set(PATHS.findall(markdown))):
-            target = (file.parent / ref).resolve()
+        scrubbed = EXTERNAL_URLS.sub("", markdown)
+        for ref in sorted(set(PATHS.findall(scrubbed))):
+            # Bare scripts/ and references/ paths are specified relative to
+            # SKILL.md root, while ./ or ../ are relative to the Markdown file.
+            explicit_relative = ref.startswith(("./", "../"))
+            candidate = (file.parent if explicit_relative else root) / ref
+            target = candidate.resolve()
             if not target.is_relative_to(root):
                 errors.append(f"out-of-package resource: {ref}")
-            elif not target.is_file() or (file.parent / ref).is_symlink():
+            elif not target.is_file() or candidate.is_symlink():
                 errors.append(f"external or missing packaged resource: {ref}")
 
     return sorted(set(errors)), sorted(files, key=lambda p: p.relative_to(root).as_posix())

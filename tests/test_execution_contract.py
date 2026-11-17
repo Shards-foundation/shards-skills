@@ -76,6 +76,17 @@ class ContractValidationTests(unittest.TestCase):
         record["constraints"]["allow_merge"] = True
         self.assertEqual(validator.validate(record)["decision"], "HOLD")
 
+    def test_executed_external_write_beyond_scope_fails(self):
+        record = self.approved()
+        record["steps"][0]["effect"] = "external-write"
+        self.assertEqual(validator.validate(record)["decision"], "FAIL")
+
+    def test_unknown_effect_class_rejected(self):
+        record = self.approved()
+        record["steps"][0]["effect"] = "shell-anything"
+        with self.assertRaises(ValueError):
+            validator.validate(record)
+
     def test_failed_check_fails(self):
         record = self.approved()
         record["checks"][0]["result"] = "FAIL"

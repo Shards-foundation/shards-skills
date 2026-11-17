@@ -16,6 +16,8 @@ SECRET = re.compile(
 )
 SENSITIVE_FIELD = re.compile(r"(?:password|private[_-]?key|api[_-]?key|access[_-]?token|secret)", re.I)
 STEP_STATUSES = {"PROPOSED", "EXECUTED", "VERIFIED", "FAILED", "BLOCKED"}
+EFFECTS = {"read-only", "local-write", "local-execute", "external-write", "production", "paid", "merge", "destructive", "sensitive"}
+EFFECT_PERMISSIONS = {"external-write": "allow_external_write", "production": "allow_production", "paid": "allow_paid", "merge": "allow_merge"}
 CHECK_RESULTS = {"PASS", "FAIL", "NOT_RUN", "BLOCKED"}
 REVIEW_VERDICTS = {"APPROVED", "CHANGES_REQUESTED", "BLOCKED"}
 CONSTRAINT_KEYS = ("allow_paid", "allow_production", "allow_merge", "allow_external_write")
@@ -145,13 +147,22 @@ def validate(data):
     failed = False
     for step in steps:
         _text(step, "owner")
-        _text(step, "effect")
+        effect = _text(step, "effect")
+        if effect not in EFFECTS:
+            raise ValueError("Unknown effect class")
         status = _text(step, "status")
         if status not in STEP_STATUSES:
             raise ValueError("Unknown step status")
         refs = check_refs(step)
         if status in ("EXECUTED", "VERIFIED") and not refs:
             raise ValueError("Observed or verified step lacks evidence")
+        if status in ("EXECUTED", "VERIFIED"):
+            permission = EFFECT_PERMISSIONS.get(effect)
+            if permission and not constraints[permission]:
+                failed = True
+                reasons.append("Executed effect contradicts declared constraints: " + step["id"])
+            if effect in ("destructive", "sensitive"):
+                reasons.append("Sensitive or destructive effect needs host verification: " + step["id"])
         if status == "FAILED":
             failed = True
         elif status != "VERIFIED":
@@ -222,12 +233,14 @@ def main(argv=None):
     item.add_argument("--input", required=True, type=Path)
     args = parser.parse_args(argv)
     try:
+        if args.input.is_symlink():
+            raise ValueError("Symlinked contract input is forbidden")
         path = args.input.resolve()
-        if not path.is_file() or path.stat().st_size > 200_000 or path.is_symlink():
+        if not path.is_file() or path.stat().st_size > 200_000:
             raise ValueError("Input must be an existing regular JSON file under 200KB")
         data = json.loads(path.read_text(encoding="utf-8"))
         report = validate(data)
-    except (OSError, UnicodeError, ValueError, json.JSONDecodeError):
+    except (OSError, UnicodeError, ValueError, TypeError):
         report = {
             "workflow": "shards-execution-contract",
             "structural_status": "INVALID",

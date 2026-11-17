@@ -49,3 +49,12 @@ python scripts/shards_agent_harness.py run --profile swarm --execute --save-rece
 Fixed skills can also be invoked via scripts/dispatch_skills.py.
 This is a local harness, not an A2A wire endpoint or OS sandbox.
 See docs/agent-harness.md for its execution envelope.
+
+## Execution contracts (first-party)
+
+The `shards-execution-contract` skill documents a human-intent -> typed task contract -> review/evidence -> gate protocol. It includes a read-only JSON validator in the full repository checkout:
+
+    python scripts/validate_execution_contract.py validate --input .shards/state/task.json
+    python scripts/dispatch_skills.py plan --skill shards-execution-contract --input-file .shards/state/task.json
+
+The validator reports HOLD, FAIL or EVIDENCE_READY using *self-reported* evidence metadata. It neither executes agents nor authenticates evidence, reviewer identity or approvals. External writes, paid work and production effects must still be independently authorized by the host. See `plugins/shards-core/skills/shards-execution-contract/SKILL.md`.

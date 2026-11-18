@@ -14,19 +14,43 @@ import verify_plugins as integrity
 
 class SkillDispatchTests(unittest.TestCase):
     def test_registry_exact_curated_skill_names(self):
-        self.assertEqual(len(dispatcher.REGISTRY), 11)
+        self.assertEqual(len(dispatcher.REGISTRY), 12)
         self.assertEqual(set(dispatcher.REGISTRY), {
             "shards-repository-health", "shards-skill-audit",
             "shards-release-gate", "shards-agent-handoff",
             "shards-automation-operator", "shards-catalogue-sync",
             "shards-skill-dispatch", "shards-a2a-harness",
+            "shards-a2a-authority-preflight",
             "shards-dual-channel", "shards-subagents", "shards-parallel-swarm",
         })
 
     def test_structural_plugin_integrity(self):
         report = integrity.validate()
         self.assertEqual(report["status"], "PASS", report["errors"])
-        self.assertEqual(report["registered_skills"], 11)
+        self.assertEqual(report["registered_skills"], 12)
+
+    def test_authority_preflight_is_read_only_and_plan_pinned(self):
+        with self.assertRaisesRegex(ValueError, "requires --input-file"):
+            dispatcher.describe("shards-a2a-authority-preflight")
+        with self.assertRaises(ValueError):
+            dispatcher.describe("shards-a2a-authority-preflight",
+                                input_file="/tmp/untrusted-input.json")
+        sample = ROOT / ".shards" / "state" / "authority.json"
+        with patch("dispatch_skills._state_file", return_value=sample):
+            plan = dispatcher.describe("shards-a2a-authority-preflight",
+                                       input_file=".shards/state/authority.json")
+            self.assertEqual(plan["effect"], "read-only")
+            self.assertEqual(plan["command"][-3:], ["validate", "--input", str(sample)])
+            dispatcher._check_plan_integrity(plan)
+            forged = dict(plan, command=plan["command"] + ["--unsafe"])
+            forged["plan_sha256"] = dispatcher._plan_fingerprint(forged)
+            with self.assertRaisesRegex(ValueError, "command differs"):
+                dispatcher.run(forged, executor=lambda *args, **kwargs: self.fail("executed"))
+            def holding(argv, **kwargs):
+                return subprocess.CompletedProcess(argv, 1,
+                    stdout='{"decision":"HOLD"}', stderr="")
+            result = dispatcher.run(plan, executor=holding)
+            self.assertEqual(result["observation"]["status"], "hold")
 
     def test_plan_is_read_only(self):
         report = dispatcher.describe("shards-repository-health")

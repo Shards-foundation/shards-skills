@@ -197,6 +197,11 @@ def append(root, task, kind, payload):
     finally:
         mutex.unlink(missing_ok=True)
 
+def same_identifier(left, right):
+    """Case and surrounding whitespace alone cannot establish distinct identities."""
+    return left.strip().casefold() == right.strip().casefold()
+
+
 def criterion_result(task, criterion, evidence, verify_observation):
     required = criterion.get("required_evidence", [])
     confirmed = set()
@@ -222,7 +227,7 @@ def criterion_result(task, criterion, evidence, verify_observation):
                 record["subject_actor"] != criterion["subject_actor"]):
             continue
         if kind == "reviewed" and (record.get("decision") != "APPROVED" or
-                                   record["observed_by"] == criterion["subject_actor"]):
+                                   same_identifier(record["observed_by"], criterion["subject_actor"])):
             continue
         recorded.add(kind)
         # Only the integrating host can authenticate an observation and its provenance.
@@ -230,7 +235,8 @@ def criterion_result(task, criterion, evidence, verify_observation):
             confirmed.add(kind)
             for digest in record.get("resolves", []):
                 blocker = blockers.get(digest)
-                if blocker and kind in blocker["outstanding"] and record["reference"] != blocker["reference"]:
+                if (blocker and kind in blocker["outstanding"] and
+                        not same_identifier(record["reference"], blocker["reference"])):
                     blocker["outstanding"].remove(kind)
                     if not blocker["outstanding"]:
                         del blockers[digest]

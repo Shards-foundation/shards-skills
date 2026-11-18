@@ -50,6 +50,40 @@ class AuthorityPreflightTests(unittest.TestCase):
         self.assertEqual(result["decision"], "CLAIMS_COMPLETE")
         self.assertFalse(result["authority_granted_by_validator"])
 
+    def test_case_variants_cannot_establish_independent_roles(self):
+        record = self.push_claim()
+        record["roles"]["reviewer"] = "EXECUTOR-AGENT"
+        action = record["actions"][0]
+        action.update(actor="EXECUTOR-AGENT", operation="pr.approve")
+        for item in record["evidence"]:
+            item.update(subject_actor=action["actor"], operation=action["operation"])
+        with self.assertRaisesRegex(ValueError, "actor ID"):
+            module.validate(record)
+
+    def test_relabelling_one_reference_cannot_satisfy_separate_gates(self):
+        record = self.push_claim()
+        for item in record["evidence"]:
+            item["reference"] = "local:observations"
+        result = module.validate(record)
+        self.assertEqual(result["decision"], "HOLD")
+        self.assertIn("AMBIGUOUS_EVIDENCE_REFERENCE", result["blockers"][0]["reasons"])
+        self.assertEqual(result["operations"][0]["matched_evidence"], [])
+
+    def test_copied_capability_reference_cannot_change_subject(self):
+        record = self.push_claim()
+        capability = record["evidence"][1]
+        record["evidence"].append(dict(capability, id="other-subject", subject_actor="executor-agent"))
+        self.assertEqual(module.validate(record)["decision"], "HOLD")
+
+    def test_separate_observations_can_share_a_document_and_compatible_roles(self):
+        record = self.push_claim()
+        record["roles"]["coordinator"] = record["roles"]["integrator"]
+        for item in record["evidence"]:
+            item["reference"] = "local:observations#" + item["id"]
+        result = module.validate(record)
+        self.assertEqual(result["decision"], "CLAIMS_COMPLETE")
+        self.assertFalse(result["authority_granted_by_validator"])
+
     def test_inapplicable_capabilities_hold(self):
         cases = {"subject_actor": ["executor-agent", "unknown-agent"], "operation": ["repo.read"],
                  "repository": ["other/project"], "branch": ["other"], "revision": ["b" * 40],

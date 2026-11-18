@@ -130,10 +130,14 @@ def validate_evidence(payload):
         raise ValueError("Invalid evidence")
     keys = set(payload)
     if keys != base:
-        if not base | ATTRIBUTION <= keys or keys - base - ATTRIBUTION - {"decision", "resolves"}:
+        if not base | ATTRIBUTION <= keys or keys - base - ATTRIBUTION - {"decision", "resolves", "evidence_type"}:
             raise ValueError("Evidence fields invalid")
         for key in ATTRIBUTION:
             require_text(payload, key)
+        if "evidence_type" in keys:
+            if (payload["status"] not in ("blocked", "fail") or
+                    not isinstance(payload["evidence_type"], str) or payload["evidence_type"] not in REQUIRED_EVIDENCE):
+                raise ValueError("Invalid blocked evidence type")
         if "decision" in keys:
             if payload["status"] != "reviewed" or payload["decision"] not in (
                     "APPROVED", "CHANGES_REQUESTED", "DISMISSED", "COMMENTED"):
@@ -202,7 +206,15 @@ def criterion_result(task, criterion, evidence, verify_observation):
         record = event["payload"]
         kind = record["status"]
         if kind in ("fail", "blocked") or record.get("decision") in ("CHANGES_REQUESTED", "DISMISSED"):
-            blockers[event["sha256"]] = record["reference"]
+            if kind == "reviewed":
+                affected = {"reviewed"}
+            elif "evidence_type" in record:
+                affected = {record["evidence_type"]}
+            else:
+                # Legacy or unspecified failures may affect any condition.
+                affected = set(required)
+            confirmed.difference_update(affected)
+            blockers[event["sha256"]] = {"reference": record["reference"], "outstanding": sorted(affected)}
             continue
         if (kind not in required or not ATTRIBUTION <= record.keys() or
                 record["revision"] != criterion["target_revision"] or
@@ -217,7 +229,11 @@ def criterion_result(task, criterion, evidence, verify_observation):
         if verify_observation is not None and verify_observation(task, criterion, record) is True:
             confirmed.add(kind)
             for digest in record.get("resolves", []):
-                blockers.pop(digest, None)
+                blocker = blockers.get(digest)
+                if blocker and kind in blocker["outstanding"] and record["reference"] != blocker["reference"]:
+                    blocker["outstanding"].remove(kind)
+                    if not blocker["outstanding"]:
+                        del blockers[digest]
     complete = bool(required) and confirmed == set(required) and not blockers
     return {**criterion, "status": "verified" if complete else "blocked" if blockers else "unverified",
             "recorded_evidence_types": sorted(recorded), "verified_evidence_types": sorted(confirmed),

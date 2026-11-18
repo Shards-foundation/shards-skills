@@ -163,7 +163,7 @@ These live in `plugins/shards-core/skills/`, not `skills/shards-sec-*/`. They us
 
 [problem-framing](skills/problem-framing/SKILL.md) · [implementation-planning](skills/implementation-planning/SKILL.md) · [systematic-debugging](skills/systematic-debugging/SKILL.md) · [test-driven-development](skills/test-driven-development/SKILL.md) · [code-review](skills/code-review/SKILL.md) · [secure-code-review](skills/secure-code-review/SKILL.md) · [threat-modeling](skills/threat-modeling/SKILL.md) · [skill-supply-chain-audit](skills/skill-supply-chain-audit/SKILL.md) · [smart-contract-review](skills/smart-contract-review/SKILL.md) · [release-readiness](skills/release-readiness/SKILL.md) · [incident-runbook](skills/incident-runbook/SKILL.md) · [agent-system-design](skills/agent-system-design/SKILL.md) · [tool-contract-design](skills/tool-contract-design/SKILL.md) · [evidence-based-research](skills/evidence-based-research/SKILL.md) · [reproducible-data-analysis](skills/reproducible-data-analysis/SKILL.md) · [frontend-accessibility-review](skills/frontend-accessibility-review/SKILL.md) · [web-application-testing](skills/web-application-testing/SKILL.md) · [writing-skill-packages](skills/writing-skill-packages/SKILL.md).
 
-**Separate pending work:** the ten operating-loop skills (task contract, context recovery, tool selection, progress control, evidence verification, review resolution, learning capture, skill evaluation, controlled updates and host compatibility) are in [PR #16](https://github.com/Shards-foundation/shards-skills/pull/16), not yet merged into `main`. They are **not** represented as installed or available on the main branch. The security suite is already merged into `main`; the ten operating-loop skills remain a separate pending change.
+At the evaluation baseline (`530ff6c`), [PR #16](https://github.com/Shards-foundation/shards-skills/pull/16) was not yet merged. This checkout includes its ten draft operating workflows alongside the security suite. Their [operating-loop guide](docs/operating-loop.md) describes how to record and verify evidence locally.
 
 Third-party packages retain their own licences and their review-stage status. Discovery is not authorisation. For current counts, use `catalogue/catalogue.json`; any examples and totals on a branch describe that branch only.
 
@@ -249,7 +249,7 @@ Original first-party content is licensed under MIT unless a file states otherwis
 
 ## Curated mega-library
 
-The bootstrap collection has been expanded into a curated catalogue of **329 skill packages** across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 14 upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
+The bootstrap collection has been expanded into a curated catalogue of **339 skill packages** across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 14 upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
 
 Imported packages are not silently treated as first-party. Each one is marked `review`, includes its immutable upstream commit and original path in frontmatter, and contains an `UPSTREAM.md` record. Package-level provenance is indexed in [`catalogue/imported-skills.json`](catalogue/imported-skills.json), with preserved source notices under [`third_party/`](third_party/).
 
@@ -355,3 +355,42 @@ does not connect a broker or start monitoring. Paper trading is the example defa
 
 Two known upstream risk defects block use for trade approval until corrected;
 see the [open findings](docs/day-trader-skills.md#open-upstream-findings).
+
+
+## Evidence-gated skill improvement (experimental)
+
+The first-party [shards-skill-improver](skills/shards-skill-improver/SKILL.md) creates
+a hash-pinned, reviewable proposed change to a single first-party skill, requires
+independently confirmed baseline/candidate evaluation evidence, and writes a local
+backup before an explicitly authorised apply. It does **not** independently
+produce eval results, run third-party scripts, modify remote repositories,
+auto-merge PRs or grant execution privileges.
+
+```bash
+python scripts/skill_improver.py plan --target skills/release-readiness/SKILL.md --candidate candidate.md --output change-plan.json
+# Validate the proposed apply locally. Without independent results this reports blocked.
+python scripts/skill_improver.py apply --plan change-plan.json --candidate candidate.md --eval eval.json --approve --expect-plan-sha256 <reviewed-plan-sha256>
+# Rollback requires the exact recorded backup and after_sha256:
+python scripts/skill_improver.py rollback --target skills/release-readiness/SKILL.md --backup <recorded-backup-path> --expect-current-sha256 <after_sha256> --approve
+```
+
+Apply and rollback operate on the local checkout only. The trusted host lookup for
+independent execution records is described in the [operating-loop guide](docs/operating-loop.md). The host remains responsible for authorization,
+GitHub branch protection, permissions and independent approval.
+
+
+## Ten operating skills: complete work without losing context
+
+The [operating-loop guide](docs/operating-loop.md) links ten Shards-authored,
+draft skills: task contract, context recovery, tool selection, progress control,
+evidence verification, review resolution, learning capture, skill evaluation,
+controlled skill updates and host compatibility. It includes an append-only,
+hash-chained **local task ledger** for durable criteria, attempts and evidence,
+plus a testable interrupted-agent handoff scenario. This local tool does not
+independently authenticate external observations or connect ChatGPT/Claude.
+
+```bash
+python scripts/operating_ledger.py --help
+python -m unittest discover -s tests -p 'test_operating_ledger.py' -v
+python -m unittest discover -s tests -p 'test_skill_improver.py' -v
+```

@@ -170,6 +170,6 @@ For enterprise security management: start with `shards-sec-business-threat-model
 
 ## Acceptance contract and continuous improvement
 
-An agent should be able to take a user story, select a skill using its trigger, capture the scoped threat and evidence, produce a reproducible finding, refuse an unauthorised action, and pass the case to another agent without inventing results. When PR #16's operating skills are merged, record attempts and evidence in their task ledger and use the separately governed skill improver to evaluate revisions. These systems are **not wired together on this branch**.
+An agent should be able to take a user story, select a skill using its trigger, capture the scoped threat and evidence, produce a reproducible finding, refuse an unauthorised action, and pass the case to another agent without inventing results. An operator can record attempts and evidence in their task ledger and use the separately governed skill improver to evaluate revisions. The operator transfers evidence between these workflows explicitly.
 
 The shared curriculum is anchored to dated primary references in `docs/security-frameworks.md`. Update guidance only after verifying newer editions; do not overwrite old version mappings silently.

@@ -11,7 +11,7 @@ and [Vercel Skills installer/agent paths](https://github.com/vercel-labs/skills/
 ## The quickest supported installation
 
 Use the established `skills` installer (Node.js 22.20+, Git and network access).
-Select **one or a few Shards-authored packages**, not all 329 catalogue entries.
+Select **one or a few Shards-authored packages**, not the full catalogue.
 The repository includes third-party imported/review-stage skills; listing a
 package never authorises execution of its scripts.
 

@@ -80,8 +80,11 @@ def validate(data: object) -> dict:
     if role_ids["reviewer"] in (role_ids["executor"], role_ids["integrator"]):
         raise ValueError("Independent reviewer must differ from executor and integrator")
     actor_ids = set(role_ids.values())
+    if len({actor.casefold() for actor in actor_ids}) != len(actor_ids):
+        raise ValueError("Ambiguous case variants of an actor ID")
     raw_evidence = _array(obj.get("evidence"), "evidence", 96)
     evidence: dict[str, dict] = {}
+    observations_by_reference = {}
     for raw in raw_evidence:
         e = _object(raw, "evidence item")
         eid = _string(e.get("id"), "evidence.id", ID)
@@ -100,6 +103,9 @@ def validate(data: object) -> dict:
                 _string(e[field], "evidence." + field, pattern)
         if "operation" in e and e["operation"] not in OPERATIONS:
             raise ValueError("Unknown evidence operation")
+        observation = tuple(e.get(key) for key in ("kind", "revision", "observed_by", "subject_actor",
+                                                   "operation", "repository", "branch"))
+        observations_by_reference.setdefault(e["reference"].strip(), set()).add(observation)
         evidence[eid] = e
     raw_actions = _array(obj.get("actions"), "actions", 48)
     if not raw_actions:
@@ -148,14 +154,17 @@ def validate(data: object) -> dict:
         if len(refs) != len(set(refs)):
             raise ValueError("Duplicate evidence reference")
         matched = []
+        reasons = []
         for ref in refs:
             item = evidence[ref]
             if (item["revision"] == sha and item["observed_by"] in actor_ids
                     and item.get("subject_actor") == actor and item.get("operation") == op
                     and item.get("repository") == repo and item.get("branch") == branch):
-                matched.append(item)
+                if len(observations_by_reference[item["reference"].strip()]) != 1:
+                    reasons.append("AMBIGUOUS_EVIDENCE_REFERENCE")
+                else:
+                    matched.append(item)
         kinds_current = {item["kind"] for item in matched}
-        reasons = []
         if permission != "GRANTED": reasons.append("SCOPE_" + permission)
         if permission == "GRANTED" and "delegation" not in kinds_current: reasons.append("DELEGATION_NOT_VERIFIED")
         if access != "OBSERVED": reasons.append(issue)

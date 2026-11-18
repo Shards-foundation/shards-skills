@@ -96,6 +96,34 @@ class LedgerTests(unittest.TestCase):
         record(dict(approval, reference="review/6", resolves=[dismissed]))
         self.assertTrue(complete())
 
+    def test_ambiguous_actor_and_receipt_spellings_cannot_establish_independence(self):
+        self.contract["criteria"][0].update(target_revision="a" * 40, resource="org/repo",
+            subject_actor="Builder", required_evidence=["reviewed"])
+        self.start()
+        review = {"criterion_id": "C1", "status": "reviewed", "revision": "a" * 40,
+                  "reference": "review/17", "observation": "approved", "observed_by": "reviewer",
+                  "subject_actor": "Builder", "resource": "org/repo", "decision": "APPROVED"}
+
+        def record(**changes):
+            return ledger.append(self.root, "case-1", "evidence", dict(review, **changes))["event_sha256"]
+
+        def complete():
+            return ledger.summary(self.root, "case-1", verify_observation=lambda *args: True)["complete"]
+
+        for variant in ("Builder ", "BUILDER"):
+            with self.subTest(actor=variant):
+                record(observed_by=variant)
+                self.assertFalse(complete())
+        record()
+        self.assertTrue(complete())
+        blocker = record(decision="DISMISSED")
+        for variant in (" review/17 ", "REVIEW/17"):
+            with self.subTest(locator=variant):
+                record(reference=variant, resolves=[blocker])
+                self.assertFalse(complete())
+        record(reference="review/18", resolves=[blocker])
+        self.assertTrue(complete())
+
     def test_current_evidence_cannot_substitute_for_another_requirement(self):
         self.contract["criteria"][0].update(target_revision="a" * 40, resource="org/repo",
             subject_actor="builder", required_evidence=["tested", "production-verified"])

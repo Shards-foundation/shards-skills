@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -60,63 +61,103 @@ def tracked(root: Path) -> list[str]:
     names = proc.stdout.decode("utf-8", errors="surrogateescape").split("\0")
     return [n for n in names if n]
 
+def open_source(path, flags):
+    # Prevent a replaced leaf from redirecting the read or blocking on a FIFO on POSIX.
+    return os.open(path, flags | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+
+
+def source_findings(name, body):
+    for number, line in enumerate(body.splitlines(), 1):
+        for code, severity, pattern, advice in RULES:
+            if pattern.search(line):
+                yield {"id": code, "severity": severity, "path": name, "line": number, "advice": advice}
+
+
 def inspect(root: Path, files: list[str]) -> dict:
     root = root.resolve()
     if not root.is_dir() or len(files) > MAX_FILES:
         raise ValueError("Invalid repository or too many tracked paths")
+    names = sorted(set(files))
     findings = []
-    consumed = 0
-    seen = set()
-    for name in sorted(files):
-        if name in seen:
-            continue
-        seen.add(name)
+    skipped = []
+    truncated_paths = []
+    out_of_scope = inspected = inspected_bytes = bytes_read = 0
+
+    def record(name, matches):
+        for finding in matches:
+            if len(findings) == MAX_FINDINGS:
+                truncated_paths.append(name)
+                return False
+            findings.append(finding)
+        return True
+
+    for name in names:
         try:
             path = relative_file(root, name)
         except (ValueError, OSError, UnicodeError):
-            # Preserve useful results for other files. Never follow a symlink.
-            findings.append({"id": "SKIPPED-UNSAFE-PATH", "severity": "medium",
-                             "path": name.encode("unicode_escape").decode("ascii"),
-                             "line": None,
-                             "advice": "Tracked path could not be inspected safely; review independently"})
-            if len(findings) >= MAX_FINDINGS:
-                return report(findings, len(seen), consumed, truncated=True)
+            safe_name = name.encode("unicode_escape").decode("ascii")
+            skipped.append({"path": safe_name, "reason": "Unsafe or symlinked tracked path"})
+            record(safe_name, [{"id": "SKIPPED-UNSAFE-PATH", "severity": "medium", "path": safe_name,
+                                "line": None, "advice": "Tracked path could not be inspected safely; review independently"}])
             continue
-        if not path.is_file():
-            continue
-        if path.name.startswith(".env") and path.name not in {".env.example", ".env.sample", ".env.template"}:
-            findings.append({"id": "TRACKED-ENV", "severity": "high", "path": name, "line": None,
-                "advice": "A tracked environment file may disclose credentials; inspect privately and rotate exposed values"})
-            continue
-        if path.suffix.lower() in {".pem", ".key", ".p12", ".pfx"}:
-            findings.append({"id": "TRACKED-KEY-MATERIAL", "severity": "high", "path": name, "line": None,
-                "advice": "Review whether tracked key or certificate material is private; never expose its contents"})
-            continue
-        if path.suffix.lower() not in SOURCE_EXT or path.stat().st_size > MAX_FILE_BYTES:
-            continue
-        blob = path.read_bytes()
-        consumed += len(blob)
-        if consumed > MAX_TOTAL_BYTES:
-            raise ValueError("Source scan byte budget exceeded")
-        if b"\0" in blob:
-            continue
-        try:
-            body = blob.decode("utf-8")
-        except UnicodeDecodeError:
-            continue
-        for number, line in enumerate(body.splitlines(), 1):
-            for code, severity, pattern, advice in RULES:
-                if pattern.search(line):
-                    findings.append({"id": code, "severity": severity, "path": name, "line": number, "advice": advice})
-                    if len(findings) >= MAX_FINDINGS:
-                        return report(findings, len(seen), consumed, truncated=True)
-    return report(findings, len(seen), consumed, truncated=False)
 
-def report(findings: list[dict], inspected: int, byte_count: int, truncated: bool) -> dict:
-    return {"schema_version": 1, "status": "WARNINGS_FOUND" if findings else "CLEAR_HEURISTICS_ONLY",
+        size = 0
+        try:
+            info = path.stat()
+            if not stat.S_ISREG(info.st_mode):
+                raise ValueError("Tracked path is not a regular file")
+            if path.name.startswith(".env") and path.name not in {".env.example", ".env.sample", ".env.template"}:
+                matches = [{"id": "TRACKED-ENV", "severity": "high", "path": name, "line": None,
+                            "advice": "A tracked environment file may disclose credentials; inspect privately and rotate exposed values"}]
+            elif path.suffix.lower() in {".pem", ".key", ".p12", ".pfx"}:
+                matches = [{"id": "TRACKED-KEY-MATERIAL", "severity": "high", "path": name, "line": None,
+                            "advice": "Review whether tracked key or certificate material is private; never expose its contents"}]
+            elif path.suffix.lower() not in SOURCE_EXT:
+                out_of_scope += 1
+                continue
+            else:
+                size = info.st_size
+                if size > MAX_FILE_BYTES:
+                    raise ValueError("Source file exceeds per-file byte limit")
+                if size > MAX_TOTAL_BYTES - bytes_read:
+                    raise ValueError("Remaining scan byte budget is insufficient")
+                with open(path, "rb", opener=open_source) as stream:
+                    opened = os.fstat(stream.fileno())
+                    if not os.path.samestat(info, opened) or opened.st_size != size:
+                        raise ValueError("Source file changed before inspection")
+                    blob = stream.read(size)
+                    bytes_read += len(blob)
+                    observed = os.fstat(stream.fileno())
+                if (len(blob) != size or observed.st_size != size or not os.path.samestat(info, observed)
+                        or observed.st_mtime_ns != info.st_mtime_ns):
+                    raise ValueError("Source file changed during inspection")
+                if b"\0" in blob:
+                    raise ValueError("Source file contains NUL bytes")
+                matches = source_findings(name, blob.decode("utf-8"))
+        except OSError:
+            skipped.append({"path": name, "reason": "Tracked path missing or unreadable"})
+            continue
+        except UnicodeDecodeError:
+            skipped.append({"path": name, "reason": "Source file is not UTF-8"})
+            continue
+        except ValueError as exc:
+            skipped.append({"path": name, "reason": str(exc)})
+            continue
+
+        if record(name, matches):
+            inspected += 1
+            inspected_bytes += size
+
+    incomplete = bool(skipped or truncated_paths)
+    status = ("INCOMPLETE_SCAN" if incomplete else
+              "WARNINGS_FOUND" if findings else "CLEAR_HEURISTICS_ONLY")
+    return {"schema_version": 1, "status": status,
             "risk_boundary": "Heuristic tracked-source inspection only; not a vulnerability scan, safety proof or approval",
-            "inspected_paths": inspected, "inspected_source_bytes": byte_count,
-            "truncated": truncated, "findings": findings}
+            "enumerated_paths": len(names), "out_of_scope_paths": out_of_scope,
+            "inspected_paths": inspected, "inspected_source_bytes": inspected_bytes,
+            "skipped_paths": skipped, "truncated_paths": truncated_paths,
+            "truncated": bool(truncated_paths), "incomplete": incomplete, "findings": findings}
+
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
@@ -136,7 +177,7 @@ def main(argv=None):
             with output.open("x", encoding="utf-8") as stream:
                 stream.write(content)
         print(content, end="")
-        return 1 if result["findings"] else 0
+        return 2 if result["incomplete"] else (1 if result["findings"] else 0)
     except (ValueError, OSError, UnicodeError) as exc:
         print(json.dumps({"status": "BLOCKED", "reason": str(exc)}), file=sys.stderr)
         return 2

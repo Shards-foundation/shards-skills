@@ -42,10 +42,13 @@ Coordinate through existing authorised tools, not through claimed internal agent
 TASK_ID / OBJECTIVE / BASE_SHA / CURRENT_SHA / OWNER / ACTORS:
 ACCEPTANCE_CRITERIA / OUT_OF_SCOPE / MAX_CORRECTION_ROUNDS:
 STATE: ACCEPTED|PLANNED|EXECUTED|VERIFIED|REVIEWED|DECIDED|BLOCKED|CLOSED|REJECTED|ESCALATED
+DECISION: ACCEPT|REVISE|HOLD|REJECT|CLOSE|ESCALATE
 EVIDENCE: [{criterion, observation, source, actor, sha, checked_at}]
 DEFECTS / CORRECTIONS_USED / PENDING_GATE / NEXT_AUTHORIZED_ACTION:
 TERMINAL_REASON / SIDE_EFFECTS / RESULT: OBSERVED|NOT_VERIFIED|BLOCKED
 ```
+
+Record `STATE` at each checkpoint. Include `DECISION` when a decision has been made about the task named by `TASK_ID`. For a missing required gate, record `HOLD` with state `BLOCKED` and name the pending gate. For verified completion, record `CLOSE` with state `CLOSED`. Handle an unrelated proposal separately from the decision on the original task.
 
 ## Verification
 Assert no transition to `CLOSED` while required evidence is pending; no correction round after the declared limit without owner decision; no new tool privilege from review or delegation; and no green result from a historic SHA after code changed. Use [frozen scenarios](../../evals/shards-a2a-five-workflows.json) for a normal verified closure, an author without push access, and a new unapproved scope request.

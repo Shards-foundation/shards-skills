@@ -40,7 +40,16 @@ SIDE_EFFECTS_OBSERVED / UNAPPROVED_EFFECTS / NEXT_OWNER / NEXT_AUTHORIZED_ACTION
 ```
 
 ## Verification
-Replay the *evidence assessment*, not irreversible actions. Test: a bot says APPROVED but GitHub review is COMMENTED (finding); a SHA-pinned check is pending (hold); a bot flags a real documentation defect despite all checks green (finding); an apparent missing write permission for another actor with no evidence (unknown, not allegation). Use [frozen scenarios](../../evals/shards-a2a-five-workflows.json). Verify timestamps, SHA and actor/operation attribution.
+Compare each assessment with its [frozen scenario](../../evals/shards-a2a-five-workflows.json). Check the subject actor, observed operation, target, revision and timestamp in the source record.
+
+| Scenario | Decision | Evidence for the decision |
+|---|---|---|
+| `comment_not_approval` | `FINDING` | The PR has a comment where the handoff claims formal approval. |
+| `pending_tests` | `HOLD_UNVERIFIED` | The required check on the current SHA is pending. |
+| `unverified_bot` | `CLEAR` | Source at the target revision refutes the bot's finding. |
+| `confirmed_bot` | `FINDING` | Source at the target revision confirms the reported defect despite passing CI. |
+| `false_actor_capability` | `FINDING` | The cited capability receipt identifies a different subject actor. Record the attribution error and leave the claimant's actual access unverified. |
+| `unverified_permission` | `HOLD_UNVERIFIED` | The actor's claimed lack of access has no supporting observation. |
 
 ## Failure handling
 On stale, missing or contradictory evidence, do not convert an assumption into a positive result; mark the exact unresolved claim and owner. Stop on unapproved external writes, exposed credentials or role confusion. If only a nonmaterial phrasing dispute remains, avoid infinite review loops; note as advisory. Treat independent review as useful critique, not a substitute for evidence.

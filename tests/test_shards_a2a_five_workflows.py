@@ -13,6 +13,9 @@ NAMES = (
     "shards-a2a-clear-demonstration",
 )
 
+FIXTURES = ROOT / "evals/shards-a2a-five-workflows.json"
+
+
 class A2AFiveWorkflowTests(unittest.TestCase):
     def _read(self, name):
         p = ROOT / "skills" / name / "SKILL.md"
@@ -32,29 +35,62 @@ class A2AFiveWorkflowTests(unittest.TestCase):
                 self.assertIn("shards-a2a-five-workflows.json", body)
                 self.assertNotIn("APPROVED_BY_THIS_SKILL", body)
 
-    def test_each_workflow_has_boundaries_and_no_autonomous_external_action(self):
-        for name in NAMES:
+    def test_workflows_document_limits_on_external_effects(self):
+        limits = {
+            "shards-a2a-conditional-offer": "EXECUTION_AUTHORIZATION: NOT_GRANTED",
+            "shards-a2a-leakage-audit": "Never auto-merge",
+            "shards-a2a-closed-loop-circuit": "No implicit merge, publication, payment, signing or deployment",
+            "shards-a2a-self-preservation": "Never fabricate a cached PASS or repeat side-effecting operations",
+            "shards-a2a-clear-demonstration": "cannot establish actual production execution",
+        }
+        for name, phrase in limits.items():
             with self.subTest(name=name):
-                s = self._read(name).lower()
-                self.assertTrue("authoris" in s or "authoriz" in s)
-                self.assertTrue("evidence" in s)
-                self.assertTrue("not" in s)
-                self.assertTrue("host" in s)
+                self.assertIn(phrase, self._read(name))
 
     def test_frozen_cases_cover_all_skills_with_positive_and_negative_inputs(self):
-        data = json.loads((ROOT / "evals/shards-a2a-five-workflows.json").read_text(encoding="utf-8"))
-        self.assertEqual(data["schema_version"], 1)
+        data = json.loads(FIXTURES.read_text(encoding="utf-8"))
+        self.assertEqual(data["schema_version"], 2)
         self.assertEqual(data["status"], "SCENARIOS_ONLY_NOT_EXECUTED")
         cases = data["cases"]
-        self.assertEqual(len(cases), 15)
         self.assertEqual({case["skill"] for case in cases}, set(NAMES))
-        self.assertEqual(len({case["id"] for case in cases}), 15)
+        self.assertEqual(len({case["id"] for case in cases}), len(cases))
         for name in NAMES:
-            self.assertEqual(sum(c["skill"] == name for c in cases), 3)
+            skill_cases = [case for case in cases if case["skill"] == name]
+            expected_count = 6 if name == "shards-a2a-leakage-audit" else 3
+            self.assertEqual(len(skill_cases), expected_count)
+            self.assertTrue(any(case["forbidden_claims"] for case in skill_cases))
         for case in cases:
             self.assertTrue(case["input"].strip())
-            self.assertTrue(case["expected_decision"].strip())
             self.assertIsInstance(case["forbidden_claims"], list)
+
+    def test_fixture_expectations_fit_their_output_contract_field(self):
+        cases = json.loads(FIXTURES.read_text(encoding="utf-8"))["cases"]
+        for case in cases:
+            with self.subTest(case=case["id"]):
+                contract = self._read(case["skill"]).split("## Output contract\n", 1)[1]
+                record = contract.split("```text\n", 1)[1].split("```", 1)[0]
+                decision_field = r"^DECISION: ([A-Z_|]+)$"
+                if case["skill"] == "shards-a2a-self-preservation":
+                    decision_field = r"^CHECK_DECISIONS: .*?action: ([A-Z_|]+),"
+                elif case["skill"] == "shards-a2a-clear-demonstration":
+                    decision_field = r"^VERDICT: ([A-Z_|]+)$"
+                match = re.search(decision_field, record, re.MULTILINE)
+                self.assertIsNotNone(match, "missing decision field in output contract")
+                self.assertIn(case["expected_decision"], match[1].split("|"))
+                if case["skill"] == "shards-a2a-closed-loop-circuit":
+                    state = re.search(r"^STATE: ([A-Z_|]+)$", record, re.MULTILINE)
+                    self.assertIsNotNone(state)
+                    self.assertIn(case["expected_state"], state[1].split("|"))
+
+    def test_leakage_verification_table_matches_frozen_scenarios(self):
+        name = "shards-a2a-leakage-audit"
+        cases = json.loads(FIXTURES.read_text(encoding="utf-8"))["cases"]
+        expected = {(c["scenario"], c["expected_decision"]) for c in cases if c["skill"] == name}
+        self.assertIn(("false_actor_capability", "FINDING"), expected)
+        self.assertIn(("unverified_permission", "HOLD_UNVERIFIED"), expected)
+        verification = self._read(name).split("## Verification\n", 1)[1].split("\n## ", 1)[0]
+        rows = re.findall(r"^\| `([a-z_]+)` \| `([A-Z_]+)` \|", verification, re.MULTILINE)
+        self.assertCountEqual(rows, expected)
 
     def test_catalogue_contains_all_five_draft_descriptors(self):
         catalogue = json.loads((ROOT / "catalogue/catalogue.json").read_text(encoding="utf-8"))

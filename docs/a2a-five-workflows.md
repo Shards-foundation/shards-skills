@@ -27,6 +27,8 @@ These complement the curated read-only `shards-a2a-harness` and sanitised `shard
 
 ## Test evidence and maturity
 
-The accompanying [frozen behavioural cases](../evals/shards-a2a-five-workflows.json) provide **15 proposed evaluation scenarios**, three per skill. `python -m unittest tests.test_shards_a2a_five_workflows -v` tests descriptors and fixture structure; it does **not** execute real model hosts. Run independent live agent trials before claiming interoperability or reliable compliance.
+The [frozen behavioural cases](../evals/shards-a2a-five-workflows.json) contain 18 proposed scenarios. Fixture schema v2 stores a closed-loop case's lifecycle state in `expected_state` and its DECIDE outcome in `expected_decision`. Consumers of v1 should read closure and blockage from the state field. For Self-Preservation, `expected_decision` describes the per-check `CHECK_DECISIONS[].action`. For Clear Demonstration it describes the `VERDICT`. For the other workflows it describes `DECISION`.
+
+From the repository root, run `python -m unittest discover -s tests -p 'test_shards_a2a_five_workflows.py' -v` to check fixture structure, decision vocabularies and catalogue registration. Independent host trials would be needed to assess model behaviour or interoperability.
 
 **Scope:** this change adds five first-party, `status: draft`, instruction-only skills to the searchable historical catalogue; it does **not** register them as executable curated plugin actions, alter `scripts/dispatch_skills.py`, or install skills into Claude, Manus, OpenHands or ChatGPT.

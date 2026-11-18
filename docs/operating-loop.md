@@ -27,8 +27,14 @@ Save this as `contract.json`:
   "scope": "Only the agreed feature branch; no release",
   "authority": "Local branch edits and tests approved; merge requires protected-branch gates",
   "criteria": [
-    {"id": "C1", "acceptance": "Regression is reproduced and corrected"},
-    {"id": "C2", "acceptance": "Required tests and independent reviews pass"}
+    {
+      "id": "C1",
+      "acceptance": "Regression tests pass and an independent reviewer approves",
+      "target_revision": "0123456789abcdef0123456789abcdef01234567",
+      "resource": "OWNER/REPO",
+      "subject_actor": "builder-id",
+      "required_evidence": ["tested", "reviewed"]
+    }
   ]
 }
 ```
@@ -45,7 +51,10 @@ For evidence, save `evidence.json`:
   "criterion_id": "C1",
   "status": "tested",
   "reference": "https://github.com/OWNER/REPO/actions/runs/REAL-RUN-ID",
-  "revision": "EXACT-COMMIT-SHA",
+  "revision": "0123456789abcdef0123456789abcdef01234567",
+  "subject_actor": "builder-id",
+  "observed_by": "ci-id",
+  "resource": "OWNER/REPO",
   "observation": "Document the actual result, not the expected result"
 }
 ```
@@ -55,7 +64,17 @@ python scripts/operating_ledger.py record --task example-fix --kind evidence --p
 python scripts/operating_ledger.py verify --task example-fix
 ```
 
-`verify` returns nonzero until all criteria have qualifying evidence. It checks presence and integrity of **operator-recorded** evidence, not the truth of external URLs or deployment status. Do not promote a task to production-verified without external host-level checks.
+Set the actual target Git object ID, canonical repository identifier and work owner's stable host ID before initialization. Evidence types are `implemented`, `tested`, `reviewed`, `deployed` and `production-verified`. Each listed type needs its own matching observation. A formal approval requires status `reviewed`, decision `APPROVED` and an observer independent of the work owner. A comment or test receipt cannot fulfill that requirement.
+
+The offline CLI displays recorded evidence. Its `verify` command exits 1 while completion is unverified. A trusted host may call `summary(root, task, verify_observation=...)`. Its verifier receives the task ID, immutable criterion and complete evidence payload. It must authenticate the underlying source and check the actor identities, operation, exact target, revision, result and reference. For approval it must check the formal review record and independence. Return exactly `True` only for a matching observation. No default host verifier is installed.
+
+The summary retains contrary records. Failed or blocked observations and negative review decisions keep the criterion open until a verified current observation explicitly lists the resolved event hashes in `resolves`. The host must confirm those resolutions. Existing ledgers remain readable. Old criteria without typed requirements and a target remain unverified. Start a new linked task for new acceptance terms and retain the original history.
+
+## Skill improvement
+
+The standalone `skill_improver.py apply` checks the proposed plan, candidate, counts and approval, and returns a blocked result with exit 1 when independent execution evidence is unavailable. Malformed or failing receipts exit 2. Planning and rollback retain their existing interface.
+
+A trusted embedding host can call `apply(args, get_verified_evaluation=lookup)`. The lookup receives the full checked plan including target and baseline/candidate digests. It must retrieve an independently authenticated run for that target and both files, verify the fixed case set actually ran, and derive the counts from its outcomes. On success it returns `kind` equal to `executed-evaluation`, the nonempty authenticated `evaluator` identity and `source` identifier, and a `results` object containing all seven evaluation fields. Return `None` if this cannot be established. The tool compares this record to the candidate's claimed results before writing. Supplying the candidate's JSON as the lookup implementation would invalidate the trust boundary. Authorisation remains the caller's responsibility.
 
 ## Other events
 
@@ -73,7 +92,7 @@ Codex, Claude, ChatGPT Work and other hosts may read the shared descriptors; act
 
 ## Acceptance test
 
-Agent A begins `example-fix`, records the contract and a checkpoint, and stops. Agent B loads the ledger, checks the actual branch/reviewer status, fixes one defect, records review disposition and tests, and demonstrates C1/C2 without inventing a new PR or asking for previously granted authority. Capture unnecessary tool calls, elapsed time and user interventions for comparison with a baseline.
+Agent A begins `example-fix`, records the contract and a checkpoint, and stops. Agent B loads the ledger, checks the actual branch/reviewer status, fixes one defect, records review disposition and tests, and demonstrates C1 without inventing a new PR or asking for previously granted authority. Capture unnecessary tool calls, elapsed time and user interventions for comparison with a baseline.
 
 ## Known limitations
 

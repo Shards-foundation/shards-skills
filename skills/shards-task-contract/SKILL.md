@@ -16,7 +16,7 @@ Read `AGENTS.md` and `docs/operating-loop.md`. Use only operator-authorised work
 
 ## Workflow
 1. Capture task ID, requested outcome, in-scope and out-of-scope actions, existing authorisation and evidence required for completion.
-2. Establish immutable acceptance criteria IDs before implementation. Record changes as explicit amendments, never silently overwrite the original.
+2. Pin each criterion ID, work owner, resource, full target revision and required evidence types before implementation. Record changes as explicit amendments, never silently overwrite the original.
 3. Assign one next action and a stop condition. If the desired output is already complete, report evidence and stop.
 4. Every additional task, PR or release must map to an existing criterion or a separately approved amendment.
 5. Use the operating ledger CLI to create a task record and record criterion results.

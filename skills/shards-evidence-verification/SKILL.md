@@ -17,7 +17,7 @@ Read `AGENTS.md` and `docs/operating-loop.md`. Use only operator-authorised work
 ## Workflow
 1. Inspect the original task contract and exact criterion identifiers.
 2. Classify each result as proposed, implemented, tested, reviewed, deployed or production-verified; keep states distinct.
-3. Pin commit, check-run, artifact digest, URL or runtime evidence and timestamp for every pass claim.
+3. Match each required evidence type to the criterion's exact revision, target and work owner. Record the observer and artifact reference. The host must authenticate the observation before it can satisfy the criterion.
 4. Treat missing, stale or contradictory evidence as unverified; record FAIL or BLOCKED with a clear cause.
 5. Present a criterion-by-criterion verdict, remaining blockers and whether the requested task is actually complete.
 

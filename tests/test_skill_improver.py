@@ -2,6 +2,8 @@
 import importlib.util
 import json
 import hashlib
+import io
+from contextlib import redirect_stdout
 import tempfile
 import unittest
 from pathlib import Path
@@ -47,6 +49,9 @@ class ImproverTests(unittest.TestCase):
               "baseline_passed": 1, "candidate_passed": 2,
               "regressions": 0, "failed_cases": 0}
         self.eval_path.write_text(json.dumps(ev))
+        # Simulate an independent host lookup, separate from the proposed eval file.
+        self.host_result = {"kind": "executed-evaluation", "source": "ci/run/5",
+                            "evaluator": "ci", "results": dict(ev)}
         return plan
 
     def options(self, plan, **overrides):
@@ -56,9 +61,39 @@ class ImproverTests(unittest.TestCase):
         fields.update(overrides)
         return SimpleNamespace(**fields)
 
-    def test_plan_apply_rollback(self):
+    def test_unverified_counts_cannot_trigger_apply(self):
         plan = self.prepare()
         receipt = imp.apply(self.options(plan))
+        self.assertEqual(receipt["status"], "blocked")
+        self.assertEqual(receipt["evaluation_status"], "unverified")
+        self.assertEqual(self.target.read_bytes(), self.original)
+        self.assertFalse(list(self.target.parent.glob("SKILL.md.backup-*")))
+
+    def test_offline_cli_returns_unverified_without_writing(self):
+        plan = self.prepare()
+        output = io.StringIO()
+        with redirect_stdout(output):
+            rc = imp.main(["apply", "--plan", str(self.plan_path), "--candidate", str(self.new),
+                "--eval", str(self.eval_path), "--approve", "--expect-plan-sha256", plan["plan_sha256"]])
+        self.assertEqual(rc, 1)
+        self.assertEqual(json.loads(output.getvalue())["evaluation_status"], "unverified")
+        self.assertEqual(self.target.read_bytes(), self.original)
+
+    def host_apply(self, plan):
+        return imp.apply(self.options(plan), get_verified_evaluation=lambda record: self.host_result)
+
+    def test_external_result_must_match_execution_and_case_set(self):
+        plan = self.prepare()
+        self.host_result["results"]["case_set_sha256"] = "b" * 64
+        self.assertEqual(self.host_apply(plan)["status"], "blocked")
+        self.host_result["results"]["case_set_sha256"] = "a" * 64
+        self.host_result["kind"] = "planned-evaluation"
+        self.assertEqual(self.host_apply(plan)["status"], "blocked")
+        self.assertEqual(self.target.read_bytes(), self.original)
+
+    def test_plan_apply_rollback(self):
+        plan = self.prepare()
+        receipt = self.host_apply(plan)
         self.assertEqual(self.target.read_bytes(), self.candidate)
         result = imp.rollback(SimpleNamespace(target="skills/sample-skill/SKILL.md",
                 backup=str(self.root / receipt["backup"]), approve=True,
@@ -78,14 +113,14 @@ class ImproverTests(unittest.TestCase):
         ev["regressions"] = 1
         self.eval_path.write_text(json.dumps(ev))
         with self.assertRaisesRegex(ValueError, "regression"):
-            imp.apply(self.options(plan))
+            self.host_apply(plan)
         self.assertEqual(self.target.read_bytes(), self.original)
 
     def test_stale_target_fails(self):
         plan = self.prepare()
         self.target.write_bytes(content("later edit"))
         with self.assertRaisesRegex(ValueError, "Stale"):
-            imp.apply(self.options(plan))
+            self.host_apply(plan)
 
     def test_plan_tamper_fails(self):
         plan = self.prepare()
@@ -93,13 +128,13 @@ class ImproverTests(unittest.TestCase):
         altered["diff"] += "\nmalicious"
         self.plan_path.write_text(json.dumps(altered))
         with self.assertRaisesRegex(ValueError, "checksum"):
-            imp.apply(self.options(plan))
+            self.host_apply(plan)
 
     def test_stale_candidate_fails(self):
         plan = self.prepare()
         self.new.write_bytes(content("subsequent"))
         with self.assertRaisesRegex(ValueError, "Stale"):
-            imp.apply(self.options(plan))
+            self.host_apply(plan)
 
     def test_imported_target_rejected(self):
         (self.target.parent / "UPSTREAM.md").write_text("imported")
@@ -114,7 +149,7 @@ class ImproverTests(unittest.TestCase):
 
     def test_rollback_rejects_later_edits(self):
         plan = self.prepare()
-        receipt = imp.apply(self.options(plan))
+        receipt = self.host_apply(plan)
         self.target.write_bytes(content("later edit"))
         with self.assertRaisesRegex(ValueError, "changed"):
             imp.rollback(SimpleNamespace(target="skills/sample-skill/SKILL.md",
@@ -124,17 +159,17 @@ class ImproverTests(unittest.TestCase):
 
     def test_reapply_after_rollback(self):
         plan = self.prepare()
-        first = imp.apply(self.options(plan))
+        first = self.host_apply(plan)
         imp.rollback(SimpleNamespace(target="skills/sample-skill/SKILL.md",
             backup=str(self.root / first["backup"]), approve=True,
             expect_current_sha256=first["after_sha256"]))
-        second = imp.apply(self.options(plan))
+        second = self.host_apply(plan)
         self.assertNotEqual(first["backup"], second["backup"])
         self.assertEqual(self.target.read_bytes(), self.candidate)
 
     def test_tampered_backup_rejected(self):
         plan = self.prepare()
-        receipt = imp.apply(self.options(plan))
+        receipt = self.host_apply(plan)
         backup = self.root / receipt["backup"]
         backup.write_bytes(content("forged backup"))
         with self.assertRaisesRegex(ValueError, "digest mismatch"):
@@ -160,9 +195,9 @@ class ImproverTests(unittest.TestCase):
 
     def test_duplicate_apply_fails(self):
         plan = self.prepare()
-        imp.apply(self.options(plan))
+        self.host_apply(plan)
         with self.assertRaisesRegex(ValueError, "Stale"):
-            imp.apply(self.options(plan))
+            self.host_apply(plan)
 
 if __name__ == "__main__":
     unittest.main()

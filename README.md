@@ -198,22 +198,21 @@ see the [open findings](docs/day-trader-skills.md#open-upstream-findings).
 
 The first-party [shards-skill-improver](skills/shards-skill-improver/SKILL.md) creates
 a hash-pinned, reviewable proposed change to a single first-party skill, requires
-operator-supplied baseline/candidate evaluation evidence, and writes a local
+independently confirmed baseline/candidate evaluation evidence, and writes a local
 backup before an explicitly authorised apply. It does **not** independently
 produce eval results, run third-party scripts, modify remote repositories,
 auto-merge PRs or grant execution privileges.
 
 ```bash
 python scripts/skill_improver.py plan --target skills/release-readiness/SKILL.md --candidate candidate.md --output change-plan.json
-# Run fixed baseline and candidate evaluations; prepare eval.json from real results.
+# Validate the proposed apply locally. Without independent results this reports blocked.
 python scripts/skill_improver.py apply --plan change-plan.json --candidate candidate.md --eval eval.json --approve --expect-plan-sha256 <reviewed-plan-sha256>
 # Rollback requires the exact recorded backup and after_sha256:
 python scripts/skill_improver.py rollback --target skills/release-readiness/SKILL.md --backup <recorded-backup-path> --expect-current-sha256 <after_sha256> --approve
 ```
 
-Apply and rollback operate on the local checkout only. The eval receipt is not
-cryptographically authenticated and must be reviewed against independently
-recorded test artifacts. The host remains responsible for authorization,
+Apply and rollback operate on the local checkout only. The trusted host lookup for
+independent execution records is described in the [operating-loop guide](docs/operating-loop.md). The host remains responsible for authorization,
 GitHub branch protection, permissions and independent approval.
 
 

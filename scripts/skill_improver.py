@@ -126,7 +126,7 @@ def check_plan(raw: str) -> tuple[dict, Path]:
     record["plan_sha256"] = sig
     return record, target_path(record["target"])
 
-def check_eval(raw: str, record: dict) -> None:
+def check_eval(raw: str, record: dict) -> dict:
     ev = load(safe_file(raw))
     fields = {"baseline_sha256", "candidate_sha256", "case_set_sha256",
               "baseline_passed", "candidate_passed", "regressions", "failed_cases"}
@@ -139,8 +139,10 @@ def check_eval(raw: str, record: dict) -> None:
         raise ValueError("Invalid evaluation counts")
     if ev["candidate_passed"] < 1 or ev["candidate_passed"] < ev["baseline_passed"] or ev["regressions"] or ev["failed_cases"]:
         raise ValueError("Candidate fails regression gate")
+    return ev
 
-def apply(args) -> dict:
+def apply(args, *, get_verified_evaluation=None) -> dict:
+    """Apply only with a host-supplied lookup of independently validated execution results."""
     if not args.approve:
         raise ValueError("Apply requires --approve")
     record, target = check_plan(args.plan)
@@ -150,11 +152,19 @@ def apply(args) -> dict:
     if digest(old) != record["baseline_sha256"] or digest(new) != record["candidate_sha256"]:
         raise ValueError("Stale target or candidate")
     descriptor(new, target.parent.name)
-    check_eval(args.eval, record)
+    claimed = check_eval(args.eval, record)
     expected = "".join(difflib.unified_diff(old.decode().splitlines(True), new.decode().splitlines(True),
         fromfile=record["target"] + " (baseline)", tofile=record["target"] + " (candidate)"))
     if expected != record["diff"]:
         raise ValueError("Diff mismatch")
+    observed = get_verified_evaluation(record.copy()) if get_verified_evaluation is not None else None
+    if (not isinstance(observed, dict) or observed.get("kind") != "executed-evaluation" or
+            any(not isinstance(observed.get(k), str) or not observed[k].strip()
+                for k in ("evaluator", "source")) or
+            canonical(observed.get("results")) != canonical(claimed)):
+        return {"status": "blocked", "evaluation_status": "unverified",
+                "reason": "Independent execution results matching the evaluated files and case set are required",
+                "target": record["target"], "plan_sha256": record["plan_sha256"]}
     backup = target.with_name("SKILL.md.backup-" + digest(old)[:16] + "-" + uuid.uuid4().hex)
     create_only(backup, old)
     temp = None
@@ -176,7 +186,9 @@ def apply(args) -> dict:
             backup.unlink(missing_ok=True)
     return {"status": "applied", "target": record["target"], "before_sha256": digest(old),
             "after_sha256": digest(new), "backup": str(backup.relative_to(ROOT)),
-            "plan_sha256": record["plan_sha256"]}
+            "plan_sha256": record["plan_sha256"], "evaluation_status": "host-verified",
+            "case_set_sha256": claimed["case_set_sha256"],
+            "evaluator": observed["evaluator"], "source": observed["source"]}
 
 def rollback(args) -> dict:
     if not args.approve or not HEX.fullmatch(args.expect_current_sha256 or ""):
@@ -231,7 +243,7 @@ def main(argv=None) -> int:
     try:
         result = {"plan": plan, "apply": apply, "rollback": rollback}[args.operation](args)
         print(json.dumps(result, indent=2))
-        return 0
+        return 1 if result.get("status") == "blocked" else 0
     except (ValueError, OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
         print(json.dumps({"status": "blocked", "error": str(exc)}), file=sys.stderr)
         return 2

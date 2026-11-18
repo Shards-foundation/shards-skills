@@ -13,6 +13,10 @@ from pathlib import Path
 ID = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$")
 KINDS = {"attempt", "checkpoint", "evidence", "review", "lesson", "amendment", "decision"}
 OUTCOMES = {"proposed", "implemented", "tested", "reviewed", "deployed", "production-verified", "fail", "blocked"}
+REQUIRED_EVIDENCE = {"implemented", "tested", "reviewed", "deployed", "production-verified"}
+TARGET_FIELDS = {"target_revision", "subject_actor", "resource", "required_evidence"}
+ATTRIBUTION = {"subject_actor", "observed_by", "resource"}
+REVISION = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})")
 MAX_BYTES = 1_000_000
 
 def canonical(obj):
@@ -39,7 +43,7 @@ def require_text(obj, key):
         raise ValueError("Invalid required field: " + key)
 
 def validate_contract(data):
-    if set(data) != {"outcome", "scope", "authority", "criteria"}:
+    if not isinstance(data, dict) or set(data) != {"outcome", "scope", "authority", "criteria"}:
         raise ValueError("Contract fields must be outcome, scope, authority, criteria")
     for field in ("outcome", "scope", "authority"):
         require_text(data, field)
@@ -48,13 +52,23 @@ def validate_contract(data):
         raise ValueError("At least one and no more than 50 criteria required")
     ids = set()
     for item in criteria:
-        if not isinstance(item, dict) or set(item) != {"id", "acceptance"}:
+        if not isinstance(item, dict) or set(item) not in ({"id", "acceptance"}, {"id", "acceptance"} | TARGET_FIELDS):
             raise ValueError("Invalid criterion shape")
         require_text(item, "acceptance")
         cid = item["id"]
         if not isinstance(cid, str) or not ID.fullmatch(cid) or cid in ids:
             raise ValueError("Invalid or repeated criterion id")
         ids.add(cid)
+        if "required_evidence" in item:
+            for key in ("target_revision", "subject_actor", "resource"):
+                require_text(item, key)
+            if not REVISION.fullmatch(item["target_revision"]):
+                raise ValueError("Target revision must be a full Git object ID")
+            required = item["required_evidence"]
+            if (not isinstance(required, list) or not required or
+                    any(not isinstance(k, str) or k not in REQUIRED_EVIDENCE for k in required)
+                    or len(required) != len(set(required))):
+                raise ValueError("Invalid required evidence types")
 
 def read_events(file):
     if not file.is_file():
@@ -110,6 +124,31 @@ def init(root, task, payload):
     emit(file, event, exclusive=True)
     return {"task": task, "event_sha256": event["sha256"], "criterion_count": len(payload["criteria"])}
 
+def validate_evidence(payload):
+    base = {"criterion_id", "status", "reference", "revision", "observation"}
+    if not isinstance(payload, dict):
+        raise ValueError("Invalid evidence")
+    keys = set(payload)
+    if keys != base:
+        if not base | ATTRIBUTION <= keys or keys - base - ATTRIBUTION - {"decision", "resolves"}:
+            raise ValueError("Evidence fields invalid")
+        for key in ATTRIBUTION:
+            require_text(payload, key)
+        if "decision" in keys:
+            if payload["status"] != "reviewed" or payload["decision"] not in (
+                    "APPROVED", "CHANGES_REQUESTED", "DISMISSED", "COMMENTED"):
+                raise ValueError("Invalid review decision")
+        if "resolves" in keys:
+            resolves = payload["resolves"]
+            if (not isinstance(resolves, list) or not resolves or len(resolves) > 50 or
+                    any(not isinstance(d, str) or not re.fullmatch(r"[0-9a-f]{64}", d) for d in resolves)):
+                raise ValueError("Invalid resolved event digests")
+    for key in base:
+        require_text(payload, key)
+    if payload["status"] not in OUTCOMES:
+        raise ValueError("Unknown evidence status")
+
+
 def append(root, task, kind, payload):
     if kind not in KINDS or not isinstance(payload, dict):
         raise ValueError("Invalid event")
@@ -118,16 +157,13 @@ def append(root, task, kind, payload):
     try:
         events = read_events(file)
         if kind == "evidence":
-            if set(payload) != {"criterion_id", "status", "reference", "revision", "observation"}:
-                raise ValueError("Evidence fields invalid")
+            validate_evidence(payload)
             known = {c["id"] for c in events[0]["payload"]["criteria"]}
             for event in events[1:]:
                 if event["kind"] == "amendment":
                     known.update(c["id"] for c in event["payload"]["criteria"])
-            if payload.get("criterion_id") not in known or payload.get("status") not in OUTCOMES:
+            if payload["criterion_id"] not in known:
                 raise ValueError("Unknown criterion or status")
-            for key in ("reference", "revision", "observation"):
-                require_text(payload, key)
         elif kind == "amendment":
             if set(payload) != {"reason", "authority", "criteria"}:
                 raise ValueError("Amendment requires reason, authority and new criteria")
@@ -157,24 +193,70 @@ def append(root, task, kind, payload):
     finally:
         mutex.unlink(missing_ok=True)
 
-def summary(root, task):
+def criterion_result(task, criterion, evidence, verify_observation):
+    required = criterion.get("required_evidence", [])
+    confirmed = set()
+    recorded = set()
+    blockers = {}
+    for event in evidence:
+        record = event["payload"]
+        kind = record["status"]
+        if kind in ("fail", "blocked") or record.get("decision") in ("CHANGES_REQUESTED", "DISMISSED"):
+            blockers[event["sha256"]] = record["reference"]
+            continue
+        if (kind not in required or not ATTRIBUTION <= record.keys() or
+                record["revision"] != criterion["target_revision"] or
+                record["resource"] != criterion["resource"] or
+                record["subject_actor"] != criterion["subject_actor"]):
+            continue
+        if kind == "reviewed" and (record.get("decision") != "APPROVED" or
+                                   record["observed_by"] == criterion["subject_actor"]):
+            continue
+        recorded.add(kind)
+        # Only the integrating host can authenticate an observation and its provenance.
+        if verify_observation is not None and verify_observation(task, criterion, record) is True:
+            confirmed.add(kind)
+            for digest in record.get("resolves", []):
+                blockers.pop(digest, None)
+    complete = bool(required) and confirmed == set(required) and not blockers
+    return {**criterion, "status": "verified" if complete else "blocked" if blockers else "unverified",
+            "recorded_evidence_types": sorted(recorded), "verified_evidence_types": sorted(confirmed),
+            "missing_verified_evidence": sorted(set(required) - confirmed),
+            "blockers": blockers, "evidence": [e["payload"] for e in evidence], "complete": complete}
+
+
+def summary(root, task, *, verify_observation=None):
+    """Verify the chain locally. The optional host verifier independently checks the exact claim."""
     events = read_events(task_file(root, task))
-    criteria = {c["id"]: {"acceptance": c["acceptance"], "status": "unverified"} for c in events[0]["payload"]["criteria"]}
+    contract = events[0]["payload"]
+    validate_contract(contract)
+    criteria = {c["id"]: c for c in contract["criteria"]}
+    evidence = {key: [] for key in criteria}
     attempts = {}
     for event in events[1:]:
         p = event["payload"]
         if event["kind"] == "amendment":
-            criteria.update({c["id"]: {"acceptance": c["acceptance"], "status": "unverified"} for c in p["criteria"]})
+            validate_contract({"outcome": contract["outcome"], "scope": contract["scope"],
+                               "authority": p["authority"], "criteria": p["criteria"]})
+            for criterion in p["criteria"]:
+                cid = criterion["id"]
+                if cid in criteria:
+                    raise ValueError("Cannot rewrite existing acceptance criteria")
+                criteria[cid] = criterion
+                evidence[cid] = []
         elif event["kind"] == "evidence":
-            criteria[p["criterion_id"]].update({"status": p["status"], "reference": p["reference"], "revision": p["revision"]})
+            validate_evidence(p)
+            evidence[p["criterion_id"]].append(event)
         elif event["kind"] == "attempt":
             key = (p["criterion_id"], p["action"], p["result"])
             attempts[key] = attempts.get(key, 0) + 1
+    results = {cid: criterion_result(task, criterion, evidence[cid], verify_observation)
+               for cid, criterion in criteria.items()}
     loops = [{"criterion_id": k[0], "action": k[1], "result": k[2], "count": n} for k,n in attempts.items() if n >= 3]
-    return {"task": task, "outcome": events[0]["payload"]["outcome"], "criteria": criteria,
+    return {"task": task, "outcome": contract["outcome"], "criteria": results,
             "event_count": len(events), "head_sha256": events[-1]["sha256"],
-            "repetition_warnings": loops,
-            "complete": all(c["status"] in ("tested", "reviewed", "deployed", "production-verified") and c.get("reference") for c in criteria.values())}
+            "repetition_warnings": loops, "host_verifier_present": verify_observation is not None,
+            "complete": all(c["complete"] for c in results.values())}
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)

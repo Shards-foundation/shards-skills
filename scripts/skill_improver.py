@@ -159,6 +159,7 @@ def apply(args, *, get_verified_evaluation=None) -> dict:
         raise ValueError("Diff mismatch")
     observed = get_verified_evaluation(record.copy()) if get_verified_evaluation is not None else None
     if (not isinstance(observed, dict) or observed.get("kind") != "executed-evaluation" or
+            observed.get("plan_sha256") != record["plan_sha256"] or
             any(not isinstance(observed.get(k), str) or not observed[k].strip()
                 for k in ("evaluator", "source")) or
             canonical(observed.get("results")) != canonical(claimed)):

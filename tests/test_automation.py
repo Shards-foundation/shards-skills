@@ -144,6 +144,34 @@ class AutomationTests(unittest.TestCase):
             self.assertTrue(first.is_file())
             self.assertEqual(json.loads(first.read_text())["status"], "pass")
 
+    def test_cli_rejects_malformed_catalogues_with_structured_errors(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.make_catalogue(root)
+            path = root / "catalogue/catalogue.json"
+            base = json.loads(path.read_text())
+            entry = {"path": "skills/sample", "name": "sample", "description": "Sample"}
+            values = ([], {**base, "skills": [None]}, {**base, "skills": [{"path": []}]},
+                      {**base, "skill_paths": [1, {}]}, {**base, "skill_count": True},
+                      {**base, "categories": [None]}, {**base, "skills": [entry, entry]},
+                      {**base, "skills": [{**entry, "description": {}}]},
+                      {**base, "skill_paths": ["skills/sample"] * 2})
+            payloads = [json.dumps(value) for value in values]
+            payloads.append(json.dumps(base)[:-1] + ',"skills":[]}')
+            payloads.append(json.dumps(base)[:-1] + ',"extra":' + '[' * 3000 + '0' + ']' * 3000 + '}')
+            for index, content in enumerate(payloads):
+                for options in (["--check"], ["--write", "--approve-write"]):
+                    with self.subTest(case=index, options=options):
+                        path.write_text(content)
+                        proc = subprocess.run(
+                            [sys.executable, str(ROOT / "scripts/catalogue_sync.py"), "--root", str(root), *options],
+                            text=True, capture_output=True, timeout=5,
+                        )
+                        self.assertEqual(proc.returncode, 2)
+                        self.assertEqual(json.loads(proc.stdout)["status"], "ERROR")
+                        self.assertNotIn("Traceback", proc.stderr)
+                        self.assertEqual(path.read_text(), content)
+
     def test_catalogue_drift_can_be_read_without_changes(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

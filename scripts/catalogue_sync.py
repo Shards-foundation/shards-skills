@@ -12,10 +12,82 @@ from validate_skills import parse_frontmatter
 
 ROOT = Path(__file__).resolve().parents[1]
 
+def _unique_fields(pairs: list[tuple[str, object]]) -> dict:
+    fields = {}
+    for name, value in pairs:
+        if name in fields:
+            raise ValueError("Duplicate catalogue JSON field")
+        fields[name] = value
+    return fields
+
+
+def _reject_constant(value: str) -> object:
+    raise ValueError("Invalid catalogue JSON numeric constant")
+
+
+def _load_catalogue(path: Path) -> dict:
+    text = path.read_text(encoding="utf-8")
+    # The standard decoder is recursive. Skip quoted strings when counting
+    # containers so braces inside skill descriptions do not count as nesting.
+    depth = 0
+    i = 0
+    while i < len(text):
+        char = text[i]
+        i += 1
+        if char == '"':
+            _, i = json.decoder.scanstring(text, i)
+        elif char in "[{":
+            depth += 1
+            if depth > 32:
+                raise ValueError("Catalogue nesting exceeds limit")
+        elif char in "]}":
+            depth -= 1
+            if depth < 0:
+                raise ValueError("Invalid JSON nesting")
+
+    catalogue = json.loads(text, object_pairs_hook=_unique_fields, parse_constant=_reject_constant)
+    if not isinstance(catalogue, dict):
+        raise ValueError("Catalogue root must be an object")
+    version = catalogue.get("schema_version")
+    if type(version) is not int or version != 1:
+        raise ValueError("Invalid catalogue schema_version")
+    if any(not isinstance(catalogue.get(key), str) for key in ("name", "version", "status")):
+        raise ValueError("Invalid catalogue name, version or status")
+    count = catalogue.get("skill_count")
+    if type(count) is not int or count < 0:
+        raise ValueError("Invalid catalogue skill_count")
+
+    for field in ("categories", "skill_paths"):
+        values = catalogue.get(field)
+        if not isinstance(values, list) or any(not isinstance(value, str) or not value for value in values):
+            raise ValueError(f"Catalogue {field} must contain strings")
+        if len(set(values)) != len(values):
+            raise ValueError(f"Duplicate entry in catalogue {field}")
+
+    entries = catalogue.get("skills")
+    if not isinstance(entries, list):
+        raise ValueError("Catalogue skills must be a list")
+    paths = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("Catalogue skill must be an object")
+        path_value = entry.get("path")
+        if not isinstance(path_value, str) or not path_value:
+            raise ValueError("Catalogue skill requires a string path")
+        if path_value in paths:
+            raise ValueError("Duplicate catalogue skill path")
+        paths.add(path_value)
+        # Missing descriptive metadata is repairable drift for a known path.
+        for field in ("name", "description", "category", "status", "version"):
+            if field in entry and not isinstance(entry[field], str):
+                raise ValueError(f"Invalid catalogue skill {field}")
+    return catalogue
+
+
 def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
     root = root.resolve()
     catalogue_path = root / "catalogue/catalogue.json"
-    existing = json.loads(catalogue_path.read_text(encoding="utf-8"))
+    existing = _load_catalogue(catalogue_path)
     entries = []
     errors = []
     for path in sorted((root / "skills").glob("*/SKILL.md")):
@@ -43,7 +115,7 @@ def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
         "categories": sorted({item["category"] for item in entries}),
         "skills": entries,
     })
-    actual_by_path = {item["path"]: item for item in existing.get("skills", []) if isinstance(item, dict) and "path" in item}
+    actual_by_path = {item["path"]: item for item in existing["skills"]}
     expected_by_path = {item["path"]: item for item in entries}
     missing = sorted(set(expected_by_path) - set(actual_by_path))
     extra = sorted(set(actual_by_path) - set(expected_by_path))

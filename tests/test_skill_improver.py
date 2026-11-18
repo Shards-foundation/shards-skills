@@ -51,6 +51,7 @@ class ImproverTests(unittest.TestCase):
         self.eval_path.write_text(json.dumps(ev))
         # Simulate an independent host lookup, separate from the proposed eval file.
         self.host_result = {"kind": "executed-evaluation", "source": "ci/run/5",
+                            "plan_sha256": plan["plan_sha256"],
                             "evaluator": "ci", "results": dict(ev)}
         return plan
 
@@ -81,6 +82,14 @@ class ImproverTests(unittest.TestCase):
 
     def host_apply(self, plan):
         return imp.apply(self.options(plan), get_verified_evaluation=lambda record: self.host_result)
+
+    def test_independent_evaluation_from_another_plan_is_blocked(self):
+        plan = self.prepare()
+        self.host_result["plan_sha256"] = "b" * 64
+        receipt = self.host_apply(plan)
+        self.assertEqual(receipt["evaluation_status"], "unverified")
+        self.assertEqual(self.target.read_bytes(), self.original)
+        self.assertFalse(list(self.target.parent.glob("SKILL.md.backup-*")))
 
     def test_external_result_must_match_execution_and_case_set(self):
         plan = self.prepare()

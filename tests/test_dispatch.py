@@ -44,7 +44,7 @@ class SkillDispatchTests(unittest.TestCase):
             dispatcher._check_plan_integrity(plan)
             forged = dict(plan, command=plan["command"] + ["--unsafe"])
             forged["plan_sha256"] = dispatcher._plan_fingerprint(forged)
-            with self.assertRaisesRegex(ValueError, "command differs"):
+            with self.assertRaisesRegex(ValueError, "command shape is invalid"):
                 dispatcher.run(forged, executor=lambda *args, **kwargs: self.fail("executed"))
             def holding(argv, **kwargs):
                 return subprocess.CompletedProcess(argv, 1,
@@ -188,7 +188,7 @@ class SkillDispatchTests(unittest.TestCase):
         listing = subprocess.run([sys.executable, script, "list"],
                                  capture_output=True, text=True, timeout=15)
         self.assertEqual(listing.returncode, 0, listing.stderr)
-        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 11)
+        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 12)
         plan = subprocess.run([sys.executable, script, "plan", "--skill", "shards-repository-health"],
                               capture_output=True, text=True, timeout=15)
         self.assertEqual(plan.returncode, 0, plan.stderr)

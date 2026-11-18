@@ -4,11 +4,13 @@ Use one task and only the actions the task actually requires. The JSON is a **sa
 
 ## Required shape
 
+Use a UTF-8 JSON document of at most 256 KiB with at most 32 nested containers. The CLI reads a local file or standard input (`--input -`) with the same limits. Each JSON field name must be unique within its object.
+
 - `schema_version`: exactly integer `1`.
 - `task`: `id`, `goal`, `repository` (`owner/name`), `branch`, `head_sha` (full 40-character lowercase hex). An unknown repository or SHA cannot be represented as verified: resolve through read-only discovery or return HOLD manually without manufacturing values.
 - `roles`: string IDs `delegator`, `coordinator`, `executor`, `integrator`, `reviewer`, `merge_decider`. Reviewer must differ from executor and integrator. IDs are operational labels, not authenticated identities.
 - `actions`: 1–48 objects with `actor`, exact `operation`, `repository` and `branch` matching the task, `permission`, `access`, `policy`, `access_issue`, `evidence_ids`. Only actions in the validator's fixed operation list are accepted; unrecognised effects are not automatically downgraded to READ.
-- `evidence`: up to 96 nonsecret source references with unique `id`, `kind` (`delegation`, `capability`, `policy`), `reference`, `revision` (same SHA as relevant action), and `observed_by`. These are claims until independently retrieved by the destination host.
+- `evidence`: up to 96 nonsecret source references with unique `id`, `kind` (`delegation`, `capability`, `policy`), `reference`, `revision` (same SHA as relevant action), and `observed_by`. To support an action, every kind also needs `subject_actor`, `operation`, `repository` and `branch` matching that action. `observed_by` identifies the reporting actor assigned to a task role and may differ from the subject. These are claims until independently retrieved by the destination host.
 
 Status vocabulary:
 
@@ -19,9 +21,9 @@ Status vocabulary:
 | `policy` | `VERIFIED`, `UNKNOWN`, `DENIED`, `NOT_APPLICABLE` | Destination gate evidence; `NOT_APPLICABLE` cannot be used for remote writes/merges/deployment |
 | `access_issue` | `NONE`, `MISSING_CONNECTOR`, `MISSING_CREDENTIAL`, `TOOL_UNAVAILABLE`, `PERMISSION_DENIED`, `UNVERIFIED` | Cause of missing access; `NONE` only when `access=OBSERVED` |
 
-For any `GRANTED` permission, current-revision `delegation` evidence is required; for any `OBSERVED` access, current-revision `capability` evidence is required; for any `VERIFIED` policy, current-revision `policy` evidence is required. Missing/stale evidence results in HOLD. An evidence ID can be checked structurally, but the program does **not** fetch, authenticate or trust its content.
+For any `GRANTED` permission, current-revision `delegation` evidence is required; for any `OBSERVED` access, current-revision `capability` evidence is required; for any `VERIFIED` policy, current-revision `policy` evidence is required. Evidence for a different subject, operation, target or SHA and evidence from an unknown observer cannot satisfy a gate. For legacy v1 inputs, add the four attribution fields from the original observation. Leave unavailable fields absent to preserve the claim as unverified (`HOLD`). Do not infer the subject from the observer. An evidence ID can be checked structurally, but the program does **not** fetch, authenticate or trust its content.
 
-`pr.approve` must belong to the independent reviewer; `pr.merge` to the merge decider; `source.edit` to the executor. The validator does not transfer those permissions or prove GitHub account independence. A real review must be a GitHub review with state `APPROVED`, not a comment.
+`pr.approve` must belong to the independent reviewer; `pr.merge` to the merge decider; `source.edit` to the executor. The formal reviewer must also be independent of authorship and publication recorded in this inventory (commit, push or PR creation). The merge decider may hold other roles subject to the review independence rule. A merge claim requires its own delegation, capability and destination policy evidence even when the assigned decider also has push access. The validator does not transfer those permissions or prove GitHub account independence. A real review must be a GitHub review with state `APPROVED`, not a comment.
 
 ## Decisions and safety
 

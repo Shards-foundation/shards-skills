@@ -32,6 +32,10 @@
     {
       "id": "delegation-1",
       "kind": "delegation",
+      "subject_actor": "executor-agent",
+      "operation": "repo.read",
+      "repository": "example-org/example-repo",
+      "branch": "main",
       "reference": "local:fictional-task-brief",
       "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "observed_by": "human-operator"
@@ -39,6 +43,10 @@
     {
       "id": "access-1",
       "kind": "capability",
+      "subject_actor": "executor-agent",
+      "operation": "repo.read",
+      "repository": "example-org/example-repo",
+      "branch": "main",
       "reference": "local:synthetic-read-check",
       "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "observed_by": "executor-agent"

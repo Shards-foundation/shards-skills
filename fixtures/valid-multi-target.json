@@ -1,44 +1,44 @@
 {
- "schema_version": "shards-handoff/1.0",
- "task_id": "fieldtest-recovery-001",
- "goal": "Recover a read-only cross-agent field evaluation from durable evidence",
- "task_owner": "human-operator",
- "executor": "codex-primary",
- "observed_at": "2026-11-18T21:00:00+00:00",
- "authority": {
- "basis": "Human operator authorised read-only recovery and local validation",
- "allowed": ["public source reads", "offline validation"],
- "prohibited": ["merge", "deploy", "credential access"],
- "expires_at": null
- },
- "targets": [
- {"repository": "Shards-foundation/shards-skills", "branch": "main", "commit_sha": "530ff6ca21edca5737a765f324d84c3cd3d17f0f", "revision_status": "KNOWN"},
- {"repository": "Shards-foundation/shards-skills", "branch": null, "commit_sha": "33cc99f76eb0dfb0440266cdf74beff43d4fda7a", "revision_status": "KNOWN"}
- ],
- "progress": {
- "executed": ["Offline structural tests executed by prior actor"],
- "adjudicated": [],
- "exported": ["Source revision map"],
- "pending": ["Recover missing per-skill evidence receipts"]
- },
- "evidence": [
- {
- "id": "receipt-reported-only-1",
- "claim": "Original executor reports 86 receipts; not supplied",
- "source_kind": "executor_report",
- "claim_level": "REPORTED",
- "subject": {"actor": "original-executor", "operation": "campaign.test", "revision_sha": null},
- "locator": {"kind": "unavailable", "value": null},
- "digest_sha256": null,
- "observed_at": "2026-11-18T20:00:00+00:00"
- }
- ],
- "blockers": ["Receipt bytes are not available in the receiving environment"],
- "next": {
- "owner": "human-operator",
- "action": "Supply sanitized per-skill receipt index with resolvable artifact locators",
- "decision": "HOLD",
- "evidence_required": ["original receipt identifiers and digests"]
- },
- "extra_metadata": "The validator must not silently discard this field"
+  "schema_version": "shards-handoff/1.0",
+  "task_id": "fieldtest-recovery-001",
+  "goal": "Recover a read-only cross-agent field evaluation from durable evidence",
+  "task_owner": "human-operator",
+  "executor": "codex-primary",
+  "observed_at": "2026-11-18T21:00:00+00:00",
+  "authority": {
+    "basis": "Human operator authorised read-only recovery and local validation",
+    "allowed": ["public source reads", "offline validation"],
+    "prohibited": ["merge", "deploy", "credential access"],
+    "expires_at": null
+  },
+  "targets": [
+    {"repository": "Shards-foundation/shards-skills", "branch": "main", "commit_sha": "530ff6ca21edca5737a765f324d84c3cd3d17f0f", "revision_status": "KNOWN"},
+    {"repository": "Shards-foundation/shards-skills", "branch": null, "commit_sha": "33cc99f76eb0dfb0440266cdf74beff43d4fda7a", "revision_status": "KNOWN"}
+  ],
+  "progress": {
+    "executed": ["Offline structural tests executed by prior actor"],
+    "adjudicated": [],
+    "exported": ["Source revision map"],
+    "pending": ["Recover missing per-skill evidence receipts"]
+  },
+  "evidence": [
+    {
+      "id": "receipt-reported-only-1",
+      "claim": "Original executor reports 86 receipts; not supplied",
+      "source_kind": "executor_report",
+      "claim_level": "REPORTED",
+      "subject": {"actor": "original-executor", "operation": "campaign.test", "revision_sha": null},
+      "locator": {"kind": "unavailable", "value": null},
+      "digest_sha256": null,
+      "observed_at": "2026-11-18T20:00:00+00:00"
+    }
+  ],
+  "blockers": ["Receipt bytes are not available in the receiving environment"],
+  "next": {
+    "owner": "human-operator",
+    "action": "Supply sanitized per-skill receipt index with resolvable artifact locators",
+    "decision": "HOLD",
+    "evidence_required": ["original receipt identifiers and digests"]
+  },
+  "extra_metadata": "The validator must not silently discard this field"
 }

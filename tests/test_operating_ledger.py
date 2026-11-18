@@ -63,7 +63,7 @@ class LedgerTests(unittest.TestCase):
         ledger.append(self.root, "case-1", "evidence", current_test)
         self.assertFalse(ledger.summary(self.root, "case-1")["complete"], "local claims alone")
         self.assertTrue(complete())
-        blocker = ledger.append(self.root, "case-1", "evidence", dict(current_test, status="blocked"))
+        blocker = ledger.append(self.root, "case-1", "evidence", dict(current_test, status="blocked", evidence_type="tested", reference="failed/1"))
         ledger.append(self.root, "case-1", "evidence", current_test)
         report = ledger.summary(self.root, "case-1", verify_observation=verifier)
         self.assertFalse(report["complete"])
@@ -73,6 +73,28 @@ class LedgerTests(unittest.TestCase):
         self.assertFalse(complete(), "self-reported resolution alone")
         expected_records.append(resolution)
         self.assertTrue(complete(), "host-confirmed resolution for this exact blocker")
+
+    def test_test_receipt_cannot_restore_a_dismissed_approval(self):
+        self.contract["criteria"][0].update(target_revision="a" * 40, resource="org/repo",
+            subject_actor="builder", required_evidence=["tested", "reviewed"])
+        self.start()
+        evidence = {"criterion_id": "C1", "status": "tested", "revision": "a" * 40,
+                    "reference": "test/1", "observation": "passed", "observed_by": "ci",
+                    "subject_actor": "builder", "resource": "org/repo"}
+        approval = dict(evidence, status="reviewed", decision="APPROVED", observed_by="reviewer",
+                        reference="review/5", observation="approved")
+        def record(payload):
+            return ledger.append(self.root, "case-1", "evidence", payload)["event_sha256"]
+        def complete():
+            return ledger.summary(self.root, "case-1", verify_observation=lambda *args: True)["complete"]
+        record(evidence)
+        record(approval)
+        self.assertTrue(complete())
+        dismissed = record(dict(approval, decision="DISMISSED", observation="approval withdrawn"))
+        record(dict(evidence, reference="test/2", resolves=[dismissed]))
+        self.assertFalse(complete(), "test cannot clear a review blocker")
+        record(dict(approval, reference="review/6", resolves=[dismissed]))
+        self.assertTrue(complete())
 
     def test_current_evidence_cannot_substitute_for_another_requirement(self):
         self.contract["criteria"][0].update(target_revision="a" * 40, resource="org/repo",

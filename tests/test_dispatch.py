@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -32,10 +33,14 @@ class SkillDispatchTests(unittest.TestCase):
     def test_execution_contract_dispatch_requires_input_and_is_read_only(self):
         with self.assertRaisesRegex(ValueError, "requires --input-file"):
             dispatcher.describe("shards-execution-contract")
-        with patch("dispatch_skills._state_file", return_value=ROOT / ".shards/state/example.json"):
-            plan = dispatcher.describe("shards-execution-contract", input_file=".shards/state/example.json")
+        dispatcher.LOCAL_STATE.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=dispatcher.LOCAL_STATE) as state:
+            source = Path(state) / "example.json"
+            source.write_text("{}", encoding="utf-8")
+            plan = dispatcher.describe("shards-execution-contract", input_file=str(source))
             self.assertEqual(plan["effect"], "read-only")
-            self.assertEqual(plan["command"][-2:], ["--input", str(ROOT / ".shards/state/example.json")])
+            self.assertEqual(plan["command"][-2:], ["--input", "-"])
+            self.assertEqual(plan["input_file"], str(source))
 
     def test_plan_is_read_only(self):
         report = dispatcher.describe("shards-repository-health")

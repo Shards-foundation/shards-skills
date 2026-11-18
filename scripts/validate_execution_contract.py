@@ -283,16 +283,19 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     subs = parser.add_subparsers(dest="command", required=True)
     item = subs.add_parser("validate")
-    item.add_argument("--input", required=True, type=Path)
+    item.add_argument("--input", required=True, type=Path, help="UTF-8 JSON file or - for stdin")
     args = parser.parse_args(argv)
     try:
-        if args.input.is_symlink():
-            raise ValueError("Symlinked contract input is forbidden")
-        path = args.input.resolve()
-        if not path.is_file() or path.stat().st_size > 200_000:
-            raise ValueError("Input must be an existing regular JSON file under 200KB")
-        with path.open("rb") as source:
-            raw = source.read(200_001)
+        if args.input == Path("-"):
+            raw = sys.stdin.buffer.read(200_001)
+        else:
+            if args.input.is_symlink():
+                raise ValueError("Symlinked contract input is forbidden")
+            path = args.input.resolve()
+            if not path.is_file() or path.stat().st_size > 200_000:
+                raise ValueError("Input must be an existing regular JSON file under 200KB")
+            with path.open("rb") as source:
+                raw = source.read(200_001)
         if len(raw) > 200_000:
             raise ValueError("Contract exceeds byte limit")
         data = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_fields,

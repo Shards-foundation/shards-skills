@@ -18,3 +18,10 @@
 - [ ] Scripts are minimal, reviewed and tested in isolation.
 - [ ] Licences, notices and source revisions are recorded.
 - [ ] CI and relevant evaluations pass.
+
+
+## Refresh the checksum manifest
+
+From the repository root, stage the intended file changes, then run `python scripts/checksums.py --write` and stage `SHA256SUMS.json`. Run `python scripts/checksums.py` to check the result. Repeat after integrating another change that affects indexed files.
+
+The manifest records the SHA-256 and byte length of each indexed Git blob, including the link text for a symlink. It excludes itself, Python bytecode and `__pycache__` directories. The check compares the working manifest with the staged tree. Unstaged edits enter the snapshot when staged.

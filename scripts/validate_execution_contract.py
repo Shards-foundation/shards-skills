@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 SHA = re.compile(r"^[0-9a-fA-F]{40}$")
@@ -41,17 +42,32 @@ def _array(obj, key):
     return value
 
 
-def _scan_secrets(value):
+def _scan_secrets(value, depth=0):
+    if depth > 64:
+        raise ValueError("Contract exceeds maximum nesting depth")
     if isinstance(value, dict):
         for key, item in value.items():
             if SENSITIVE_FIELD.search(str(key)):
                 raise ValueError("Sensitive field name is forbidden")
-            _scan_secrets(item)
+            _scan_secrets(item, depth + 1)
     elif isinstance(value, list):
         for item in value:
-            _scan_secrets(item)
+            _scan_secrets(item, depth + 1)
     elif isinstance(value, str) and SECRET.search(value):
         raise ValueError("Credential-like content is forbidden")
+
+
+def _unique_fields(pairs):
+    fields = {}
+    for key, value in pairs:
+        if key in fields:
+            raise ValueError("Duplicate JSON field")
+        fields[key] = value
+    return fields
+
+
+def _invalid_constant(_):
+    raise ValueError("Invalid JSON number")
 
 
 def validate(data):
@@ -97,7 +113,31 @@ def validate(data):
     if not steps or not checks:
         raise ValueError("At least one step and one check are required")
 
+    def unique_items(items, key, category):
+        ids = set()
+        for item in items:
+            if not _is_object(item):
+                raise ValueError(category + " must be an object")
+            value = _text(item, key)
+            if value in ids:
+                raise ValueError("Duplicate " + category + " identifier")
+            ids.add(value)
+        return ids
+
+    step_ids = unique_items(steps, "id", "step")
+    unique_items(checks, "id", "check")
+
+    def review_scope(item):
+        ids = _array(item, "step_ids")
+        if not ids or any(not isinstance(i, str) or i not in step_ids for i in ids):
+            raise ValueError("Review must cover known step identifiers")
+        covered = frozenset(ids)
+        if len(covered) != len(ids):
+            raise ValueError("Duplicate reviewed step")
+        return covered
+
     evidence_ids = set()
+    formal_reviews = {}
     for item in evidence:
         if not _is_object(item):
             raise ValueError("Evidence entry must be an object")
@@ -110,26 +150,20 @@ def validate(data):
         if not SHA.fullmatch(item["revision"]):
             raise ValueError("Evidence revision must be a full SHA")
 
+        if item["kind"] == "formal-review":
+            if _text(item, "verdict") not in REVIEW_VERDICTS:
+                raise ValueError("Unknown formal review artifact verdict")
+            formal_reviews[item_id] = (review_scope(item), item["observed_by"], item["verdict"])
+
     def check_refs(item):
         refs = _array(item, "evidence_ids")
         if any(not isinstance(ref, str) or ref not in evidence_ids for ref in refs):
             raise ValueError("Unknown evidence reference")
         return refs
 
-    def unique_items(items, key, category):
-        ids = set()
-        for item in items:
-            if not _is_object(item):
-                raise ValueError(category + " must be an object")
-            value = _text(item, key)
-            if value in ids:
-                raise ValueError("Duplicate " + category + " identifier")
-            ids.add(value)
-
-    unique_items(steps, "id", "step")
-    unique_items(checks, "id", "check")
     reasons = []
     evidence_by_id = {entry["id"]: entry for entry in evidence}
+    artifact_counts = Counter(entry["ref"] for entry in evidence)
 
     def live_refs(refs):
         return bool(refs) and all(
@@ -144,9 +178,10 @@ def validate(data):
     if any(constraints[key] for key in CONSTRAINT_KEYS):
         reasons.append("Host authorization for consequential effects cannot be verified by this validator")
 
+    owners = {}
     failed = False
     for step in steps:
-        _text(step, "owner")
+        owners[step["id"]] = _text(step, "owner").strip().casefold()
         effect = _text(step, "effect")
         if effect not in EFFECTS:
             raise ValueError("Unknown effect class")
@@ -165,8 +200,9 @@ def validate(data):
                 reasons.append("Sensitive or destructive effect needs host verification: " + step["id"])
         if status == "FAILED":
             failed = True
+            reasons.append("Step failed: " + step["id"])
         elif status != "VERIFIED":
-            reasons.append("Step not independently verified: " + step["id"])
+            reasons.append("Step not reported VERIFIED: " + step["id"])
         if status == "VERIFIED" and not live_refs(refs):
             reasons.append("Stale or missing step evidence: " + step["id"])
 
@@ -179,13 +215,17 @@ def validate(data):
             raise ValueError("Passing check lacks evidence")
         if result == "FAIL":
             failed = True
+            reasons.append("Check failed: " + check["id"])
         elif result != "PASS":
             reasons.append("Check not passing: " + check["id"])
         if result == "PASS" and not live_refs(refs):
             reasons.append("Stale or missing check evidence: " + check["id"])
 
-    approved = False
+    approved_steps = set()
     for review in reviews:
+        if not _is_object(review):
+            raise ValueError("Review must be an object")
+        covered = review_scope(review) if "step_ids" in review else frozenset()
         reviewer = _text(review, "reviewer")
         revision = _text(review, "revision")
         verdict = _text(review, "verdict")
@@ -200,15 +240,28 @@ def validate(data):
         if verdict == "APPROVED" and not refs:
             raise ValueError("Approved review lacks evidence")
         current = head_sha is not None and revision.lower() == head_sha.lower()
-        if (verdict == "APPROVED" and reviewer != executor and current
-                and open_findings == 0 and live_refs(refs)):
-            approved = True
-        elif current and open_findings:
+        if not current:
+            continue
+        if open_findings:
             reasons.append("Open findings at current revision")
-        elif current and verdict in ("CHANGES_REQUESTED", "BLOCKED"):
+        if verdict != "APPROVED":
             reasons.append("Review blocked at current revision")
-    if not approved:
-        reasons.append("No evidence-backed different-actor approval of current head SHA")
+            continue
+
+        actor = reviewer.strip().casefold()
+        if not covered or actor == executor.strip().casefold():
+            continue
+        if any(owners[step_id] == actor for step_id in covered):
+            continue
+        if open_findings or not live_refs(refs):
+            continue
+        expected_review = (covered, reviewer, verdict)
+        if any(formal_reviews.get(ref) == expected_review
+               and artifact_counts[evidence_by_id[ref]["ref"]] == 1 for ref in refs):
+            approved_steps.update(covered)
+
+    for step_id in step_ids - approved_steps:
+        reasons.append("No applicable independent review claim at current head SHA: " + step_id)
 
     decision = "FAIL" if failed else ("HOLD" if reasons else "EVIDENCE_READY")
     return {
@@ -238,13 +291,18 @@ def main(argv=None):
         path = args.input.resolve()
         if not path.is_file() or path.stat().st_size > 200_000:
             raise ValueError("Input must be an existing regular JSON file under 200KB")
-        data = json.loads(path.read_text(encoding="utf-8"))
+        with path.open("rb") as source:
+            raw = source.read(200_001)
+        if len(raw) > 200_000:
+            raise ValueError("Contract exceeds byte limit")
+        data = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_fields,
+                          parse_constant=_invalid_constant)
         report = validate(data)
-    except (OSError, UnicodeError, ValueError, TypeError):
+    except (OSError, UnicodeError, ValueError, RecursionError):
         report = {
             "workflow": "shards-execution-contract",
             "structural_status": "INVALID",
-            "decision": "HOLD",
+            "decision": "INVALID",
             "reasons": ["Invalid or unsafe contract; inspect input locally"],
             "execution_performed": False,
             "approval_verified": False,

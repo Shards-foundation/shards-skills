@@ -51,8 +51,8 @@ Produce a concise, versioned report with:
 - `task_id`, normalised goal, exact target and revision;
 - explicit constraints, unresolved ambiguities and assumed facts;
 - per-step proposed/executed/verified/failed/blocked status, owning actor and evidence refs;
-- test and review receipts tied to the exact head SHA;
-- `HOLD`, `FAIL` or `EVIDENCE_READY`, with reasons, known omissions, and the next permitted action.
+- test receipts and typed formal review records tied to the exact head SHA, with the reviewer and covered step IDs;
+- `INVALID`, `HOLD`, `FAIL` or `EVIDENCE_READY`, with reasons, known omissions, and the next permitted action.
 
 The local validator also returns `execution_performed: false`, `approval_verified: false` and `independent_review_verified: false`: validating **claims about evidence** is not independently fetching or authenticating that evidence.
 

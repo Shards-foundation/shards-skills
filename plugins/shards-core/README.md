@@ -57,4 +57,4 @@ The `shards-execution-contract` skill documents a human-intent -> typed task con
     python scripts/validate_execution_contract.py validate --input .shards/state/task.json
     python scripts/dispatch_skills.py plan --skill shards-execution-contract --input-file .shards/state/task.json
 
-The validator reports HOLD, FAIL or EVIDENCE_READY using *self-reported* evidence metadata. It neither executes agents nor authenticates evidence, reviewer identity or approvals. External writes, paid work and production effects must still be independently authorized by the host. See `plugins/shards-core/skills/shards-execution-contract/SKILL.md`.
+The validator reports INVALID, HOLD, FAIL or EVIDENCE_READY using *self-reported* evidence metadata. It neither executes agents nor authenticates evidence, reviewer identity or approvals. External writes, paid work and production effects must still be independently authorized by the host. See `plugins/shards-core/skills/shards-execution-contract/SKILL.md`.

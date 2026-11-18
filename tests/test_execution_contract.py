@@ -28,11 +28,12 @@ class ContractValidationTests(unittest.TestCase):
             "reviewer": "reviewer-agent",
             "revision": record["scope"]["head_sha"],
             "verdict": "APPROVED",
-            "open_findings": 0,
+            "open_findings": 0, "step_ids": ["implement"],
             "evidence_ids": ["review-1"],
         }]
         record["evidence"].append({
-            "id": "review-1", "kind": "review", "ref": "local:fictional-review",
+            "id": "review-1", "kind": "formal-review", "verdict": "APPROVED",
+            "step_ids": ["implement"], "ref": "local:fictional-review",
             "revision": record["scope"]["head_sha"], "observed_by": "reviewer-agent",
         })
         return record
@@ -65,6 +66,94 @@ class ContractValidationTests(unittest.TestCase):
         record = self.approved()
         record["reviews"][0]["reviewer"] = "builder-agent"
         self.assertEqual(validator.validate(record)["decision"], "HOLD")
+
+    def test_reviewer_must_be_independent_of_reviewed_step_owner(self):
+        record = self.approved()
+        record["steps"][0]["owner"] = " Reviewer-Agent "
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+
+    def test_review_must_cover_every_step_but_can_be_split(self):
+        record = self.approved()
+        record["steps"].append(dict(record["steps"][0], id="docs", owner="reviewer-agent"))
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+        record["reviews"].append(dict(record["reviews"][0], reviewer="docs-reviewer",
+                                      step_ids=["docs"], evidence_ids=["review-docs"]))
+        record["evidence"].append(dict(record["evidence"][1], id="review-docs",
+                                       step_ids=["docs"], observed_by="docs-reviewer",
+                                       ref="local:fictional-docs-review"))
+        self.assertEqual(validator.validate(record)["decision"], "EVIDENCE_READY")
+
+    def test_review_requires_applicable_formal_artifact(self):
+        for change in ({"kind": "self-reported-test"}, {"kind": "execution"},
+                       {"kind": "bot-comment"}, {"kind": "review"},
+                       {"observed_by": "builder-agent"}, {"verdict": "CHANGES_REQUESTED"},
+                       {"revision": "b" * 40}):
+            with self.subTest(change=change):
+                record = self.approved()
+                record["evidence"][1].update(change)
+                self.assertEqual(validator.validate(record)["decision"], "HOLD")
+        record = self.approved()
+        record["reviews"][0]["evidence_ids"] = ["test-1"]
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+
+    def test_same_test_receipt_cannot_be_relabelled_as_a_formal_review(self):
+        record = self.approved()
+        record["evidence"][1]["ref"] = record["evidence"][0]["ref"]
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+
+    def test_artifact_and_review_scopes_must_match(self):
+        record = self.approved()
+        record["steps"].append(dict(record["steps"][0], id="docs"))
+        record["reviews"][0]["step_ids"].append("docs")
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+
+    def test_legacy_review_without_scope_cannot_cover_steps(self):
+        record = self.approved()
+        del record["reviews"][0]["step_ids"]
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+
+    def test_invalid_review_scope(self):
+        for invalid in (None, [], [None], ["absent"], ["implement", "implement"]):
+            with self.subTest(invalid=invalid):
+                record = self.approved()
+                record["reviews"][0]["step_ids"] = invalid
+                with self.assertRaises(ValueError):
+                    validator.validate(record)
+
+    def test_failed_step_and_check_identified(self):
+        record = self.approved()
+        record["checks"][0]["result"] = "FAIL"
+        record["steps"][0]["status"] = "FAILED"
+        report = validator.validate(record)
+        self.assertEqual(report["decision"], "FAIL")
+        for name in ("tests", "implement"):
+            self.assertTrue(any(name in reason for reason in report["reasons"]))
+
+    def test_cli_returns_invalid_for_nested_malformed_data(self):
+        cases = []
+        for field in ("reviews", "steps", "checks", "evidence"):
+            record = self.approved()
+            record[field] = [None]
+            cases.append(json.dumps(record))
+        for depth in (70, 1500):
+            cases.append(json.dumps(self.approved())[:-1] + ', "extra":'
+                         + "[" * depth + "0" + "]" * depth + "}")
+        valid = json.dumps(self.approved())
+        cases.extend([valid.replace('"schema_version": 1', '"schema_version": 2, "schema_version": 1'),
+                      valid[:-1] + ', "extra": NaN}'])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "contract.json"
+            for index, payload in enumerate(cases):
+                with self.subTest(index=index):
+                    path.write_text(payload, encoding="utf-8")
+                    proc = subprocess.run([sys.executable, str(SCRIPT), "validate",
+                                           "--input", str(path)], capture_output=True,
+                                          text=True, timeout=15)
+                    self.assertEqual(proc.returncode, 2)
+                    self.assertNotIn("Traceback", proc.stderr)
+                    result = json.loads(proc.stdout)
+                    self.assertEqual(result["structural_status"], "INVALID")
+                    self.assertEqual(result["decision"], "INVALID")
 
     def test_open_findings_block(self):
         record = self.approved()

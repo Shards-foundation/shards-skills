@@ -33,9 +33,13 @@ class AgentAdoptionEvalTests(unittest.TestCase):
         cases = evaluator.load_cases(ROOT / "evals" / "trigger-cases.json")
         entries = evaluator.catalogue_entries() + evaluator.curated_entries()
         report = evaluator.retrieval_report(cases, entries)
-        self.assertEqual(report["positive_count"], 7)
-        self.assertGreaterEqual(report["recall_at_3"], 6 / 7)
+        self.assertEqual(report["positive_count"], sum(case["should_trigger"] for case in cases))
+        self.assertGreaterEqual(report["recall_at_3"], 7 / 8)
         self.assertEqual(report["recall_at_5"], 1.0)
+        recover = [row for row in report["results"] if row["target_skill"] == "shards-restore-recover"
+                   and row["expected_trigger"]]
+        self.assertEqual(len(recover), 1)
+        self.assertLessEqual(recover[0]["rank"], 3)
         self.assertFalse(report["negative_trigger_assessed"])
 
     def test_missing_host_trace_does_not_count_as_use(self):

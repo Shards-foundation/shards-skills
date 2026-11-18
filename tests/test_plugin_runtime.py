@@ -44,6 +44,7 @@ class PluginRuntimeTests(unittest.TestCase):
     def test_static_audit_never_executes(self):
         result = runner.audit_skill(PACKAGE / "skills/shards-skill-audit")
         self.assertEqual(result["status"], "METADATA_PASS")
+        self.assertEqual(result["provenance"], "first-party-checkout")
         self.assertFalse(result["executable"])
 
     def test_imported_review_stage(self):
@@ -55,6 +56,7 @@ class PluginRuntimeTests(unittest.TestCase):
             (p / "UPSTREAM.md").write_text("Unreviewed")
             result = runner.audit_skill(p)
             self.assertEqual(result["status"], "REVIEW")
+            self.assertEqual(result["provenance"], "imported-or-review-stage")
             self.assertFalse(result["executable"])
 
     def test_audit_blocks_traversal_link(self):
@@ -64,6 +66,26 @@ class PluginRuntimeTests(unittest.TestCase):
             (p / "SKILL.md").write_text(
                 "---\nname: example\ndescription: A sufficient testing skill description.\n---\n[bad](../x.md)")
             self.assertEqual(runner.audit_skill(p)["status"], "BLOCK")
+
+    def test_unknown_provenance_requires_review(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "shards-skill-audit"
+            path.mkdir()
+            descriptor = PACKAGE / "skills/shards-skill-audit/SKILL.md"
+            (path / "SKILL.md").write_bytes(descriptor.read_bytes())
+            proc = subprocess.run([sys.executable, str(RUNNER), "audit-skill", "--path", str(path)],
+                                  text=True, capture_output=True)
+            self.assertEqual(proc.returncode, 3)
+            report = json.loads(proc.stdout)
+            self.assertEqual(report["status"], "REVIEW")
+            self.assertEqual(report["provenance"], "unknown")
+            self.assertTrue(report["metadata_valid"])
+            self.assertFalse(report["executable"])
+
+    def test_health_identifies_repository_root_mismatch(self):
+        report = runner.repository_health(PACKAGE)
+        self.assertEqual(report["status"], "INCOMPLETE")
+        self.assertIn(str(ROOT), " ".join(report["errors"]))
 
     def test_release_holds_without_execution(self):
         report = runner.release_check(ROOT, False, False)
@@ -103,8 +125,8 @@ class PluginRuntimeTests(unittest.TestCase):
     def test_first_party_workflow_adapters(self):
         cases = (
             ("release-readiness", "--repo", ".", 1),
-            ("skill-supply-chain-audit", "--path", "skills/release-readiness", 0),
-            ("writing-skill-packages", "--path", "skills/release-readiness", 0),
+            ("skill-supply-chain-audit", "--path", "skills/release-readiness", 3),
+            ("writing-skill-packages", "--path", "skills/release-readiness", 3),
         )
         for name, switch, value, expected in cases:
             path = ROOT / "skills" / name / "scripts" / "run.py"

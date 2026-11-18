@@ -19,7 +19,9 @@ Invoke from the plugin package root: python scripts/run.py audit-skill --path SK
 For the repository checkout use: python plugins/shards-core/scripts/run.py audit-skill --path SKILL_DIRECTORY [--output REPORT.json]
 
 ## Output contract
-JSON with metadata, script inventory, findings and execution eligibility.
+Read `metadata_valid`, `provenance`, `scripts`, `issues` and `status` from the JSON report. Exit 0 means `METADATA_PASS`. Exit 3 means `REVIEW` is required, including for unknown provenance or executable content. Exit 1 means `BLOCK` and exit 2 indicates an input or tool error. `executable` is always false.
+
+`first-party-checkout` records a match against the path, Git blobs and executable modes in the running checkout's HEAD. A copied standalone descriptor has unknown provenance. Authenticating the checkout and approving execution are host responsibilities.
 
 ## Verification
 Confirm inspected files and paths; manual review and sandbox tests remain required before executing third-party scripts.

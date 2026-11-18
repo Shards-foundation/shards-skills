@@ -17,7 +17,8 @@ Three layers are intentionally separate:
 ## CLI
 Run in the repository root: python plugins/shards-core/scripts/run.py --help
 Commands: catalogue, repository-health, audit-skill, release-check, handoff.
+For `audit-skill`, exit 0 means a metadata pass, 3 requests independent review, 1 blocks the package, and 2 reports an invocation or tool error. Dispatcher and automation callers propagate nonzero review outcomes as unsuccessful checks. Read the audit JSON for provenance and the reasons for review.
 All default operations are read-only except an explicit handoff output file. A release check is HOLD unless its approved test evidence is present. Running untrusted repository tests is opt-in.
 
 ## Coverage and readiness
-The existing 293 top-level packages were not converted wholesale. The curated plugin contains eleven curated skill packages: four core executable workflows, three root-repository automation/dispatch workflows, and four local agent-harness workflows. These are read-only local delegates, not network A2A servers. Imported packages stay review-stage, are not auto-executed, and are not auto-loaded into the curated plugin. Extend by adding new reviewed wrappers with tests and matching output contracts. Host compatibility must be demonstrated, not inferred from file extensions.
+The full catalogue includes instruction-only and review-stage packages. The curated plugin contains eleven curated skill packages: four core executable workflows, three root-repository automation/dispatch workflows, and four local agent-harness workflows. These are read-only local delegates, not network A2A servers. Imported packages stay review-stage, are not auto-executed, and are not auto-loaded into the curated plugin. Extend by adding new reviewed wrappers with tests and matching output contracts. Host compatibility must be demonstrated, not inferred from file extensions.

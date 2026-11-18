@@ -2,7 +2,9 @@
 """Shards Agent Core: dependency-free, bounded local workflows."""
 from __future__ import annotations
 import argparse
+import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -43,11 +45,55 @@ def catalogue() -> dict:
         entries.append({"name": m.get("name"), "description": m.get("description"), "path": str(p.relative_to(ROOT))})
     return {"workflow": "catalogue", "count": len(entries), "scope": "curated-only", "skills": entries}
 
+def checkout_provenance(directory: Path, files: list[Path], author: str | None) -> str:
+    checkout = ROOT.parent.parent
+    curated = directory.parent == SKILLS
+    first_party = directory.parent == checkout / "skills" and author == "Shards Foundation"
+    if ROOT != checkout / "plugins/shards-core" or not (curated or first_party):
+        return "unknown"
+    # The running checkout is the local provenance anchor. Compare the whole
+    # package to HEAD, including extra or missing files and executable modes.
+    rel = directory.relative_to(checkout)
+    try:
+        listed = subprocess.run(
+            ["git", "--literal-pathspecs", "-C", str(checkout), "ls-tree", "-rz",
+             "--full-tree", "HEAD", "--", str(rel)],
+            capture_output=True, timeout=10, check=True,
+            env={k: v for k, v in os.environ.items() if not k.startswith("GIT_")})
+        blobs = {}
+        for entry in listed.stdout.split(b"\0"):
+            if entry:
+                header, path = entry.split(b"\t", 1)
+                mode, kind, oid = header.split()
+                if kind != b"blob" or mode not in (b"100644", b"100755"):
+                    return "unknown"
+                blobs[checkout / os.fsdecode(path)] = (mode, oid.decode("ascii"))
+        if not blobs or set(blobs) != set(files):
+            return "unknown"
+        for path, (mode, oid) in blobs.items():
+            stat = path.stat()
+            if bool(stat.st_mode & 0o100) != (mode == b"100755"):
+                return "unknown"
+            digest = hashlib.new("sha256" if len(oid) == 64 else "sha1")
+            digest.update(f"blob {stat.st_size}\0".encode())
+            with path.open("rb") as stream:
+                for chunk in iter(lambda: stream.read(65536), b""):
+                    digest.update(chunk)
+            if digest.hexdigest() != oid:
+                return "unknown"
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return "unknown"
+    return "first-party-checkout"
+
 def audit_skill(path: Path) -> dict:
-    d = path.expanduser().resolve()
+    target = path.expanduser().absolute()
+    d = target.resolve()
     issues, scripts, meta = [], [], {}
-    if not d.is_dir():
-        return {"workflow": "audit-skill", "status": "BLOCK", "issues": ["Directory missing"], "executable": False}
+    descriptor = d / "SKILL.md"
+    if (not d.is_dir() or descriptor.is_symlink() or target.is_symlink()
+            or any(parent.is_symlink() for parent in target.parents)):
+        return {"workflow": "audit-skill", "status": "BLOCK", "issues": ["Missing directory or unsafe symlink"],
+                "metadata_valid": False, "provenance": "unknown", "executable": False}
     try:
         body = read(d / "SKILL.md")
         meta = metadata(body)
@@ -65,19 +111,32 @@ def audit_skill(path: Path) -> dict:
         f = (d / rel).resolve()
         if not f.is_relative_to(d) or not f.is_file():
             issues.append("Unsafe link: " + rel)
+    metadata_valid = not issues
+    files = []
     for p in d.rglob("*"):
         if p.is_symlink():
-            issues.append("Symlink needs review: " + str(p.relative_to(d)))
-        elif p.is_file() and p.suffix in (".py", ".sh", ".js", ".ts", ".ps1", ".exe"):
-            scripts.append(str(p.relative_to(d)))
+            issues.append("Unsafe symlink: " + str(p.relative_to(d)))
+        elif p.is_file():
+            files.append(p)
+            if os.access(p, os.X_OK) or p.suffix.lower() in (
+                    ".py", ".sh", ".bash", ".js", ".mjs", ".cjs", ".ts", ".ps1", ".exe"):
+                scripts.append(str(p.relative_to(d)))
+        elif not p.is_dir():
+            issues.append("Unsafe special file: " + str(p.relative_to(d)))
     if (d / "UPSTREAM.md").exists() or meta.get("status") == "review":
+        provenance = "imported-or-review-stage"
         issues.append("Imported/review-stage skill needs independent review")
+    else:
+        provenance = checkout_provenance(d, files, meta.get("author")) if not issues else "unknown"
+        if provenance == "unknown":
+            issues.append("First-party package provenance unverified")
     if scripts:
         issues.append("Executable scripts need independent review")
     blocked = any(x.startswith(("Invalid", "Unsafe")) for x in issues)
     return {"workflow": "audit-skill", "path": str(d),
             "status": "BLOCK" if blocked else ("REVIEW" if issues else "METADATA_PASS"),
-            "issues": issues, "scripts": scripts, "metadata": meta,
+            "issues": issues, "scripts": sorted(scripts), "metadata": meta,
+            "metadata_valid": metadata_valid, "provenance": provenance,
             "executable": False, "scope": "static-structural-only"}
 
 def git(repo: Path, *args: str) -> dict:
@@ -92,13 +151,16 @@ def repository_health(path: Path) -> dict:
     if not repo.is_dir():
         raise ValueError("Repository path missing")
     top, head, changes = git(repo, "rev-parse", "--show-toplevel"), git(repo, "rev-parse", "HEAD"), git(repo, "status", "--porcelain")
-    good = all(x["ok"] for x in (top, head, changes)) and Path(top["output"]).resolve() == repo
+    errors = [x["error"] for x in (top, head, changes) if not x["ok"]]
+    if top["ok"] and Path(top["output"]).resolve() != repo:
+        errors.append("Target must be the Git root: " + top["output"])
+    good = not errors
     return {"workflow": "repository-health", "repo": str(repo), "status": "OBSERVED" if good else "INCOMPLETE",
             "scope": "metadata-only", "commit": head["output"] if head["ok"] else None,
             "dirty": bool(changes["output"]) if changes["ok"] else None,
             "changed_paths": changes["output"].splitlines()[:100] if changes["ok"] else [],
             "metadata": {name: (repo / name).exists() for name in ("README.md", "LICENSE", "pyproject.toml", "tests", ".github/workflows")},
-            "errors": [x["error"] for x in (top, head, changes) if not x["ok"]]}
+            "errors": errors}
 
 def release_check(repo: Path, run_tests: bool, trusted_local_code: bool) -> dict:
     if run_tests and not trusted_local_code:
@@ -195,8 +257,9 @@ def main() -> int:
         if getattr(args, "output", None):
             write_exclusive(args.output, result)
         print(result, end="")
+        if args.command == "audit-skill":
+            return {"METADATA_PASS": 0, "BLOCK": 1, "REVIEW": 3}[report["status"]]
         return int((args.command == "release-check" and report["decision"] == "HOLD") or
-                   (args.command == "audit-skill" and report["status"] == "BLOCK") or
                    (args.command == "repository-health" and report["status"] == "INCOMPLETE"))
     except (ValueError, OSError, UnicodeError) as error:
         print("ERROR: " + str(error), file=sys.stderr)

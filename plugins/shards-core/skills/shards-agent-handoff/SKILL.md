@@ -9,7 +9,7 @@ license: MIT
 Python 3.11+ and a local checkout with permission to inspect the requested path. The host must expose a shell or Python execution tool. The skill cannot grant itself more authority.
 
 ## Workflow
-1. Prepare factual state: goal, repository, branch, commit, completed steps, decisions, evidence, blockers and next actions.
+1. Supply nonempty strings for `goal`, `repo`, `branch` and `commit`. Supply arrays of strings for `completed`, `decisions`, `evidence`, `blockers` and `pending`. Use an empty array when there are no entries.
 2. Remove secrets and private data manually; use only a local input file and explicit output path.
 3. Run the packaged handoff validation command; inspect the resulting sanitized JSON.
 4. On resume, confirm commit and tool state again; the checkpoint is not persistent model memory.
@@ -22,7 +22,7 @@ For the repository checkout use: python plugins/shards-core/scripts/run.py hando
 A validated JSON task checkpoint written only to the explicitly selected output file.
 
 ## Verification
-Re-open the output, confirm required keys, dates/revisions and that no sensitive information is included.
+Re-open the output, check the required keys and compare the recorded commit with the repository.
 
 ## Failure handling
 Reject missing fields, malformed arrays or detected credential patterns. Never overwrite an existing output.

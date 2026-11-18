@@ -9,6 +9,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import uuid
 from pathlib import Path
 from contextlib import redirect_stdout
 from unittest.mock import patch
@@ -24,8 +25,10 @@ def fake_receipt(plan: dict, outcome: str = "pass") -> dict:
     return {
         "observation": {"status": outcome, "exit_code": 0 if outcome == "pass" else 1,
                         "stdout_tail": '{"checked":true}', "stderr_tail": ""},
-        "receipt_id": "mock-" + plan["skill"],
-        "script_sha256": plan["script_sha256"],
+        "receipt_id": str(uuid.uuid4()),
+        "executed": True,
+        **{key: plan[key] for key in ("skill", "effect", "commit", "command", "plan_sha256", "script_sha256")},
+        "delegation": dict(plan["delegation"]),
     }
 
 
@@ -165,6 +168,80 @@ class AgentHarnessTests(unittest.TestCase):
                 self.assertEqual(result["summary"]["failed"], 2)
                 self.assertTrue(all(entry["artifact"]["error_type"] == "ValueError"
                                     for entry in result["data_channel"]))
+
+    def test_success_from_another_task_fails_aggregate(self):
+        plan = harness.build_plan("a2a")
+        other = plan["tasks"][1]["dispatch_plan"]["plan_sha256"]
+        def runner(delegate):
+            return dict(fake_receipt(delegate), plan_sha256=other)
+        record = harness.execute(plan, runner=runner)
+        self.assertEqual(record["summary"], {"total": 2, "passed": 1, "failed": 1})
+        artifact = record["data_channel"][0]["artifact"]
+        self.assertEqual(artifact["mismatches"]["plan_sha256"], {
+            "expected": plan["tasks"][0]["dispatch_plan"]["plan_sha256"], "observed": other})
+
+    def test_repeated_skill_is_bound_to_its_assigned_task_and_agent(self):
+        plan = harness.build_plan("custom", skills=["shards-catalogue-sync"] * 2, workers=1)
+        first, second = [task["dispatch_plan"] for task in plan["tasks"]]
+        record = harness.execute(plan, runner=lambda _: fake_receipt(first))
+        self.assertEqual(record["summary"], {"total": 2, "passed": 1, "failed": 1})
+        self.assertNotEqual(first["plan_sha256"], second["plan_sha256"])
+        mismatch = record["data_channel"][1]["artifact"]["mismatches"]
+        self.assertEqual(mismatch["delegation"]["expected"], second["delegation"])
+        self.assertEqual(mismatch["delegation"]["observed"], first["delegation"])
+
+    def test_injected_runner_cannot_rewrite_expected_command(self):
+        plan = harness.build_plan("dual-channel")
+        digest = harness.fingerprint(plan)
+        def runner(delegate):
+            delegate["command"].append("sensitive-command-argument")
+            return fake_receipt(delegate)
+        record = harness.execute(plan, runner=runner)
+        self.assertEqual(record["summary"]["failed"], 2)
+        self.assertEqual(digest, harness.fingerprint(plan))
+        self.assertNotIn("sensitive-command-argument", json.dumps(record))
+        self.assertIn("command", record["data_channel"][0]["artifact"]["mismatches"])
+
+    def test_missing_or_misattributed_receipt_fields_are_refused(self):
+        plan = harness.build_plan("custom", skills=["shards-repository-health"])
+        for key, bad in (("skill", "shards-skill-dispatch"), ("effect", "local-write"),
+                         ("commit", "a" * 40), ("delegation", {"task_id": "task-002"}),
+                         ("executed", 1), ("receipt_id", ""),
+                         ("observation", ["pass"])):
+            for omit in (True, False):
+                with self.subTest(key=key, omit=omit):
+                    def runner(delegate):
+                        receipt = fake_receipt(delegate)
+                        if omit:
+                            receipt.pop(key, None)
+                        else:
+                            receipt[key] = bad
+                        return receipt
+                    record = harness.execute(plan, runner=runner)
+                    self.assertEqual(record["status"], "fail")
+
+    def test_nonprocess_outcome_requires_explicit_null(self):
+        for status in ("timeout", "error"):
+            def runner(delegate):
+                receipt = fake_receipt(delegate, status)
+                del receipt["observation"]["exit_code"]
+                return receipt
+            artifact = harness.execute(harness.build_plan("a2a"), runner=runner)["data_channel"][0]["artifact"]
+            self.assertIn("error_type", artifact)
+
+    def test_missing_revision_and_malformed_output_cannot_pass(self):
+        with patch.object(dispatch_skills, "_source_revision", return_value=None):
+            with patch.object(dispatch_skills, "run") as runner:
+                record = harness.execute(harness.build_plan("a2a"))
+                runner.assert_not_called()
+                self.assertEqual(record["status"], "fail")
+        def malformed(delegate):
+            receipt = fake_receipt(delegate)
+            receipt["observation"]["stdout_tail"] = {"secret": "private fixture"}
+            return receipt
+        record = harness.execute(harness.build_plan("a2a"), runner=malformed)
+        self.assertEqual(record["summary"]["failed"], 2)
+        self.assertNotIn("private fixture", json.dumps(record))
 
     def test_delegate_receipt_accepts_consistent_nonzero_failure(self):
         result = harness.execute(harness.build_plan("a2a"),

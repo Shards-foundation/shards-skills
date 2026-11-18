@@ -82,10 +82,20 @@ Each delegated task has a distinct stable ID within the run and a sub-agent
 identity. In parallel mode, workers execute concurrently, then return
 results in the original task order for deterministic joins. Aggregate status
 is pass only when every delegate passes; fail, hold, timeout and
-error remain failures. Delegate receipts must match the pinned script SHA-256
-and have a consistent exit code (zero for pass; nonzero for fail or hold).
-Timeout and startup-error receipts correctly have a null exit code; mismatched
-evidence becomes an attributed task error. There are no hidden retries.
+error remain failures. Each child dispatch plan includes a `delegation` object
+with the task ID and local agent ID. Both IDs contribute to the child plan
+digest, including when two tasks invoke the same skill. Regenerate any saved
+harness plans created before this field existed.
+
+Injected runners receive a copy of the child dispatch plan. Return a dispatcher
+receipt with its UUID, `executed: true`, matching delegation, skill, commit,
+effect, command, plan digest and script digest. Include the observed status
+and an explicit exit code, using zero for pass, nonzero for fail or hold, and
+null for timeout or startup error. A task with a missing source revision fails
+before dispatch. A mismatched identity fails the task and aggregate. The
+artifact records expected and observed identifiers, hashing command arguments
+and masking unknown values. These checks establish consistency with the local
+plan. They do not authenticate the runner or confer execution authority.
 
 receipt_sha256 detects accidental changes to JSON data after generation.
 It is **not** a signature, an append-only audit ledger, or evidence of

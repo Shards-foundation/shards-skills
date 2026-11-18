@@ -133,6 +133,15 @@ def _plan_fingerprint(plan: dict) -> str:
     payload = {key: plan[key] for key in fields}
     if "input_file" in plan:
         payload.update(input_file=plan["input_file"], input_sha256=plan.get("input_sha256"))
+    if "delegation" in plan:
+        delegation = plan["delegation"]
+        if (not isinstance(delegation, dict) or set(delegation) != {"task_id", "agent_id"}
+                or not isinstance(delegation["task_id"], str)
+                or not re.fullmatch(r"task-[0-9]{3}", delegation["task_id"])
+                or not isinstance(delegation["agent_id"], str)
+                or not re.fullmatch(r"subagent-[0-9]{3}", delegation["agent_id"])):
+            raise ValueError("Invalid local delegation identity")
+        payload["delegation"] = delegation
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -203,7 +212,8 @@ def _check_plan_integrity(plan: dict) -> bytes | None:
 
 def describe(skill_id: str, *, target_skill: str | None = None,
              profile: str = "quick", input_file: str | None = None,
-             output_file: str | None = None, allow_local_write: bool = False) -> dict:
+             output_file: str | None = None, allow_local_write: bool = False,
+             delegation: dict | None = None) -> dict:
     if skill_id not in REGISTRY:
         raise ValueError("Unknown or unapproved skill identifier")
     _check_descriptor(skill_id)
@@ -239,6 +249,8 @@ def describe(skill_id: str, *, target_skill: str | None = None,
     if "--input" in cmd:
         path = _state_file(input_file, must_exist=True)
         plan.update(input_file=str(path), input_sha256=hashlib.sha256(_input_bytes(path)).hexdigest())
+    if delegation is not None:
+        plan["delegation"] = dict(delegation)
     plan["plan_sha256"] = _plan_fingerprint(plan)
     return plan
 
@@ -279,6 +291,7 @@ def run(plan: dict, *, executor=None) -> dict:
             "plan_sha256": plan["plan_sha256"],
             "script_sha256": plan["script_sha256"], "command": plan["command"],
             "started_at": started, "finished_at": timestamp(), "executed": True,
+            **({"delegation": dict(plan["delegation"])} if "delegation" in plan else {}),
             "observation": observed, "production_verified": False}
 
 def persist(receipt: dict) -> Path:

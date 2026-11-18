@@ -8,6 +8,7 @@ first-party operations, with separate control and evidence channels.
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import hashlib
 import json
 import re
@@ -48,7 +49,7 @@ def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def fingerprint(value: dict) -> str:
+def fingerprint(value: dict | list) -> str:
     raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
@@ -82,11 +83,11 @@ def build_plan(profile: str, *, skills: list[str] | None = None,
         capacity = min(workers, len(selected))
     tasks = []
     for index, skill in enumerate(selected, start=1):
+        delegation = {"task_id": f"task-{index:03d}", "agent_id": f"subagent-{index:03d}"}
         tasks.append({
-            "task_id": f"task-{index:03d}",
-            "agent_id": f"subagent-{index:03d}",
+            **delegation,
             "skill": skill,
-            "dispatch_plan": dispatch_skills.describe(skill),
+            "dispatch_plan": dispatch_skills.describe(skill, delegation=delegation),
         })
     plan = {
         "profile": profile,
@@ -103,18 +104,59 @@ def build_plan(profile: str, *, skills: list[str] | None = None,
     return plan
 
 
+def _diagnostic_id(key: str, value):
+    """Only retain known identifiers. Command arguments can contain sensitive text."""
+    if value is None:
+        return None
+    if key == "command" and isinstance(value, list) and len(value) <= 32:
+        if all(isinstance(arg, str) and len(arg) <= 4096 for arg in value):
+            return {"sha256": fingerprint(value)}
+    if key == "delegation" and isinstance(value, dict):
+        return {field: _diagnostic_id(field, value.get(field)) for field in ("task_id", "agent_id")}
+    if key == "executed" and type(value) is bool:
+        return value
+    if isinstance(value, str):
+        if key == "skill" and value in dispatch_skills.REGISTRY:
+            return value
+        if key == "effect" and value in ("read-only", "local-write", "local-tests"):
+            return value
+        formats = {"task_id": r"task-[0-9]{3}", "agent_id": r"subagent-[0-9]{3}",
+                   "commit": r"[0-9a-f]{40}(?:[0-9a-f]{24})?",
+                   "plan_sha256": r"[0-9a-f]{64}", "script_sha256": r"[0-9a-f]{64}"}
+        if key in formats and re.fullmatch(formats[key], value):
+            return value
+    return "<invalid>"
+
+
 def _execute_one(task: dict, runner) -> dict:
+    plan = task["dispatch_plan"]
     try:
-        receipt = runner(task["dispatch_plan"])
+        if not plan["commit"]:
+            raise ValueError("Missing source revision")
+        receipt = runner(deepcopy(plan))
+        if not isinstance(receipt, dict):
+            raise ValueError("Missing dispatcher receipt")
+        mismatches = {}
+        for key in ("delegation", "skill", "commit", "plan_sha256", "script_sha256",
+                    "effect", "command", "executed"):
+            expected = True if key == "executed" else plan[key]
+            observed = receipt.get(key)
+            if type(observed) is not type(expected) or observed != expected:
+                mismatches[key] = {"expected": _diagnostic_id(key, expected),
+                                   "observed": _diagnostic_id(key, observed)}
+        if mismatches:
+            return {"status": "error", "error_type": "ValueError", "exit_code": None,
+                    "mismatches": mismatches}
+        receipt_id = receipt.get("receipt_id")
+        if not isinstance(receipt_id, str) or str(uuid.UUID(receipt_id)) != receipt_id:
+            raise ValueError("Invalid dispatcher receipt ID")
         observation = receipt["observation"]
+        if not isinstance(observation, dict) or "exit_code" not in observation:
+            raise ValueError("Incomplete process observation")
         outcome = observation["status"]
         if outcome not in ("pass", "fail", "hold", "timeout", "error"):
             raise ValueError("Unexpected sub-agent outcome")
-        # A delegate receipt is evidence, not authority. Reject inconsistent
-        # claims before a forged success can influence the aggregate result.
-        if receipt["script_sha256"] != task["dispatch_plan"]["script_sha256"]:
-            raise ValueError("Delegate script digest differs from approved plan")
-        exit_code = observation.get("exit_code")
+        exit_code = observation["exit_code"]
         # The dispatcher intentionally records no process exit code when a
         # process times out or cannot start; those outcomes must stay visible.
         # A normal process result, including HOLD, must have an integer code.
@@ -128,13 +170,22 @@ def _execute_one(task: dict, runner) -> dict:
             )
         if not valid_exit:
             raise ValueError("Delegate status and exit code are inconsistent")
+        tails = {}
+        for key, limit in (("stdout_tail", 4000), ("stderr_tail", 2000)):
+            value = observation.get(key, "")
+            if not isinstance(value, str) or len(value) > limit:
+                raise ValueError("Invalid dispatcher output tail")
+            tails[key] = dispatch_skills.SECRET.sub("[REDACTED]", value)
         return {
             "status": outcome,
-            "receipt_id": receipt["receipt_id"],
-            "script_sha256": receipt["script_sha256"],
-            "exit_code": observation.get("exit_code"),
-            "stdout_tail": observation.get("stdout_tail", ""),
-            "stderr_tail": observation.get("stderr_tail", ""),
+            "receipt_id": receipt_id,
+            "plan_sha256": plan["plan_sha256"],
+            "script_sha256": plan["script_sha256"],
+            "commit": plan["commit"],
+            "effect": plan["effect"],
+            "command_sha256": fingerprint(plan["command"]),
+            "exit_code": exit_code,
+            **tails,
         }
     except (OSError, ValueError, KeyError, TypeError) as exc:
         return {

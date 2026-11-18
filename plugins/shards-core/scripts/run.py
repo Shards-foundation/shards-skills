@@ -141,7 +141,13 @@ def contains_secret(value, key: str = "") -> bool:
     return False
 
 def validate_handoff(path: Path) -> dict:
-    data = json.loads(read(path))
+    if path == Path("-"):
+        raw = sys.stdin.buffer.read(2_000_001)
+        if len(raw) > 2_000_000:
+            raise ValueError("Oversized checkpoint")
+        data = json.loads(raw.decode("utf-8"))
+    else:
+        data = json.loads(read(path))
     if not isinstance(data, dict):
         raise ValueError("Checkpoint must be a JSON object")
     strings = ("goal", "repo", "branch", "commit")
@@ -198,7 +204,7 @@ def main() -> int:
         return int((args.command == "release-check" and report["decision"] == "HOLD") or
                    (args.command == "audit-skill" and report["status"] == "BLOCK") or
                    (args.command == "repository-health" and report["status"] == "INCOMPLETE"))
-    except (ValueError, OSError, UnicodeError) as error:
+    except (ValueError, OSError, UnicodeError, RecursionError) as error:
         print("ERROR: " + str(error), file=sys.stderr)
         return 2
 

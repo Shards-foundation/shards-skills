@@ -8,6 +8,7 @@ import hmac
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import uuid
@@ -66,19 +67,49 @@ def _selected_skill(name: str) -> Path:
     raise ValueError("Target skill not found")
 
 def _state_file(raw: str, *, must_exist: bool) -> Path:
-    if not raw:
+    if not isinstance(raw, str) or not raw:
         raise ValueError("Explicit checkpoint input and output required")
     path = Path(raw)
     if not path.is_absolute():
         path = ROOT / path
-    path = path.resolve()
-    if not _contained(path, LOCAL_STATE) or path.suffix.lower() != ".json":
+    if path != path.resolve() or not path.is_relative_to(ROOT):
+        raise ValueError("Checkpoint traversal or symlink is forbidden")
+    if not path.is_relative_to(LOCAL_STATE) or path.suffix.lower() != ".json":
         raise ValueError("Checkpoints must be JSON files inside .shards/state")
     if must_exist and not path.is_file():
         raise ValueError("Checkpoint input missing")
     if not must_exist and path.exists():
         raise ValueError("Checkpoint output already exists")
     return path
+
+def _input_bytes(path: Path) -> bytes:
+    """Read once from a bounded regular file, rejecting links in the checkout path."""
+    limit = 2_000_000  # Largest supported checkpoint; consumers enforce their own limits.
+    if os.open in os.supports_dir_fd and hasattr(os, "O_NOFOLLOW"):
+        directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        parent = os.open(ROOT, directory_flags)
+        try:
+            for part in path.relative_to(ROOT).parts[:-1]:
+                child = os.open(part, directory_flags, dir_fd=parent)
+                os.close(parent)
+                parent = child
+            fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+        finally:
+            os.close(parent)
+        stream = os.fdopen(fd, "rb")
+    else:
+        # Recheck the opened file identity on platforms without relative directory FDs.
+        stream = path.open("rb")
+    with stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
+            raise ValueError("Checkpoint input must be a bounded regular file")
+        if path != path.resolve() or not os.path.samestat(info, path.lstat()):
+            raise ValueError("Checkpoint input changed during open")
+        data = stream.read(limit + 1)
+        if len(data) > limit:
+            raise ValueError("Checkpoint input exceeds byte limit")
+        return data
 
 def _check_descriptor(skill_id: str) -> None:
     skill = CORE / "skills" / skill_id
@@ -91,7 +122,7 @@ def _check_descriptor(skill_id: str) -> None:
 
 def _source_revision() -> str | None:
     try:
-        p = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        p = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--verify", "HEAD^{commit}"],
                            text=True, capture_output=True, timeout=5, check=False)
         return p.stdout.strip() if p.returncode == 0 else None
     except (OSError, subprocess.TimeoutExpired):
@@ -101,13 +132,15 @@ def _plan_fingerprint(plan: dict) -> str:
     """Stable digest of the command and effects the operator actually reviewed."""
     fields = ("skill", "effect", "command", "script_sha256", "commit", "timeout_seconds")
     payload = {key: plan[key] for key in fields}
+    if "input_file" in plan:
+        payload.update(input_file=plan["input_file"], input_sha256=plan.get("input_sha256"))
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
-def _check_plan_integrity(plan: dict) -> None:
+def _check_plan_integrity(plan: dict) -> bytes | None:
     """Fail closed if a reviewed plan, trusted script or checkout changed."""
     skill = plan.get("skill")
-    if skill not in REGISTRY:
+    if not isinstance(skill, str) or skill not in REGISTRY:
         raise ValueError("Unknown curated skill in execution plan")
     _check_descriptor(skill)
     effect, script_path, operation = REGISTRY[skill]
@@ -134,12 +167,12 @@ def _check_plan_integrity(plan: dict) -> None:
     elif skill == "shards-agent-handoff":
         if len(args) != 4 or args[0] != "--input" or args[2] != "--output":
             raise ValueError("Handoff command shape is invalid")
-        expected_args = ["--input", str(_state_file(args[1], must_exist=True)),
+        expected_args = ["--input", "-",
                          "--output", str(_state_file(args[3], must_exist=False))]
     elif skill == "shards-a2a-authority-preflight":
         if len(args) != 2 or args[0] != "--input":
             raise ValueError("Authority preflight command shape is invalid")
-        expected_args = ["--input", str(_state_file(args[1], must_exist=True))]
+        expected_args = ["--input", "-"]
     elif skill == "shards-automation-operator":
         if len(args) != 2 or args[0] != "--workflow" or args[1] not in (
                 "quick", "weekly", "verify"):
@@ -155,12 +188,23 @@ def _check_plan_integrity(plan: dict) -> None:
     expected_script = plan.get("script_sha256")
     if not isinstance(expected_script, str) or not hmac.compare_digest(digest, expected_script):
         raise ValueError("Trusted executable changed since planning")
+    if not plan.get("commit"):
+        raise ValueError("Repository revision unavailable for execution")
     if plan.get("commit") != _source_revision():
         raise ValueError("Repository revision changed since planning")
     claimed = plan.get("plan_sha256")
     actual = _plan_fingerprint(plan)
     if not isinstance(claimed, str) or not hmac.compare_digest(actual, claimed):
         raise ValueError("Execution plan changed since planning")
+    if "--input" in expected_args:
+        path = _state_file(plan.get("input_file"), must_exist=True)
+        data = _input_bytes(path)
+        if hashlib.sha256(data).hexdigest() != plan.get("input_sha256"):
+            raise ValueError("Reviewed input changed since planning")
+        return data
+    if "input_file" in plan or "input_sha256" in plan:
+        raise ValueError("Unexpected input in execution plan")
+    return None
 
 def describe(skill_id: str, *, target_skill: str | None = None,
              profile: str = "quick", input_file: str | None = None,
@@ -181,12 +225,12 @@ def describe(skill_id: str, *, target_skill: str | None = None,
     elif skill_id == "shards-agent-handoff":
         if not allow_local_write:
             raise ValueError("Handoff requires --allow-local-write")
-        cmd.extend(["--input", str(_state_file(input_file, must_exist=True)),
+        cmd.extend(["--input", "-",
                     "--output", str(_state_file(output_file, must_exist=False))])
     elif skill_id == "shards-a2a-authority-preflight":
         if input_file is None:
             raise ValueError("Authority preflight requires --input-file")
-        cmd.extend(["--input", str(_state_file(input_file, must_exist=True))])
+        cmd.extend(["--input", "-"])
     elif skill_id == "shards-automation-operator":
         if profile not in ("quick", "weekly", "verify"):
             raise ValueError("Only named maintenance profiles can run")
@@ -201,11 +245,14 @@ def describe(skill_id: str, *, target_skill: str | None = None,
             "script_sha256": hashlib.sha256(script.read_bytes()).hexdigest(),
             "commit": _source_revision(), "timeout_seconds": timeout,
             "approved_by": "host-required", "executed": False}
+    if "--input" in cmd:
+        path = _state_file(input_file, must_exist=True)
+        plan.update(input_file=str(path), input_sha256=hashlib.sha256(_input_bytes(path)).hexdigest())
     plan["plan_sha256"] = _plan_fingerprint(plan)
     return plan
 
 def run(plan: dict, *, executor=None) -> dict:
-    _check_plan_integrity(plan)
+    input_data = _check_plan_integrity(plan)
     if executor is None:
         executor = subprocess.run
     env = {key: value for key, value in os.environ.items() if key in
@@ -214,10 +261,13 @@ def run(plan: dict, *, executor=None) -> dict:
     env["PYTHONUTF8"] = "1"
     started = timestamp()
     try:
+        options = {"text": True} if input_data is None else {"input": input_data}
         proc = executor(plan["command"], cwd=str(ROOT), env=env, capture_output=True,
-                        text=True, timeout=plan["timeout_seconds"], check=False)
-        stdout = SECRET.sub("[REDACTED]", proc.stdout)[-4000:]
-        stderr = SECRET.sub("[REDACTED]", proc.stderr)[-2000:]
+                        timeout=plan["timeout_seconds"], check=False, **options)
+        stdout_text = proc.stdout.decode("utf-8", "replace") if isinstance(proc.stdout, bytes) else proc.stdout
+        stderr_text = proc.stderr.decode("utf-8", "replace") if isinstance(proc.stderr, bytes) else proc.stderr
+        stdout = SECRET.sub("[REDACTED]", stdout_text)[-4000:]
+        stderr = SECRET.sub("[REDACTED]", stderr_text)[-2000:]
         status = "pass" if proc.returncode == 0 else "fail"
         if plan["skill"] in ("shards-release-gate", "shards-a2a-authority-preflight") and proc.returncode == 1:
             try:
@@ -232,7 +282,8 @@ def run(plan: dict, *, executor=None) -> dict:
                     "error": "Process exceeded timeout"}
     except OSError as exc:
         observed = {"status": "error", "exit_code": None, "error": type(exc).__name__}
-    return {"receipt_id": str(uuid.uuid4()), "skill": plan["skill"],
+    pinned = {key: plan[key] for key in ("input_file", "input_sha256") if key in plan}
+    return {**pinned, "receipt_id": str(uuid.uuid4()), "skill": plan["skill"],
             "effect": plan["effect"], "commit": plan["commit"],
             "plan_sha256": plan["plan_sha256"],
             "script_sha256": plan["script_sha256"], "command": plan["command"],
@@ -278,6 +329,10 @@ def main(argv=None) -> int:
             return 0
         if not args.execute:
             raise ValueError("Run requires --execute; use plan first")
+        requires_pin = ("input_file" in plan or plan["effect"] != "read-only"
+                        or plan["skill"] == "shards-release-gate")
+        if requires_pin and args.expect_plan_sha256 is None:
+            raise ValueError("This operation requires --expect-plan-sha256 from a reviewed plan")
         if args.expect_plan_sha256 is not None:
             expected = args.expect_plan_sha256.lower()
             if not re.fullmatch(r"[0-9a-f]{64}", expected) or not hmac.compare_digest(

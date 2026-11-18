@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -35,12 +36,14 @@ class SkillDispatchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             dispatcher.describe("shards-a2a-authority-preflight",
                                 input_file="/tmp/untrusted-input.json")
-        sample = ROOT / ".shards" / "state" / "authority.json"
-        with patch("dispatch_skills._state_file", return_value=sample):
-            plan = dispatcher.describe("shards-a2a-authority-preflight",
-                                       input_file=".shards/state/authority.json")
+        dispatcher.LOCAL_STATE.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=dispatcher.LOCAL_STATE) as state:
+            sample = Path(state) / "authority.json"
+            sample.write_text("{}", encoding="utf-8")
+            plan = dispatcher.describe("shards-a2a-authority-preflight", input_file=str(sample))
+            self.assertEqual(plan["input_file"], str(sample))
             self.assertEqual(plan["effect"], "read-only")
-            self.assertEqual(plan["command"][-3:], ["validate", "--input", str(sample)])
+            self.assertEqual(plan["command"][-3:], ["validate", "--input", "-"])
             dispatcher._check_plan_integrity(plan)
             forged = dict(plan, command=plan["command"] + ["--unsafe"])
             forged["plan_sha256"] = dispatcher._plan_fingerprint(forged)

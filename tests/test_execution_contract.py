@@ -74,7 +74,10 @@ class ContractValidationTests(unittest.TestCase):
 
     def test_review_must_cover_every_step_but_can_be_split(self):
         record = self.approved()
-        record["steps"].append(dict(record["steps"][0], id="docs", owner="reviewer-agent"))
+        record["steps"].append(dict(record["steps"][0], id="docs", owner="reviewer-agent", evidence_ids=["docs-test"]))
+        record["evidence"][0]["step_ids"] = ["implement"]
+        record["evidence"].append(dict(record["evidence"][0], id="docs-test", step_ids=["docs"],
+                                       observed_by="reviewer-agent", ref="local:docs-test"))
         self.assertEqual(validator.validate(record)["decision"], "HOLD")
         record["reviews"].append(dict(record["reviews"][0], reviewer="docs-reviewer",
                                       step_ids=["docs"], evidence_ids=["review-docs"]))
@@ -99,6 +102,80 @@ class ContractValidationTests(unittest.TestCase):
     def test_same_test_receipt_cannot_be_relabelled_as_a_formal_review(self):
         record = self.approved()
         record["evidence"][1]["ref"] = record["evidence"][0]["ref"]
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+
+    def test_formal_artifact_alone_cannot_verify_work_or_tests(self):
+        record = self.approved()
+        record["evidence"] = record["evidence"][1:]
+        record["steps"][0]["evidence_ids"] = ["review-1"]
+        record["checks"][0]["evidence_ids"] = ["review-1"]
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+
+    def test_work_and_check_evidence_matches_reported_scope_and_actor(self):
+        for change in ({"kind": "comment"}, {"observed_by": "other-agent"},
+                       {"result": "FAIL"}, {"branch": "release"}, {"repository": "foreign/repo"},
+                       {"ref": "https://github.com/elsewhere/repo/actions/runs/123"}):
+            with self.subTest(change=change):
+                record = self.approved()
+                record["evidence"][0].update(change)
+                self.assertEqual(validator.validate(record)["decision"], "HOLD")
+        record = self.approved()
+        record["checks"][0]["observed_by"] = "ci-observer"
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+        record["evidence"][0].update(observed_by="ci-observer", subject_actor="builder-agent")
+        self.assertEqual(validator.validate(record)["decision"], "EVIDENCE_READY")
+
+    def test_unscoped_work_receipt_cannot_widen_to_a_second_step_or_check(self):
+        for field, scope_field, identifier in (("steps", "step_ids", "implement"),
+                                               ("checks", "check_ids", "tests")):
+            with self.subTest(field=field):
+                record = self.approved()
+                record[field].append(dict(record[field][0], id="extra"))
+                if field == "steps":
+                    record["reviews"][0]["step_ids"].append("extra")
+                    record["evidence"][1]["step_ids"].append("extra")
+                self.assertEqual(validator.validate(record)["decision"], "HOLD")
+                record["evidence"][0][scope_field] = [identifier]
+                self.assertEqual(validator.validate(record)["decision"], "HOLD")
+                record["evidence"][0][scope_field].append("extra")
+                self.assertEqual(validator.validate(record)["decision"], "EVIDENCE_READY")
+
+    def test_artifact_identity_and_github_review_resource(self):
+        record = self.approved()
+        record["evidence"][1]["ref"] = " " + record["evidence"][0]["ref"] + " "
+        with self.assertRaises(ValueError):
+            validator.validate(record)
+        for ref, expected in (
+            ("https://github.com/Example-Org/Example-Repository/pull/12#pullrequestreview-19", "EVIDENCE_READY"),
+            ("https://api.github.com/repos/example-org/example-repository/pulls/12/reviews/19", "EVIDENCE_READY"),
+            ("https://github.com/example-org/example-repository/pull/12#issuecomment-19", "HOLD"),
+            ("https://github.com/example-org/example-repository/pull/12#discussion_r19", "HOLD"),
+            ("https://github.com/example-org/foreign/pull/12#pullrequestreview-19", "HOLD"),
+        ):
+            with self.subTest(ref=ref):
+                record = self.approved()
+                record["evidence"][1]["ref"] = ref
+                self.assertEqual(validator.validate(record)["decision"], expected)
+        record = self.approved()
+        record["evidence"][1]["repository"] = "foreign/repo"
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+        record = self.approved()
+        record["scope"]["repository"] = "not an owner/repo"
+        with self.assertRaises(ValueError):
+            validator.validate(record)
+
+    def test_one_github_review_event_cannot_back_two_claims_via_different_urls(self):
+        record = self.approved()
+        record["evidence"][0]["ref"] = "https://api.github.com/repos/Example-org/example-repository/pulls/12/reviews/19"
+        record["evidence"][1]["ref"] = "https://github.com/example-org/example-repository/pull/12#pullrequestreview-19"
+        self.assertEqual(validator.validate(record)["decision"], "HOLD")
+
+    def test_case_alias_cannot_self_review(self):
+        record = self.approved()
+        record["steps"][0]["owner"] = "@Reviewer-Agent"
+        record["reviews"][0]["reviewer"] = "reviewer-agent"
+        record["evidence"][1]["observed_by"] = "reviewer-agent"
+        record["evidence"][0]["observed_by"] = "@Reviewer-Agent"
         self.assertEqual(validator.validate(record)["decision"], "HOLD")
 
     def test_artifact_and_review_scopes_must_match(self):

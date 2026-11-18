@@ -8,8 +8,11 @@ import re
 import sys
 from collections import Counter
 from pathlib import Path
+from urllib.parse import urlsplit
 
 SHA = re.compile(r"^[0-9a-fA-F]{40}$")
+REPOSITORY = re.compile(r"[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+")
+CHECK_KINDS = {"test", "self-reported-test", "check"}
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SECRET = re.compile(
     r"(?:gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|"
@@ -70,6 +73,45 @@ def _invalid_constant(_):
     raise ValueError("Invalid JSON number")
 
 
+def _actor_label(value):
+    # GitHub login case and the display-only @ prefix cannot create independence.
+    label = value.strip().removeprefix("@").casefold()
+    if not label:
+        raise ValueError("Empty actor identifier")
+    return label
+
+
+def _artifact_reference(ref, repository):
+    """Identity for duplicate detection and compatibility with a formal review claim."""
+    if ref != ref.strip() or any(ord(ch) < 32 for ch in ref):
+        raise ValueError("Malformed artifact reference")
+    url = urlsplit(ref)
+    host = (url.hostname or "").rstrip(".")
+    if host not in ("github.com", "www.github.com", "api.github.com"):
+        return ref, "opaque"  # Local and other host references remain self-reported.
+    if url.scheme != "https" or url.username is not None or url.port not in (443, None):
+        return ref, "inapplicable"
+    prefix = "/repos/" if host == "api.github.com" else "/"
+    scoped_path = re.match(prefix + r"([^/]+/[^/]+)(?:/|$)", url.path)
+    if not scoped_path or scoped_path[1].casefold() != repository.casefold():
+        return ref, "inapplicable"
+    if url.fragment.startswith(("issuecomment-", "discussion_r")) or "/comments/" in url.path:
+        return ref, "inapplicable"
+    if host == "api.github.com":
+        target = re.fullmatch(r"/repos/([^/]+/[^/]+)/pulls/([1-9][0-9]*)/reviews/([1-9][0-9]*)/?", url.path)
+        if not target or url.fragment:
+            return ref, "other-github"
+        repo, pull, review = target.groups()
+    else:
+        target = re.fullmatch(r"/([^/]+/[^/]+)/pull/([1-9][0-9]*)/?", url.path)
+        anchor = re.fullmatch(r"pullrequestreview-([1-9][0-9]*)", url.fragment)
+        if not target or not anchor:
+            return ref, "other-github"
+        repo, pull = target.groups()
+        review = anchor.group(1)
+    return (repo.casefold(), pull, review), "github-review"
+
+
 def validate(data):
     """Return a structural verdict; never interpret this as host permission."""
     if not _is_object(data):
@@ -97,8 +139,10 @@ def validate(data):
         _text(ambiguity, "description")
         if type(ambiguity.get("material")) is not bool or type(ambiguity.get("resolved")) is not bool:
             raise ValueError("ambiguity flags must be booleans")
-    _text(scope, "repository")
-    _text(scope, "branch")
+    repository = _text(scope, "repository")
+    if not REPOSITORY.fullmatch(repository) or any(part in (".", "..") for part in repository.split("/")):
+        raise ValueError("Repository must be an owner/repo identifier")
+    branch = _text(scope, "branch")
     head_sha = scope.get("head_sha")
     if head_sha is not None and (not isinstance(head_sha, str) or not SHA.fullmatch(head_sha)):
         raise ValueError("head_sha must be a full 40-character commit SHA or null")
@@ -125,19 +169,21 @@ def validate(data):
         return ids
 
     step_ids = unique_items(steps, "id", "step")
-    unique_items(checks, "id", "check")
+    check_ids = unique_items(checks, "id", "check")
 
-    def review_scope(item):
-        ids = _array(item, "step_ids")
-        if not ids or any(not isinstance(i, str) or i not in step_ids for i in ids):
-            raise ValueError("Review must cover known step identifiers")
+    def covered_ids(item, field, known_ids):
+        ids = _array(item, field)
+        if not ids or any(not isinstance(i, str) or i not in known_ids for i in ids):
+            raise ValueError("Unknown or missing identifiers in " + field)
         covered = frozenset(ids)
         if len(covered) != len(ids):
-            raise ValueError("Duplicate reviewed step")
+            raise ValueError("Duplicate identifier in " + field)
         return covered
 
     evidence_ids = set()
     formal_reviews = {}
+    artifact_keys = {}
+    work_receipts = set()
     for item in evidence:
         if not _is_object(item):
             raise ValueError("Evidence entry must be an object")
@@ -150,10 +196,26 @@ def validate(data):
         if not SHA.fullmatch(item["revision"]):
             raise ValueError("Evidence revision must be a full SHA")
 
+        for key in ("repository", "branch", "subject_actor"):
+            if key in item:
+                _text(item, key)
+        if "repository" in item and not REPOSITORY.fullmatch(item["repository"]):
+            raise ValueError("Invalid evidence repository")
+        if "result" in item and _text(item, "result") not in CHECK_RESULTS:
+            raise ValueError("Invalid evidence result")
+        for field, known in (("step_ids", step_ids), ("check_ids", check_ids)):
+            if field in item:
+                covered_ids(item, field, known)
+
+        artifact_keys[item_id], ref_kind = _artifact_reference(item["ref"], repository)
+        if item["kind"] in CHECK_KINDS and ref_kind in ("opaque", "other-github"):
+            work_receipts.add(item_id)
         if item["kind"] == "formal-review":
             if _text(item, "verdict") not in REVIEW_VERDICTS:
                 raise ValueError("Unknown formal review artifact verdict")
-            formal_reviews[item_id] = (review_scope(item), item["observed_by"], item["verdict"])
+            covered = covered_ids(item, "step_ids", step_ids)
+            if ref_kind in ("opaque", "github-review"):
+                formal_reviews[item_id] = (covered, item["observed_by"], item["verdict"])
 
     def check_refs(item):
         refs = _array(item, "evidence_ids")
@@ -163,13 +225,34 @@ def validate(data):
 
     reasons = []
     evidence_by_id = {entry["id"]: entry for entry in evidence}
-    artifact_counts = Counter(entry["ref"] for entry in evidence)
+    artifact_counts = Counter(artifact_keys.values())
 
     def live_refs(refs):
         return bool(refs) and all(
             head_sha is not None and evidence_by_id[ref]["revision"].lower() == head_sha.lower()
+            and evidence_by_id[ref].get("repository", repository).casefold() == repository.casefold()
+            and evidence_by_id[ref].get("branch", branch) == branch
             for ref in refs
         )
+
+    def supports_work(refs, field, work_id, total, subject=None, observer=None):
+        for ref in refs:
+            item = evidence_by_id[ref]
+            if ref not in work_receipts or item.get("result", "PASS") != "PASS":
+                continue
+            if artifact_counts[artifact_keys[ref]] != 1:
+                continue
+            if field in item:
+                if work_id not in item[field]:
+                    continue
+            elif total != 1:
+                continue
+            if subject is not None and item.get("subject_actor", item["observed_by"]) != subject:
+                continue
+            if observer is not None and item["observed_by"] != observer:
+                continue
+            return True
+        return False
 
     if head_sha is None:
         reasons.append("Unknown exact head SHA")
@@ -181,7 +264,7 @@ def validate(data):
     owners = {}
     failed = False
     for step in steps:
-        owners[step["id"]] = _text(step, "owner").strip().casefold()
+        owners[step["id"]] = _actor_label(_text(step, "owner"))
         effect = _text(step, "effect")
         if effect not in EFFECTS:
             raise ValueError("Unknown effect class")
@@ -203,8 +286,9 @@ def validate(data):
             reasons.append("Step failed: " + step["id"])
         elif status != "VERIFIED":
             reasons.append("Step not reported VERIFIED: " + step["id"])
-        if status == "VERIFIED" and not live_refs(refs):
-            reasons.append("Stale or missing step evidence: " + step["id"])
+        if status == "VERIFIED" and (not live_refs(refs) or not supports_work(
+                refs, "step_ids", step["id"], len(steps), subject=step["owner"])):
+            reasons.append("Missing applicable current verification evidence for step: " + step["id"])
 
     for check in checks:
         result = _text(check, "result")
@@ -218,14 +302,16 @@ def validate(data):
             reasons.append("Check failed: " + check["id"])
         elif result != "PASS":
             reasons.append("Check not passing: " + check["id"])
-        if result == "PASS" and not live_refs(refs):
-            reasons.append("Stale or missing check evidence: " + check["id"])
+        observer = _text(check, "observed_by") if "observed_by" in check else None
+        if result == "PASS" and (not live_refs(refs) or not supports_work(
+                refs, "check_ids", check["id"], len(checks), observer=observer)):
+            reasons.append("Missing applicable current result evidence for check: " + check["id"])
 
     approved_steps = set()
     for review in reviews:
         if not _is_object(review):
             raise ValueError("Review must be an object")
-        covered = review_scope(review) if "step_ids" in review else frozenset()
+        covered = covered_ids(review, "step_ids", step_ids) if "step_ids" in review else frozenset()
         reviewer = _text(review, "reviewer")
         revision = _text(review, "revision")
         verdict = _text(review, "verdict")
@@ -248,8 +334,8 @@ def validate(data):
             reasons.append("Review blocked at current revision")
             continue
 
-        actor = reviewer.strip().casefold()
-        if not covered or actor == executor.strip().casefold():
+        actor = _actor_label(reviewer)
+        if not covered or actor == _actor_label(executor):
             continue
         if any(owners[step_id] == actor for step_id in covered):
             continue
@@ -257,7 +343,7 @@ def validate(data):
             continue
         expected_review = (covered, reviewer, verdict)
         if any(formal_reviews.get(ref) == expected_review
-               and artifact_counts[evidence_by_id[ref]["ref"]] == 1 for ref in refs):
+               and artifact_counts[artifact_keys[ref]] == 1 for ref in refs):
             approved_steps.update(covered)
 
     for step_id in step_ids - approved_steps:

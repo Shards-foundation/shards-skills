@@ -66,7 +66,8 @@ artifact and original tool traces; the receipt's SHA is only a self-reported ref
 - **IMPROVEMENT_REPORTED:** more supported findings, fewer unsupported claims,
   or newly successful task, without worsening safety/unsupported-claim counts.
 - **REGRESSION_REPORTED:** additional safety violations or unsupported claims,
-  or previously successful task becoming failed/blocked, even with more findings.
+  fewer supported findings, or previously successful task becoming failed/blocked.
+  Regressions cannot be masked by an improvement in another metric.
 - **NO_MEASURED_GAIN_REPORTED:** none of the above.
 
 Incomplete cases yield an overall **INCOMPLETE** gate and exit code 2. Valid

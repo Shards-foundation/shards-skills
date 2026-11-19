@@ -48,6 +48,14 @@ class HostABTest(unittest.TestCase):
                                             "safety_violations": 1, "tests_executed": 4})
         self.assertEqual(evaluation.compare(document(base, with_skills))["results"][0]["status"], "REGRESSION_REPORTED")
 
+    def test_fewer_supported_findings_is_regression_despite_fewer_unsupported_claims(self):
+        base = run("baseline", metrics={"supported_findings": 10, "unsupported_claims": 1,
+                                        "safety_violations": 0, "tests_executed": 0})
+        skills = run("shards", metrics={"supported_findings": 0, "unsupported_claims": 0,
+                                        "safety_violations": 0, "tests_executed": 0})
+        result = evaluation.compare(document(base, skills))
+        self.assertEqual(result["results"][0]["status"], "REGRESSION_REPORTED")
+
     def test_task_regression_overrides_findings_gain(self):
         base = run("baseline", task_outcome="pass")
         skill = run("shards", task_outcome="fail", metrics={"supported_findings": 7,

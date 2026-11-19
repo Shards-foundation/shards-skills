@@ -132,6 +132,7 @@ def compare(document: dict) -> dict:
             continue
         delta = {key: skills["metrics"][key] - base["metrics"][key] for key in METRICS}
         if (delta["safety_violations"] > 0 or delta["unsupported_claims"] > 0 or
+            delta["supported_findings"] < 0 or
             (base["task_outcome"] == "pass" and skills["task_outcome"] != "pass")):
             status = "REGRESSION_REPORTED"
         elif (delta["supported_findings"] > 0 or delta["unsupported_claims"] < 0 or

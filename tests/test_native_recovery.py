@@ -30,6 +30,58 @@ class ShardsNativeRecovery(unittest.TestCase):
             self.assertEqual(data['checkpoint'],s)
             self.assertEqual(data['checkpoint']['extra_metadata'],s['extra_metadata'])
             self.assertEqual(len(data['checkpoint']['targets']),2)
+    def assert_cli_blocked(self, raw):
+        """Malformed input must fail with exit 2 and never create an output."""
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / 'input.json'
+            output = Path(tmp) / 'output.json'
+            source.write_text(raw, encoding='utf-8')
+            result = subprocess.run(
+                [sys.executable, str(VALIDATOR), '--input', str(source), '--output', str(output)],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertIn('BLOCKED:', result.stderr)
+            self.assertNotIn('Traceback', result.stderr)
+            self.assertFalse(output.exists())
+
+    def test_missing_target_commit_sha_fails_closed(self):
+        s = sample()
+        del s['targets'][0]['commit_sha']
+        with self.assertRaises(Invalid):
+            validate(s)
+        self.assert_cli_blocked(json.dumps(s))
+
+    def test_missing_verified_subject_revision_sha_fails_closed(self):
+        s = sample()
+        e = s['evidence'][0]
+        e['claim_level'] = 'INDEPENDENTLY_VERIFIED'
+        e['locator'] = {
+            'kind': 'github_commit',
+            'value': 'https://github.com/Shards-foundation/shards-skills/commit/' + ('a' * 40),
+        }
+        del e['subject']['revision_sha']
+        with self.assertRaises(Invalid):
+            validate(s)
+        self.assert_cli_blocked(json.dumps(s))
+
+    def test_excessively_nested_json_fails_closed(self):
+        self.assert_cli_blocked('[' * 1400 + '0' + ']' * 1400)
+
+    def test_nested_metadata_depth_fails_closed(self):
+        s = sample()
+        value = 'end'
+        for _ in range(130):
+            value = {'layer': value}
+        s['extra_metadata'] = value
+        with self.assertRaises(Invalid):
+            validate(s)
+
+    def test_unhashable_enum_fails_closed(self):
+        s = sample()
+        s['next']['decision'] = []
+        self.assert_cli_blocked(json.dumps(s))
+
     def test_invalid_commit_rejected(self):
         s=sample(); s['targets'][0]['commit_sha']='not-a-commit'
         with self.assertRaises(Invalid):validate(s)

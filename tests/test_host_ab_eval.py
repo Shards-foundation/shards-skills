@@ -1,4 +1,6 @@
 """Fail-closed paired host evaluation tests, with no external model or network calls."""
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -25,7 +27,8 @@ def run(condition, **overrides):
 
 
 def document(*runs):
-    return {"schema_version": 1, "experiment_id": "claude-security-20261114", "runs": list(runs)}
+    return {"schema_version": 2, "experiment_id": "claude-security-20261114",
+            "shards_bundle_commit": "c" * 40, "runs": list(runs)}
 
 
 class HostABTest(unittest.TestCase):
@@ -99,9 +102,67 @@ class HostABTest(unittest.TestCase):
             link.symlink_to(path)
             with self.assertRaisesRegex(ValueError, "symlinked"):
                 evaluation.read_receipts(link)
-            path.write_text(json.dumps({"schema_version": 2, "experiment_id": "x", "runs": []}))
+            path.write_text(json.dumps({"schema_version": 99, "experiment_id": "x", "runs": []}))
             with self.assertRaisesRegex(ValueError, "experiment version"):
                 evaluation.compare(evaluation.read_receipts(path))
+
+
+    def test_incomplete_gate_has_nonzero_cli_exit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "receipt.json"
+            path.write_text(json.dumps(document(run("shards"))), encoding="utf-8")
+            output, errors = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                status = evaluation.main(["--receipts", str(path)])
+            self.assertEqual(status, 2)
+            self.assertEqual(json.loads(output.getvalue())["gate"], "INCOMPLETE")
+            self.assertEqual(errors.getvalue(), "")
+
+    def test_duplicate_json_keys_fail_closed_at_nested_depth(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "duplicate.json"
+            source = json.dumps(document(run("baseline"), run("shards")))
+            path.write_text(source.replace('"metrics": {', '"metrics": {"unsupported_claims": 0, ', 1),
+                            encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Duplicate JSON"):
+                evaluation.read_receipts(path)
+
+    def test_oversized_receipt_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "oversize.json"
+            path.write_bytes(b" " * (evaluation.MAX_BYTES + 1))
+            with self.assertRaisesRegex(ValueError, "oversized"):
+                evaluation.read_receipts(path)
+
+    def test_deeply_nested_json_returns_blocked_without_traceback(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "deep.json"
+            path.write_text("[" * 2000 + "0" + "]" * 2000, encoding="utf-8")
+            errors = io.StringIO()
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(errors):
+                status = evaluation.main(["--receipts", str(path)])
+            self.assertEqual(status, 2)
+            self.assertEqual(json.loads(errors.getvalue())["status"], "BLOCKED")
+
+    def test_unsupported_claims_regression_overrides_more_findings(self):
+        baseline = run("baseline")
+        skills = run("shards", metrics={"supported_findings": 10, "unsupported_claims": 2,
+                                        "safety_violations": 0, "tests_executed": 0})
+        result = evaluation.compare(document(baseline, skills))
+        self.assertEqual(result["results"][0]["status"], "REGRESSION_REPORTED")
+
+    def test_nonexistent_selected_workflow_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "Unknown or unavailable"):
+            evaluation.compare(document(run("baseline"),
+                                        run("shards", selected_workflows=["shards-not-real"])))
+
+    def test_shards_bundle_commit_is_reported_and_validated(self):
+        receipt = document(run("baseline"), run("shards"))
+        result = evaluation.compare(receipt)
+        self.assertEqual(result["shards_bundle_commit"], "c" * 40)
+        receipt["shards_bundle_commit"] = "not-a-commit"
+        with self.assertRaisesRegex(ValueError, "bundle commit"):
+            evaluation.compare(receipt)
 
 
 if __name__ == "__main__":

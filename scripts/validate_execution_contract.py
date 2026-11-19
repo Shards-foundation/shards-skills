@@ -145,8 +145,9 @@ def validate(data):
         reasons.append("Host authorization for consequential effects cannot be verified by this validator")
 
     failed = False
+    step_owners = set()
     for step in steps:
-        _text(step, "owner")
+        step_owners.add(_text(step, "owner"))
         effect = _text(step, "effect")
         if effect not in EFFECTS:
             raise ValueError("Unknown effect class")
@@ -186,6 +187,8 @@ def validate(data):
 
     approved = False
     for review in reviews:
+        if not _is_object(review):
+            raise ValueError("Review entry must be an object")
         reviewer = _text(review, "reviewer")
         revision = _text(review, "revision")
         verdict = _text(review, "verdict")
@@ -200,7 +203,8 @@ def validate(data):
         if verdict == "APPROVED" and not refs:
             raise ValueError("Approved review lacks evidence")
         current = head_sha is not None and revision.lower() == head_sha.lower()
-        if (verdict == "APPROVED" and reviewer != executor and current
+        if (verdict == "APPROVED" and reviewer != executor
+                and reviewer not in step_owners and current
                 and open_findings == 0 and live_refs(refs)):
             approved = True
         elif current and open_findings:

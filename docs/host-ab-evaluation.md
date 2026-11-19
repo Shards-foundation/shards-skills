@@ -30,10 +30,12 @@ self-assessment is not proof of value. Existing
 The program is standard-library-only, does not dereference evidence links and
 does not contact hosts, run models or modify target repositories.
 
-## Input format: schema version 1
+## Input format: schema version 2
 
-Top-level keys are **schema_version** (integer 1), **experiment_id** (stable ID),
-and **runs** (array). Each run needs exactly these fields:
+Top-level keys are **schema_version** (integer 2), **experiment_id** (stable ID),
+**shards_bundle_commit** (40-character lowercase SHA of the Shards bundle under test),
+and **runs** (array). This is a breaking pre-merge schema update: version 1 receipts are rejected.
+Each run needs exactly these fields:
 
 | Field | Meaning |
 | --- | --- |
@@ -51,7 +53,11 @@ and **runs** (array). Each run needs exactly these fields:
 
 Baselines cannot claim Shards skill use. In the skill condition,
 procedure_applied=true requires a named workflow and skill_opened=true.
-Unknown fields, oversized input, symlinks and invalid data fail closed.
+Unknown fields, duplicate JSON keys, oversized input, symlinks and invalid data fail closed.
+Workflow names must also exist in the first-party workflow inventory of the evaluating
+checkout. This validates repository names, **not** which bundle a host actually loaded.
+A reviewer must separately confirm the claimed bundle commit against the installed
+artifact and original tool traces; the receipt's SHA is only a self-reported reference.
 
 ## Scoring
 
@@ -63,7 +69,9 @@ Unknown fields, oversized input, symlinks and invalid data fail closed.
   or previously successful task becoming failed/blocked, even with more findings.
 - **NO_MEASURED_GAIN_REPORTED:** none of the above.
 
-Comparable cases receive overall gate **REVIEW_REQUIRED**, never certified PASS.
+Incomplete cases yield an overall **INCOMPLETE** gate and exit code 2. Valid
+comparable cases receive **REVIEW_REQUIRED** and exit code 0, never certified PASS.
+Malformed receipts return **BLOCKED** on stderr and exit code 2.
 The checker computes deltas from self-supplied counts only. It cannot prove the
 underlying trace is authentic, that a reviewer was independent, or that the skill
 caused the difference. Require multiple controlled trials and independent trace

@@ -12,6 +12,8 @@ import re
 import sys
 from pathlib import Path
 
+from search_skills import catalogue_entries, curated_entries
+
 MAX_BYTES = 1_000_000
 COMMIT = re.compile(r"^[a-f0-9]{40}$")
 DIGEST = re.compile(r"^[a-f0-9]{64}$")
@@ -26,11 +28,29 @@ RUN_KEYS = {
 }
 
 
+def _unique_object_keys(pairs: list[tuple[str, object]]) -> dict:
+    """Reject duplicate JSON keys at every depth rather than silently using the last."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate JSON object key: " + key)
+        result[key] = value
+    return result
+
+
+def known_workflows() -> set[str]:
+    """First-party repository inventory; does not prove a host installed the same bundle."""
+    names = {entry["name"] for entry in catalogue_entries()
+             if entry["name"].startswith("shards-") and entry["status"] != "deprecated"}
+    names.update(entry["name"] for entry in curated_entries())
+    return names
+
+
 def read_receipts(path: Path) -> dict:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
         raise ValueError("Missing, symlinked or oversized input")
-    document = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(document, dict) or set(document) != {"schema_version", "experiment_id", "runs"}:
+    document = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_object_keys)
+    if not isinstance(document, dict) or set(document) != {"schema_version", "experiment_id", "runs", "shards_bundle_commit"}:
         raise ValueError("Unexpected top-level schema")
     return document
 
@@ -68,6 +88,8 @@ def validate_run(run: dict) -> None:
     if (not isinstance(skills, list) or len(skills) > 36 or any(not isinstance(s, str)
             or not re.fullmatch(r"shards-[a-z0-9-]{1,72}", s) for s in skills) or len(skills) != len(set(skills))):
         raise ValueError("Invalid selected workflows")
+    if skills and not set(skills).issubset(known_workflows()):
+        raise ValueError("Unknown or unavailable first-party workflow")
     if run["condition"] == "baseline" and (run["skill_opened"] or run["procedure_applied"] or skills):
         raise ValueError("Baseline must not use Shards skills")
     if run["condition"] == "shards" and run["procedure_applied"] and not (run["skill_opened"] and skills):
@@ -75,8 +97,11 @@ def validate_run(run: dict) -> None:
 
 
 def compare(document: dict) -> dict:
-    if type(document["schema_version"]) is not int or document["schema_version"] != 1:
+    if type(document["schema_version"]) is not int or document["schema_version"] != 2:
         raise ValueError("Unsupported experiment version")
+    bundle = document["shards_bundle_commit"]
+    if not isinstance(bundle, str) or not COMMIT.fullmatch(bundle):
+        raise ValueError("A full lowercase Shards bundle commit SHA is required")
     if not isinstance(document["experiment_id"], str) or not IDENT.fullmatch(document["experiment_id"]):
         raise ValueError("Invalid experiment ID")
     runs = document["runs"]
@@ -121,7 +146,8 @@ def compare(document: dict) -> dict:
             "selected_workflows": skills["selected_workflows"],
         })
     return {
-        "schema_version": 1, "experiment_id": document["experiment_id"],
+        "schema_version": 2, "experiment_id": document["experiment_id"],
+        "shards_bundle_commit": bundle,
         "evaluation": "paired_self_report_only", "independently_verified": False,
         "gate": "INCOMPLETE" if not results or any(r["status"] in {"INCOMPLETE", "INCOMPARABLE", "NO_ADOPTION"} for r in results) else "REVIEW_REQUIRED",
         "results": results,
@@ -134,9 +160,10 @@ def main(argv=None) -> int:
     parser.add_argument("--receipts", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        print(json.dumps(compare(read_receipts(args.receipts)), indent=2, sort_keys=True))
-        return 0
-    except (OSError, ValueError, UnicodeError) as error:
+        report = compare(read_receipts(args.receipts))
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 2 if report["gate"] == "INCOMPLETE" else 0
+    except (OSError, ValueError, UnicodeError, RecursionError) as error:
         print(json.dumps({"status": "BLOCKED", "reason": str(error)}), file=sys.stderr)
         return 2
 

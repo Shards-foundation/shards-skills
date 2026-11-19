@@ -66,6 +66,21 @@ class ContractValidationTests(unittest.TestCase):
         record["reviews"][0]["reviewer"] = "builder-agent"
         self.assertEqual(validator.validate(record)["decision"], "HOLD")
 
+    def test_step_owner_cannot_approve_own_work(self):
+        record = self.approved()
+        record["steps"][0]["owner"] = "reviewer-agent"
+        result = validator.validate(record)
+        self.assertEqual(result["decision"], "HOLD")
+        self.assertTrue(any("different-actor" in reason for reason in result["reasons"]))
+
+    def test_malformed_review_entry_is_invalid_not_crash(self):
+        for entry in ("invalid-review", None, 123, []):
+            record = self.approved()
+            record["reviews"] = [entry]
+            with self.subTest(entry=entry):
+                with self.assertRaisesRegex(ValueError, "Review entry must be an object"):
+                    validator.validate(record)
+
     def test_open_findings_block(self):
         record = self.approved()
         record["reviews"][0]["open_findings"] = 1

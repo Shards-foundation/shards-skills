@@ -102,7 +102,8 @@ class HostABTest(unittest.TestCase):
             link.symlink_to(path)
             with self.assertRaisesRegex(ValueError, "symlinked"):
                 evaluation.read_receipts(link)
-            path.write_text(json.dumps({"schema_version": 99, "experiment_id": "x", "runs": []}))
+            path.write_text(json.dumps({"schema_version": 99, "experiment_id": "x",
+                                        "shards_bundle_commit": "c" * 40, "runs": []}))
             with self.assertRaisesRegex(ValueError, "experiment version"):
                 evaluation.compare(evaluation.read_receipts(path))
 

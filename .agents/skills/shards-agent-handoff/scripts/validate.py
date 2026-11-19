@@ -67,15 +67,17 @@ def digest(v, where):
     if v is not None and (type(v) is not str or not SHA256.fullmatch(v)):
         fail(where, "must be 64-character SHA-256 or null")
 
-def clean_content(x, where="$"):
+def clean_content(x, where="$", depth=0):
+    if depth > 128:
+        fail(where, "maximum nesting depth exceeded")
     if type(x) is dict:
         for k,v in x.items():
             if type(k) is not str or SENSITIVE_FIELD.search(k):
                 fail(where, "sensitive or invalid field name")
-            clean_content(v, f"{where}.{k}")
+            clean_content(v, f"{where}.{k}", depth+1)
     elif type(x) is list:
         for i,v in enumerate(x):
-            clean_content(v, f"{where}[{i}]")
+            clean_content(v, f"{where}[{i}]", depth+1)
     elif type(x) is str and SECRET.search(x):
         fail(where, "potential credential pattern detected")
 
@@ -89,7 +91,7 @@ def decode_without_duplicate_keys(raw: str):
         return result
     try:
         return json.loads(raw, object_pairs_hook=no_dups, parse_constant=lambda c: fail("JSON", "nonfinite number"))
-    except (json.JSONDecodeError, UnicodeError) as e:
+    except (json.JSONDecodeError, UnicodeError, RecursionError) as e:
         raise Invalid(f"invalid JSON: {e}") from e
 
 def validate(c):
@@ -115,12 +117,14 @@ def validate(c):
         required_str(t.get("repository"),f"targets[{i}].repository")
         if t.get("branch") is not None:
             required_str(t["branch"],f"targets[{i}].branch")
+        if "commit_sha" not in t:
+            fail(f"targets[{i}].commit_sha", "required field; use null with UNKNOWN status when unavailable")
         sha(t.get("commit_sha"),f"targets[{i}].commit_sha",nullable=True)
         if t.get("commit_sha") is None:
             unknown_revision=True
         if t.get("revision_status") not in {"KNOWN", "UNKNOWN"}:
             fail(f"targets[{i}].revision_status","must be KNOWN or UNKNOWN")
-        if (t["commit_sha"] is None) != (t["revision_status"]=="UNKNOWN"):
+        if (t.get("commit_sha") is None) != (t["revision_status"]=="UNKNOWN"):
             fail(f"targets[{i}]", "revision_status and commit_sha disagree")
     progress=obj(c.get("progress"),"progress")
     for k in ("executed", "adjudicated", "exported", "pending"):
@@ -146,6 +150,8 @@ def validate(c):
         subj=obj(e.get("subject"),f"{w}.subject")
         required_str(subj.get("actor"),f"{w}.subject.actor")
         required_str(subj.get("operation"),f"{w}.subject.operation")
+        if "revision_sha" not in subj:
+            fail(f"{w}.subject.revision_sha", "required field; use null when revision is unknown")
         sha(subj.get("revision_sha"),f"{w}.subject.revision_sha",nullable=True)
         loc=obj(e.get("locator"),f"{w}.locator")
         if loc.get("kind") not in ALLOWED_LOCATORS:
@@ -157,7 +163,7 @@ def validate(c):
         digest(e.get("digest_sha256"),f"{w}.digest_sha256")
         time_iso(e.get("observed_at"),f"{w}.observed_at")
         if level=="INDEPENDENTLY_VERIFIED":
-            if loc["kind"] in {"synthetic","unavailable"} or subj["revision_sha"] is None:
+            if loc["kind"] in {"synthetic","unavailable"} or subj.get("revision_sha") is None:
                 fail(w,"independently verified claim requires non-synthetic locator and pinned subject revision")
             if loc["kind"]=="local_artifact" and e.get("digest_sha256") is None:
                 fail(w,"independently verified local artifact requires digest")
@@ -195,7 +201,7 @@ def main(argv=None):
             f.write("\n")
         print(json.dumps({"result":"SCHEMA_VALID","output":str(dest),**summary},sort_keys=True))
         return 0
-    except (Invalid,OSError,ValueError,UnicodeError) as e:
+    except (Invalid,OSError,ValueError,UnicodeError,RecursionError,KeyError,TypeError) as e:
         print("BLOCKED: "+str(e),file=sys.stderr)
         return 2
 

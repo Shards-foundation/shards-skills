@@ -12,7 +12,7 @@ This is a human/agent exchange envelope. It is not a signed permit or proof of e
 - `executor`: agent/operator identifier.
 - `steps`: `{id, owner, effect, status, evidence_ids}`. Allowed effects: `read-only`, `local-write`, `local-execute`, `external-write`, `production`, `paid`, `merge`, `destructive`, `sensitive`. Reported executed/verified effects that contradict forbidden constraints cause FAIL; sensitive/destructive effects require host verification and remain HOLD. Status values: `PROPOSED`, `EXECUTED`, `VERIFIED`, `FAILED`, `BLOCKED`. Completed claims must reference evidence. An executed step is not necessarily verified.
 - `checks`: `{id, result, evidence_ids}`. Result values: `PASS`, `FAIL`, `NOT_RUN`, `BLOCKED`.
-- `reviews`: `{reviewer, revision, verdict, open_findings, evidence_ids}`. Verdict: `APPROVED`, `CHANGES_REQUESTED`, `BLOCKED`. Reviewer must differ from executor to be counted as independent *by reported identity*. No signature or identity verification occurs here.
+- `reviews`: `{reviewer, revision, verdict, open_findings, evidence_ids}`. Verdict: `APPROVED`, `CHANGES_REQUESTED`, `BLOCKED`. Reviewer must differ from both the executor and every step owner to be counted as independent *by reported identity*. No signature or identity verification occurs here.
 - `evidence`: `{id, kind, ref, revision, observed_by}`. References must be nonempty, linked by ID, and bound to current head revision. This is a provenance claim; the validator does not open URLs.
 
 ## Decision semantics

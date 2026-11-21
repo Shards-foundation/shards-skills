@@ -78,8 +78,11 @@ python scripts/security_assurance.py plan --system "My application" --profiles w
 python scripts/vibecode_guard.py --repo /path/to/your/app
 ```
 
-The `plan` command returns controls to investigate, not results. The local guard uses
-**0 = no configured patterns found**, **1 = warnings found**, and **2 = blocked input**.
+The `plan` command returns controls to investigate, not results. For a complete
+local scan, **0 = no actionable heuristic findings** and **1 = actionable warnings**.
+For a legacy baseline, `--no-triage` reports every signature match as actionable.
+**2 = blocked input or incomplete scan**. Review any reported findings, skipped
+paths and truncation before proceeding.
 A clean run is not an automatic security sign-off. For observed evidence and a
 reproducible assessment, follow [the evidence and assessment walkthrough](docs/security-assurance.md).
 
@@ -249,7 +252,7 @@ Original first-party content is licensed under MIT unless a file states otherwis
 
 ## Curated mega-library
 
-The bootstrap collection has been expanded into a curated catalogue of **329 skill packages** across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 14 upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
+The [skill catalogue](catalogue/catalogue.json) records the current package count across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 14 upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
 
 Imported packages are not silently treated as first-party. Each one is marked `review`, includes its immutable upstream commit and original path in frontmatter, and contains an `UPSTREAM.md` record. Package-level provenance is indexed in [`catalogue/imported-skills.json`](catalogue/imported-skills.json), with preserved source notices under [`third_party/`](third_party/).
 
@@ -355,3 +358,42 @@ does not connect a broker or start monitoring. Paper trading is the example defa
 
 Two known upstream risk defects block use for trade approval until corrected;
 see the [open findings](docs/day-trader-skills.md#open-upstream-findings).
+
+
+## Evidence-gated skill improvement (experimental)
+
+The first-party [shards-skill-improver](skills/shards-skill-improver/SKILL.md) creates
+a hash-pinned, reviewable proposed change to a single first-party skill, requires
+independently confirmed baseline/candidate evaluation evidence, and writes a local
+backup before an explicitly authorised apply. It does **not** independently
+produce eval results, run third-party scripts, modify remote repositories,
+auto-merge PRs or grant execution privileges.
+
+```bash
+python scripts/skill_improver.py plan --target skills/release-readiness/SKILL.md --candidate candidate.md --output change-plan.json
+# Validate the proposed apply locally. Without independent results this reports blocked.
+python scripts/skill_improver.py apply --plan change-plan.json --candidate candidate.md --eval eval.json --approve --expect-plan-sha256 <reviewed-plan-sha256>
+# Rollback requires the exact recorded backup and after_sha256:
+python scripts/skill_improver.py rollback --target skills/release-readiness/SKILL.md --backup <recorded-backup-path> --expect-current-sha256 <after_sha256> --approve
+```
+
+Apply and rollback operate on the local checkout only. The trusted host lookup for
+independent execution records is described in the [operating-loop guide](docs/operating-loop.md). The host remains responsible for authorization,
+GitHub branch protection, permissions and independent approval.
+
+
+## Ten operating skills: complete work without losing context
+
+The [operating-loop guide](docs/operating-loop.md) links ten Shards-authored,
+draft skills: task contract, context recovery, tool selection, progress control,
+evidence verification, review resolution, learning capture, skill evaluation,
+controlled skill updates and host compatibility. It includes an append-only,
+hash-chained **local task ledger** for durable criteria, attempts and evidence,
+plus a testable interrupted-agent handoff scenario. This local tool does not
+independently authenticate external observations or connect ChatGPT/Claude.
+
+```bash
+python scripts/operating_ledger.py --help
+python -m unittest discover -s tests -p 'test_operating_ledger.py' -v
+python -m unittest discover -s tests -p 'test_skill_improver.py' -v
+```

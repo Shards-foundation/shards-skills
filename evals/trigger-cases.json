@@ -55,6 +55,16 @@
       "skill": "trader-broker",
       "should_trigger": false,
       "prompt": "Import the day-trading skill files into the catalogue; do not connect a broker or place orders."
+    },
+    {
+      "skill": "shards-restore-recover",
+      "should_trigger": true,
+      "prompt": "Our Codex engineering session was interrupted by a usage limit after some fixes were pushed; recover verified branches and continue from the first unfinished safe step without rerunning the completed work."
+    },
+    {
+      "skill": "shards-restore-recover",
+      "should_trigger": false,
+      "prompt": "Start a brand-new documentation task; no earlier run or checkpoint exists."
     }
   ]
 }

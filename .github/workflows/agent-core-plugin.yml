@@ -32,6 +32,7 @@ on:
       - 'plugins/shards-core/**'
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'
+      - 'tests/test_dispatch_inputs.py'
       - 'scripts/dispatch_skills.py'
       - 'scripts/shards_agent_harness.py'
       - 'tests/test_agent_harness.py'
@@ -45,6 +46,9 @@ on:
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
       - '.agents/skills/**'
+      - 'fixtures/valid-multi-target.json'
+      - 'evals/shards-native-recovery.json'
+      - 'scripts/security_lint.py'
       - 'tests/test_native_recovery.py'
       - 'skills/rebelytics-observer-rebelytics-observer/**'
       - '.github/workflows/agent-core-plugin.yml'
@@ -79,6 +83,7 @@ on:
       - 'plugins/shards-core/**'
       - 'tests/test_plugin_runtime.py'
       - 'tests/test_dispatch.py'
+      - 'tests/test_dispatch_inputs.py'
       - 'scripts/dispatch_skills.py'
       - 'scripts/shards_agent_harness.py'
       - 'tests/test_agent_harness.py'
@@ -92,6 +97,9 @@ on:
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
       - '.agents/skills/**'
+      - 'fixtures/valid-multi-target.json'
+      - 'evals/shards-native-recovery.json'
+      - 'scripts/security_lint.py'
       - 'tests/test_native_recovery.py'
       - 'skills/rebelytics-observer-rebelytics-observer/**'
       - '.github/workflows/agent-core-plugin.yml'
@@ -149,3 +157,16 @@ jobs:
         run: python scripts/search_skills.py --query "repository health" --status curated --limit 3
       - name: Exercise repository health
         run: python plugins/shards-core/scripts/run.py repository-health --repo .
+
+  dispatch-windows:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify dispatcher inputs and atomic checkpoint publication
+        run: python -m unittest discover -s tests -p test_dispatch_inputs.py -v

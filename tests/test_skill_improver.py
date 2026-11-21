@@ -83,6 +83,23 @@ class ImproverTests(unittest.TestCase):
     def host_apply(self, plan):
         return imp.apply(self.options(plan), get_verified_evaluation=lambda record: self.host_result)
 
+    def test_apply_and_rollback_share_an_exclusive_lock(self):
+        plan = self.prepare()
+        with imp.lock_target(self.target):
+            with self.assertRaisesRegex(ValueError, "another writer"):
+                self.host_apply(plan)
+            self.assertEqual(self.target.read_bytes(), self.original)
+        receipt = self.host_apply(plan)
+        options = SimpleNamespace(target="skills/sample-skill/SKILL.md", approve=True,
+                                  backup=str(self.root / receipt["backup"]),
+                                  expect_current_sha256=receipt["after_sha256"])
+        with imp.lock_target(self.target):
+            with self.assertRaisesRegex(ValueError, "another writer"):
+                imp.rollback(options)
+            self.assertEqual(self.target.read_bytes(), self.candidate)
+        imp.rollback(options)
+        self.assertEqual(self.target.read_bytes(), self.original)
+
     def test_independent_evaluation_from_another_plan_is_blocked(self):
         plan = self.prepare()
         self.host_result["plan_sha256"] = "b" * 64

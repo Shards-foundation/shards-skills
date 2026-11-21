@@ -11,6 +11,7 @@ import re
 import sys
 import tempfile
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -100,6 +101,34 @@ def create_only(path: Path, data: bytes) -> None:
             path.unlink(missing_ok=True)
             raise
 
+@contextmanager
+def lock_target(target: Path):
+    mutex = target.with_name(".skill-improver.lock")
+    try:
+        create_only(mutex, b"")
+    except FileExistsError as exc:
+        raise ValueError("Skill revision is already locked by another writer") from exc
+    try:
+        yield
+    finally:
+        mutex.unlink()
+
+def replace_current(target: Path, expected: bytes, replacement: bytes) -> None:
+    temp = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="wb", dir=target.parent, prefix=".skill-improver-", delete=False) as stream:
+            temp = Path(stream.name)
+            stream.write(replacement)
+            stream.flush()
+            os.fsync(stream.fileno())
+        if target.is_symlink() or target.read_bytes() != expected:
+            raise ValueError("Target changed before replacement")
+        os.replace(temp, target)
+        temp = None
+    finally:
+        if temp is not None:
+            temp.unlink(missing_ok=True)
+
 def plan(args) -> dict:
     target = target_path(args.target)
     old, new = target.read_bytes(), safe_file(args.candidate).read_bytes()
@@ -166,25 +195,17 @@ def apply(args, *, get_verified_evaluation=None) -> dict:
         return {"status": "blocked", "evaluation_status": "unverified",
                 "reason": "Independent execution results matching the evaluated files and case set are required",
                 "target": record["target"], "plan_sha256": record["plan_sha256"]}
-    backup = target.with_name("SKILL.md.backup-" + digest(old)[:16] + "-" + uuid.uuid4().hex)
-    create_only(backup, old)
-    temp = None
-    replaced = False
-    try:
-        with tempfile.NamedTemporaryFile(mode="wb", dir=target.parent, prefix=".skill-improver-", delete=False) as stream:
-            temp = Path(stream.name)
-            stream.write(new)
-            stream.flush()
-            os.fsync(stream.fileno())
-        if digest(target.read_bytes()) != digest(old):
+    target = target_path(record["target"])
+    with lock_target(target):
+        if target_path(record["target"]).read_bytes() != old:
             raise ValueError("Target changed during apply")
-        os.replace(temp, target)
-        replaced = True
-    finally:
-        if temp is not None:
-            temp.unlink(missing_ok=True)
-        if not replaced:
+        backup = target.with_name("SKILL.md.backup-" + digest(old)[:16] + "-" + uuid.uuid4().hex)
+        create_only(backup, old)
+        try:
+            replace_current(target, old, new)
+        except (ValueError, OSError):
             backup.unlink(missing_ok=True)
+            raise
     return {"status": "applied", "target": record["target"], "before_sha256": digest(old),
             "after_sha256": digest(new), "backup": str(backup.relative_to(ROOT)),
             "plan_sha256": record["plan_sha256"], "evaluation_status": "host-verified",
@@ -207,19 +228,8 @@ def rollback(args) -> dict:
     descriptor(old, target.parent.name)
     if digest(current) != args.expect_current_sha256:
         raise ValueError("Target changed; rollback blocked")
-    temp = None
-    try:
-        with tempfile.NamedTemporaryFile(mode="wb", dir=target.parent, prefix=".skill-rollback-", delete=False) as stream:
-            temp = Path(stream.name)
-            stream.write(old)
-            stream.flush()
-            os.fsync(stream.fileno())
-        if digest(target.read_bytes()) != digest(current):
-            raise ValueError("Target changed during rollback")
-        os.replace(temp, target)
-    finally:
-        if temp is not None:
-            temp.unlink(missing_ok=True)
+    with lock_target(target):
+        replace_current(target_path(args.target), current, old)
     return {"status": "rolled_back", "target": args.target, "sha256": digest(old)}
 
 def main(argv=None) -> int:

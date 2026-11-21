@@ -74,6 +74,8 @@ The summary retains contrary records. Failed or blocked observations and negativ
 
 The standalone `skill_improver.py apply` checks the proposed plan, candidate, counts and approval, and returns a blocked result with exit 1 when independent execution evidence is unavailable. Malformed or failing receipts exit 2. Planning and rollback retain their existing interface.
 
+Apply and rollback share an exclusive `.skill-improver.lock` next to the target. Use a trusted checkout and prevent editors or other processes from changing the target, directory or backups during a revision. The lock coordinates this tool's writers. After an interrupted run, confirm no writer is live and review the target and backup digests before removing a stale lock.
+
 A trusted embedding host can call `apply(args, get_verified_evaluation=lookup)`. The lookup receives the full checked plan including target and baseline/candidate digests. It must retrieve an independently authenticated run for that target and both files, verify the fixed case set actually ran, and derive the counts from its outcomes. On success it returns `kind` equal to `executed-evaluation`, the independently recorded `plan_sha256` for that execution, the nonempty authenticated `evaluator` identity and `source` identifier, and a `results` object containing all seven evaluation fields. Return `None` if this cannot be established. The tool compares this record to the candidate's claimed results before writing. Supplying the candidate's JSON as the lookup implementation would invalidate the trust boundary. Authorisation remains the caller's responsibility.
 
 ## Other events

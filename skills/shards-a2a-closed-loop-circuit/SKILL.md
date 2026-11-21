@@ -33,7 +33,7 @@ DECIDED + CLOSE -> CLOSED
 DECIDED + REJECT (task) -> REJECTED
 DECIDED + ESCALATE -> ESCALATED
 Required gate missing -> BLOCKED (HOLD)
-DECIDED + REVISE -> bounded correction
+DECIDED + REVISE -> PLANNED -> EXECUTED -> VERIFIED -> [REVIEWED] -> DECIDED
 ```
 No `CLOSED` from an executor's self-report alone when objective verification is required. No implicit merge, publication, payment, signing or deployment at any transition.
 

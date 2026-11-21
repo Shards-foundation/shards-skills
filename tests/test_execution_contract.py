@@ -278,8 +278,21 @@ class ContractValidationTests(unittest.TestCase):
     def test_credential_content_is_invalid(self):
         record = self.approved()
         record["intent"]["goal"] = "token " + "ghp_" + "a" * 25
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "Credential-like"):
             validator.validate(record)
+        for field in ("token", "refreshToken", "credentials"):
+            with self.subTest(field=field):
+                record = self.approved()
+                record["evidence"][0][field] = "synthetic placeholder"
+                with self.assertRaisesRegex(ValueError, "Sensitive field"):
+                    validator.validate(record)
+        for locator in ("https://fixture-user:fixture-pass@example.invalid/receipt",
+                        "https://example.invalid/receipt?access_token=placeholder"):
+            with self.subTest(locator=locator):
+                record = self.approved()
+                record["evidence"][0]["ref"] = locator
+                with self.assertRaisesRegex(ValueError, "Credential-like"):
+                    validator.validate(record)
 
     def test_bad_schema_and_bool_fail_closed(self):
         for key, value in (("schema_version", 2), ("schema_version", True)):

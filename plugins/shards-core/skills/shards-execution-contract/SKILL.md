@@ -43,7 +43,7 @@ python scripts/dispatch_skills.py plan --skill shards-execution-contract --input
 python scripts/dispatch_skills.py run --skill shards-execution-contract --input-file .shards/state/task.json --execute --expect-plan-sha256 <reviewed-digest>
 ```
 
-The validator reads a JSON contract and prints a decision; it **never invokes agents or external APIs**. Execution still requires the host's explicit permission and the curated dispatcher checks. For other actions, route separately to `shards-skill-dispatch`, `shards-a2a-harness`, `shards-release-gate` or `shards-agent-handoff` as appropriate; do not reuse the validator as an executor.
+The validator reads a JSON contract and prints a decision. When running through the dispatcher, read the structured `observation.report` together with `observation.status` and `observation.exit_code`. The host must authorise any execution separately. Route actions through `shards-skill-dispatch`, `shards-a2a-harness`, `shards-release-gate` or `shards-agent-handoff` as appropriate.
 
 ## Output contract
 

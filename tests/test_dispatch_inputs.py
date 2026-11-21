@@ -48,6 +48,22 @@ class DispatchInputTests(unittest.TestCase):
         self.assertEqual(json.loads(self.target.read_bytes())["checkpoint"], self.record)
         self.assertEqual(receipt["input_sha256"], plan["input_sha256"])
 
+    def test_child_refuses_redirected_output_directory(self):
+        output_dir = self.target.parent / "output"
+        output_dir.mkdir()
+        self.options["output_file"] = str(output_dir / self.target.name)
+        plan = self.handoff()
+
+        with tempfile.TemporaryDirectory() as outside:
+            def redirect_at_launch(argv, **kwargs):
+                output_dir.rmdir()
+                output_dir.symlink_to(outside, target_is_directory=True)
+                return subprocess.run(argv, **kwargs)
+
+            receipt = dispatcher.run(plan, executor=redirect_at_launch)
+            self.assertEqual(receipt["observation"]["status"], "fail", receipt)
+            self.assertEqual(list(Path(outside).iterdir()), [])
+
     def test_unknown_revision_refuses_execution(self):
         with patch.object(dispatcher, "_source_revision", return_value=None):
             plan = self.handoff()

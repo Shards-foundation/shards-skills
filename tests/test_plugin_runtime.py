@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "plugins/shards-core"
@@ -93,6 +94,19 @@ class PluginRuntimeTests(unittest.TestCase):
             runner.write_exclusive(path, "{}")
             with self.assertRaises(FileExistsError):
                 runner.write_exclusive(path, "{}")
+
+    def test_dispatched_output_publishes_once_and_cleans_up(self):
+        for fallback in (False, True):
+            with self.subTest(fallback=fallback), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp).resolve()
+                path = root / ".shards" / "state" / "nested" / "output.json"
+                support = set() if fallback else runner.os.supports_dir_fd
+                with patch.object(Path, "cwd", return_value=root), patch.object(runner.os, "supports_dir_fd", support):
+                    runner.publish_dispatched_checkpoint(path, '{"original":true}')
+                    with self.assertRaises(FileExistsError):
+                        runner.publish_dispatched_checkpoint(path, '{"replacement":true}')
+                self.assertEqual(json.loads(path.read_bytes()), {"original": True})
+                self.assertEqual(list(path.parent.iterdir()), [path])
 
     def test_cli_catalogue(self):
         proc = subprocess.run([sys.executable, str(RUNNER), "catalogue"],

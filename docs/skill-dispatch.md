@@ -37,6 +37,8 @@ For a validated checkpoint handoff, create sanitized JSON input in .shards/state
 
     python scripts/dispatch_skills.py run --skill shards-agent-handoff --input-file .shards/state/input.json --output-file .shards/state/output.json --allow-local-write --execute --expect-plan-sha256 <reviewed-digest>
 
+Dispatched handoff outputs use atomic, create-only publication. The destination filesystem must support hard links. On platforms without directory-relative file operations, use a checkout and state directory protected from concurrent untrusted changes by the host.
+
 No dispatcher operation can publish packages, deploy, merge pull requests, call external APIs or run imported scripts. The catalogue audit may inspect any existing skill by NAME but does not execute it.
 
 ## Safety and evidence

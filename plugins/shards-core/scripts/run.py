@@ -3,9 +3,11 @@
 from __future__ import annotations
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -168,6 +170,52 @@ def write_exclusive(path: Path, data: str):
     with path.open("x", encoding="utf-8") as f:
         f.write(data)
 
+def publish_dispatched_checkpoint(path: Path, data: str) -> None:
+    root = Path.cwd().resolve()
+    if (path != path.resolve() or not path.is_relative_to(root / ".shards" / "state")
+            or path.suffix.lower() != ".json"):
+        raise ValueError("Dispatched checkpoint output must be inside .shards/state")
+
+    directory = None
+    temporary = path.parent / (".handoff-" + uuid.uuid4().hex)
+    created = False
+    try:
+        if {os.open, os.mkdir, os.link, os.unlink}.issubset(os.supports_dir_fd) and hasattr(os, "O_NOFOLLOW"):
+            flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+            directory = os.open(root, flags)
+            for segment in path.parent.relative_to(root).parts:
+                try:
+                    child = os.open(segment, flags, dir_fd=directory)
+                except FileNotFoundError:
+                    try:
+                        os.mkdir(segment, mode=0o700, dir_fd=directory)
+                    except FileExistsError:
+                        pass
+                    child = os.open(segment, flags, dir_fd=directory)
+                os.close(directory)
+                directory = child
+            temporary = Path(temporary.name)
+            path = Path(path.name)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if path != path.resolve():
+                raise ValueError("Checkpoint output path changed")
+
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600, dir_fd=directory)
+        created = True
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(data)
+        if directory is None and path != path.resolve():
+            raise ValueError("Checkpoint output path changed")
+        os.link(temporary, path, src_dir_fd=directory, dst_dir_fd=directory)
+    finally:
+        try:
+            if created:
+                os.unlink(temporary, dir_fd=directory)
+        finally:
+            if directory is not None:
+                os.close(directory)
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     subs = p.add_subparsers(dest="command", required=True)
@@ -198,7 +246,9 @@ def main() -> int:
         else:
             report = {"workflow": "handoff", "checkpoint": validate_handoff(args.input), "status": "VALIDATED"}
         result = json.dumps(report, indent=2, sort_keys=True) + "\n"
-        if getattr(args, "output", None):
+        if args.command == "handoff" and args.input == Path("-"):
+            publish_dispatched_checkpoint(args.output, result)
+        elif getattr(args, "output", None):
             write_exclusive(args.output, result)
         print(result, end="")
         return int((args.command == "release-check" and report["decision"] == "HOLD") or

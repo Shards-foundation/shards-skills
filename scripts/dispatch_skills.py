@@ -97,7 +97,9 @@ def _input_bytes(path: Path) -> bytes:
             os.close(parent)
         stream = os.fdopen(fd, "rb")
     else:
-        # Recheck the opened file identity on platforms without relative directory FDs.
+        # On platforms without relative directory FDs, check before opening and recheck before reading.
+        if not stat.S_ISREG(path.lstat().st_mode):
+            raise ValueError("Checkpoint input must be a regular file")
         stream = path.open("rb")
     with stream:
         info = os.fstat(stream.fileno())

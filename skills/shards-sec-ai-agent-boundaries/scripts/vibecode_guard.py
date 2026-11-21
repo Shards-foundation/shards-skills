@@ -55,7 +55,8 @@ def tracked(root: Path) -> list[str]:
         top = subprocess.run(base + ["rev-parse", "--show-toplevel"],
                              stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                              timeout=15, check=False, env=env)
-        if top.returncode or Path(top.stdout.decode("utf-8", errors="surrogateescape").strip()).resolve() != root:
+        top_path = Path(top.stdout.removesuffix(b"\n").decode("utf-8", errors="surrogateescape"))
+        if top.returncode or top_path.resolve() != root:
             raise ValueError("Target must be exact Git repository top-level")
         # Don't retain an unbounded attacker-controlled index in RAM.
         with tempfile.TemporaryFile() as output:

@@ -32,17 +32,17 @@ def no_duplicate_keys(pairs: list[tuple[str, object]]) -> dict:
     return output
 
 
-def read(path: Path) -> tuple[dict, str]:
+def read(path: Path, *, normalize_newlines: bool = False) -> tuple[dict, str]:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
         raise ValueError("Missing, symlinked or oversized JSON file")
     raw = path.read_bytes()
     obj = json.loads(raw.decode("utf-8"), object_pairs_hook=no_duplicate_keys)
     if not isinstance(obj, dict):
         raise ValueError("Expected object")
-    return obj, fingerprint(raw)
+    return obj, fingerprint(raw.replace(b"\r\n", b"\n") if normalize_newlines else raw)
 
 def caseset() -> tuple[dict, str]:
-    doc, hash_value = read(FIXTURE)
+    doc, hash_value = read(FIXTURE, normalize_newlines=True)
     if hash_value != FROZEN_CASESET_SHA256:
         raise ValueError("Frozen case-set digest changed; independent review required")
     expected = {"schema_version", "description", "status", "skill_count", "case_count", "variants", "decisions", "cases"}
@@ -79,9 +79,11 @@ def caseset() -> tuple[dict, str]:
         per_skill.setdefault(entry["skill"], set()).add(entry["variant"])
     if len(skills) != doc["skill_count"] or len(skills) != 6 or any(x != VARIANTS for x in per_skill.values()):
         raise ValueError("Each of six skills must include all four variants")
-    if (not isinstance(doc["variants"], list) or not isinstance(doc["decisions"], list) or
-            set(doc["variants"]) != VARIANTS or set(doc["decisions"]) != DECISIONS):
-        raise ValueError("Unrecognized evaluator labels")
+    for field, allowed in (("variants", VARIANTS), ("decisions", DECISIONS)):
+        labels = doc[field]
+        if (not isinstance(labels, list) or len(labels) != len(allowed)
+                or any(not isinstance(label, str) for label in labels) or set(labels) != allowed):
+            raise ValueError("Unrecognized evaluator labels")
     return doc, hash_value
 
 def assess_receipts(doc: dict, case_sha: str, payload: dict, payload_sha: str) -> dict:

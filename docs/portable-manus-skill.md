@@ -39,6 +39,8 @@ Do not interpret an apparently successful import as proof that tools run.
 The ZIP has exactly one top-level skill directory. MANIFEST.json contains the
 SHA-256 of SKILL.md and the seven bundled support files. It deliberately says
 host_traces_verified=false (no behavioral evaluation has been run by the builder).
+Build on a filesystem that supports hard links. The builder publishes the completed
+ZIP atomically and creates it with owner-only permissions on POSIX systems.
 
 ## Run offline after installation
 

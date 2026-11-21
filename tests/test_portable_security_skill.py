@@ -95,10 +95,12 @@ class PortableSkillTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 portable.build_zip(ROOT, output)
             self.assertEqual(output.read_bytes(), b"keep-existing-file")
-            source = ROOT / "skills" / portable.NAME / "SKILL.md"
+            work = output.parent / "checkout"
+            self._stage(work)
+            source = work / "skills" / portable.NAME / "SKILL.md"
             before = source.read_bytes()
             with self.assertRaises(FileExistsError):
-                portable.build_zip(ROOT, source)
+                portable.build_zip(work, source)
             self.assertEqual(source.read_bytes(), before)
 
     def test_trusted_symlinked_system_directory_alias_is_usable(self):
@@ -159,6 +161,23 @@ class PortableSkillTests(unittest.TestCase):
                     portable.build_zip(work, output)
             self.assertFalse(output.exists())
 
+    def test_canonical_change_between_verify_and_stage_blocks_without_output(self):
+        with tempfile.TemporaryDirectory() as location:
+            work = Path(location).resolve()
+            self._stage(work)
+            output = work / "attempt.zip"
+            original_verify = portable.verify
+
+            def change_canonical_after_verify(root):
+                hashes = original_verify(root)
+                (root / portable.SOURCES[0]).write_bytes(b"modified-after-verification")
+                return hashes
+
+            with patch.object(portable, "verify", side_effect=change_canonical_after_verify):
+                with self.assertRaisesRegex(ValueError, "Changed canonical source"):
+                    portable.build_zip(work, output)
+            self.assertFalse(output.exists())
+
     def test_zip_is_deterministic_and_manifest_matches_files(self):
         with tempfile.TemporaryDirectory() as location:
             a, b = Path(location).resolve() / "a.zip", Path(location).resolve() / "b.zip"
@@ -215,6 +234,11 @@ class PortableSkillTests(unittest.TestCase):
                 assurance.read_json(receipt)
             with self.assertRaisesRegex(ValueError, "Duplicate JSON object key"):
                 evaluator.read(receipt)
+            _, digest = evaluator.caseset()
+            evaluation_receipt = {"schema_version": True, "case_set_sha256": digest,
+                                  "host": "synthetic", "responses": []}
+            with self.assertRaisesRegex(ValueError, "Receipt schema mismatch"):
+                evaluator.assess_receipts({}, digest, evaluation_receipt, "a" * 64)
             original_registry = json.loads((ROOT / "catalogue/shards-security-controls.json").read_text())
             original_registry["schema_version"] = True
             receipt.write_text(json.dumps(original_registry))
@@ -246,6 +270,30 @@ class PortableSkillTests(unittest.TestCase):
             with patch.object(module, "FIXTURE", fixture), patch.object(module, "FROZEN_CASESET_SHA256", digest):
                 with self.assertRaisesRegex(ValueError, "Unrecognized evaluator labels"):
                     module.caseset()
+
+    def test_case_set_accepts_crlf_but_rejects_boolean_schema_and_duplicate_labels(self):
+        spec = importlib.util.spec_from_file_location("evaluator_case", ROOT / "scripts/security_skill_eval.py")
+        evaluator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(evaluator)
+        raw = evaluator.FIXTURE.read_bytes().replace(b"\r\n", b"\n")
+        with tempfile.TemporaryDirectory() as location:
+            fixture = Path(location).resolve() / "cases.json"
+            with patch.object(evaluator, "FIXTURE", fixture):
+                fixture.write_bytes(raw.replace(b"\n", b"\r\n"))
+                self.assertEqual(evaluator.caseset()[1], evaluator.FROZEN_CASESET_SHA256)
+                for field, value, error in (
+                    ("schema_version", True, "Unknown case-set schema"),
+                    ("variants", [*json.loads(raw)["variants"], "positive"], "Unrecognized evaluator labels"),
+                    ("decisions", [*json.loads(raw)["decisions"], "BLOCK"], "Unrecognized evaluator labels"),
+                ):
+                    with self.subTest(field=field):
+                        changed = json.loads(raw)
+                        changed[field] = value
+                        changed_bytes = json.dumps(changed).encode("utf-8")
+                        fixture.write_bytes(changed_bytes)
+                        with patch.object(evaluator, "FROZEN_CASESET_SHA256", evaluator.fingerprint(changed_bytes)):
+                            with self.assertRaisesRegex(ValueError, error):
+                                evaluator.caseset()
 
     def test_source_guard_rejects_partial_checkouts_and_oversized_skips(self):
         spec = importlib.util.spec_from_file_location("guard", ROOT / "scripts/vibecode_guard.py")

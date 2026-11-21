@@ -42,7 +42,7 @@ def verify(root: Path) -> dict[str, str]:
     root = root.resolve()  # canonicalise trusted system-directory aliases (e.g. macOS /var)
     skill = root / "skills" / NAME
     header = checked_file(skill / "SKILL.md")
-    if not header.startswith(b"---\nname: shards-sec-ai-agent-boundaries\n"):
+    if not header.replace(b"\r\n", b"\n").startswith(b"---\nname: shards-sec-ai-agent-boundaries\n"):
         raise ValueError("Unexpected SKILL.md header")
     if b"../" in header:
         raise ValueError("SKILL.md contains out-of-bundle parent-directory reference")
@@ -103,6 +103,8 @@ def build_zip(root: Path, target: Path) -> dict[str, str]:
         data = checked_file(root / "skills" / NAME / relative)
         if hashlib.sha256(data).hexdigest() != hashes[relative]:
             raise ValueError(f"Changed skill input during packaging: {relative}")
+        if relative in SOURCES and checked_file(root / relative) != data:
+            raise ValueError(f"Changed canonical source during packaging: {relative}")
         staged[relative] = data
     manifest = json.dumps({"schema_version": 1, "name": NAME, "file_sha256": hashes,
                            "host_traces_verified": False}, indent=2, sort_keys=True).encode() + b"\n"

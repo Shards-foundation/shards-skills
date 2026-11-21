@@ -65,13 +65,20 @@ def read_source(path: Path) -> bytes:
     def open_regular(name, flags):
         return os.open(name, flags | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
 
+    def version(info):
+        return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
     before = path.lstat()
     with open(path, "rb", opener=open_regular) as stream:
         opened = os.fstat(stream.fileno())
-        if (not stat.S_ISREG(opened.st_mode) or not os.path.samestat(before, opened)
+        if (not stat.S_ISREG(opened.st_mode) or version(before) != version(opened)
                 or path.resolve() != path):
             raise OSError("Source path changed before inspection")
-        return stream.read(MAX_FILE_BYTES + 1)
+        data = stream.read(MAX_FILE_BYTES + 1)
+        if (version(os.fstat(stream.fileno())) != version(opened)
+                or version(path.lstat()) != version(opened) or path.resolve() != path):
+            raise OSError("Source changed during inspection")
+        return data
 
 def inspect(root: Path, files: list[str]) -> dict:
     root = root.resolve()

@@ -183,6 +183,24 @@ class VibeCodeGuardTests(unittest.TestCase):
         self.assertEqual([entry["path"] for entry in result["skipped_paths"]], ["a.py"])
         self.assertEqual([finding["id"] for finding in result["findings"]], ["DEPLOYMENT-DEBUG"])
 
+    def test_changed_source_is_incomplete(self):
+        source = self.file("sample.py", "# original fixture")
+        replaced = self.file("replacement.txt", "# replacement fixture")
+        fstat = os.fstat
+        observations = 0
+
+        def replace_after_read(fd):
+            nonlocal observations
+            observations += 1
+            if observations == 2:
+                replaced.replace(source)
+            return fstat(fd)
+
+        with patch.object(guard.os, "fstat", side_effect=replace_after_read):
+            result = guard.inspect(self.root, ["sample.py"])
+        self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([entry["path"] for entry in result["skipped_paths"]], ["sample.py"])
+
     def test_invalid_source_content_must_not_pass(self):
         self.file("nul.py", "a\x00b")
         (self.root / "nonutf8.py").write_bytes(b"\xff\xfe")

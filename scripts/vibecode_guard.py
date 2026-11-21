@@ -24,6 +24,7 @@ import ast
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -131,11 +132,11 @@ class Repo:
                     if size > MAX_FILE_BYTES or source_bytes + size > MAX_TOTAL_BYTES:
                         self._source_scan_complete = False
                         continue
-                    blob = path.read_bytes()
+                    blob = read_source(path)
                 except (ValueError, OSError, UnicodeError):
                     self._source_scan_complete = False
                     continue
-                if len(blob) > MAX_FILE_BYTES or b"\0" in blob:
+                if len(blob) > MAX_FILE_BYTES or source_bytes + len(blob) > MAX_TOTAL_BYTES or b"\0" in blob:
                     self._source_scan_complete = False
                     continue
                 source_bytes += len(blob)
@@ -158,7 +159,9 @@ class Repo:
             safe_path = relative_file(self.root, str(path.relative_to(self.root)))
             if safe_path.stat().st_size > MAX_FILE_BYTES:
                 return None
-            blob = safe_path.read_bytes()
+            blob = read_source(safe_path)
+            if len(blob) > MAX_FILE_BYTES:
+                return None
             # A bundle containing private material must not be excused by a
             # neighbouring/embedded test certificate identity.
             if b"PRIVATE KEY-----" in blob or not blob.lstrip().startswith(b"-----BEGIN CERTIFICATE-----"):
@@ -186,50 +189,42 @@ def _test_identity(subject: dict | None) -> bool:
     return bool(tokens & TEST_IDENTITY_TOKENS)
 
 
-def _expected_failure_context(lines: list[str], lineno: int, rule: str) -> tuple[str | None, bool]:
-    """Associate TLS findings only with an enclosing SSL-error assertion.
-
-    A pytest.raises elsewhere in the function is NOT evidence of a negative
-    TLS test. Parsing failures remain actionable (fail-closed).
-    """
-    try:
-        tree = ast.parse("\n".join(lines))
-    except (SyntaxError, RecursionError, MemoryError, ValueError):
-        return None, False
-    function = None
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.lineno <= lineno <= node.end_lineno:
-            if function is None or node.lineno >= function.lineno:
-                function = node
-    if function is None:
-        return None, False
-    if rule != "TLS-VERIFY-DISABLED":
-        return function.name, False
-    for node in ast.walk(function):
-        if not isinstance(node, (ast.With, ast.AsyncWith)) or not node.body:
-            continue
-        # The flagged line must actually be inside the with block, not merely
-        # in the same test function as an unrelated raises() assertion.
-        if not node.body[0].lineno <= lineno <= node.body[-1].end_lineno:
-            continue
-        for item in node.items:
-            call = item.context_expr
-            if not isinstance(call, ast.Call) or not call.args:
-                continue
-            callee = ast.unparse(call.func)
-            if not (callee == "pytest.raises" or callee.endswith(".assertRaises") or callee == "assertRaises"):
-                continue
-            exception_name = ast.unparse(call.args[0])
-            if exception_name.endswith("SSLError"):
-                return function.name, True
-    return function.name, False
+def expected_failure_context(node: ast.Call, parents: dict) -> tuple[str | None, bool]:
+    """Associate the actual TLS call with an enclosing exception assertion."""
+    expected = False
+    deferred = False
+    while node in parents:
+        parent = parents[node]
+        if isinstance(parent, (ast.Lambda, ast.GeneratorExp, ast.ClassDef)):
+            deferred = True
+        if isinstance(parent, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            return parent.name, expected and not deferred and node in parent.body
+        if isinstance(parent, (ast.With, ast.AsyncWith)) and node in parent.body:
+            for item in parent.items:
+                call = item.context_expr
+                if not isinstance(call, ast.Call) or not call.args:
+                    continue
+                callee = call.func
+                exception = call.args[0]
+                raises_ssl = (isinstance(exception, ast.Name) and exception.id == "SSLError"
+                              or isinstance(exception, ast.Attribute) and exception.attr == "SSLError")
+                pytest_raises = (isinstance(callee, ast.Attribute) and callee.attr == "raises"
+                                 and isinstance(callee.value, ast.Name) and callee.value.id == "pytest")
+                unittest_raises = isinstance(callee, ast.Attribute) and callee.attr == "assertRaises"
+                expected |= raises_ssl and (pytest_raises or unittest_raises)
+        node = parent
+    return None, False
 
 
-# -- deprecated: order preserved for legacy mode ------------------------------
-def relative_file(root: Path, raw: str) -> Path:
+def relative_path(raw: str) -> Path:
     rel = Path(raw)
     if not raw or rel.is_absolute() or ".." in rel.parts or raw.startswith("-") or any(ord(c) < 32 for c in raw):
         raise ValueError("Unsafe tracked path")
+    return rel
+
+
+def relative_file(root: Path, raw: str) -> Path:
+    rel = relative_path(raw)
     cursor = root
     for part in rel.parts:
         cursor = cursor / part
@@ -265,14 +260,23 @@ def tracked(root: Path) -> list[str]:
         proc = subprocess.run(
             ["git", "--no-optional-locks", "-c", "core.fsmonitor=false",
              "-c", "core.hooksPath=" + os.devnull, "-C", str(root),
-             "ls-files", "-z", "--cached"],
+             "ls-files", "-z", "--stage"],
             capture_output=True, timeout=15, check=False, env=env)
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise ValueError("Cannot enumerate tracked files") from exc
     if proc.returncode:
         raise ValueError("Target is not a readable Git repository")
-    names = proc.stdout.decode("utf-8", errors="surrogateescape").split("\0")
-    return [n for n in names if n]
+    names = []
+    for record in proc.stdout.split(b"\0"):
+        if not record:
+            continue
+        metadata, name = record.split(b"\t", 1)
+        mode, _, stage = metadata.split()
+        if stage != b"0":
+            raise ValueError("Unmerged entries in Git index")
+        if mode != b"160000":
+            names.append(name.decode("utf-8", errors="surrogateescape"))
+    return names
 
 
 def _finding(code, severity, name, line, advice, classification, confidence, reason):
@@ -329,12 +333,11 @@ def triage_key_material(repo: Repo, name: str) -> dict:
     if not source_complete:
         return _finding("TRACKED-KEY-MATERIAL", "high", name, None, base_advice + "; production reference scan incomplete",
                         "CONFIRMED", "low", None)
-    if signals["test_path"] and signals["fixture_tree"] and signals["test_identity"] and signals["no_production_reference"]:
-        conf = "high" if signals["fixture_declaration"] else "medium"
-        reason = ("declared test fixture: test path, fixture directory, certificate/paired-key declares a "
+    if all(signals.values()):
+        reason = ("declared test fixture: test path, fixture directory, certificate declares a "
                   "test identity, no non-test source references it")
         return _finding("TRACKED-KEY-MATERIAL", "high", name, None, base_advice,
-                        "TEST_FIXTURE_LIKELY_INTENTIONAL", conf, reason)
+                        "TEST_FIXTURE_LIKELY_INTENTIONAL", "high", reason)
     if signals["test_path"] and signals["test_identity"] and signals["no_production_reference"]:
         return _finding("TRACKED-KEY-MATERIAL", "high", name, None, base_advice,
                         "TEST_FIXTURE_UNCONFIRMED_DIRECTORY", "low",
@@ -343,6 +346,25 @@ def triage_key_material(repo: Repo, name: str) -> dict:
     return _finding("TRACKED-KEY-MATERIAL", "high", name, None, base_advice,
                     "CONFIRMED", "medium", None)
 
+
+def read_source(path: Path) -> bytes:
+    def open_regular(name, flags):
+        return os.open(name, flags | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+
+    def version(info):
+        return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+    before = path.lstat()
+    with open(path, "rb", opener=open_regular) as stream:
+        opened = os.fstat(stream.fileno())
+        if (not stat.S_ISREG(opened.st_mode) or version(before) != version(opened)
+                or path.resolve() != path):
+            raise OSError("Source path changed before inspection")
+        data = stream.read(MAX_FILE_BYTES + 1)
+        if (version(os.fstat(stream.fileno())) != version(opened)
+                or version(path.lstat()) != version(opened) or path.resolve() != path):
+            raise OSError("Source changed during inspection")
+        return data
 
 def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
     root = root.resolve()
@@ -357,8 +379,13 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
         if name in seen:
             continue
         seen.add(name)
-        entry = root / name
-        if entry.is_symlink():
+        try:
+            entry = root / relative_path(name)
+            is_link = entry.is_symlink() and entry.parent.resolve() == entry.parent
+        except (ValueError, OSError, UnicodeError, RuntimeError):
+            is_link = False
+        if is_link:
+            skipped.append({"path": name, "reason": "Tracked symlink target not inspected"})
             if not triage:
                 findings.append(_finding("SKIPPED-UNSAFE-PATH", "medium", name, None,
                                          "Tracked path could not be inspected safely; review independently",
@@ -400,46 +427,51 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                                              "Tracked symlink could not be resolved; review independently",
                                              "CONFIRMED", "low", None))
             if len(findings) >= MAX_FINDINGS:
-                return report(findings, len(seen), consumed, truncated=True, triage=triage)
+                return report(findings, len(seen), consumed, truncated=True, triage=triage, skipped=skipped)
             continue
         try:
             path = relative_file(root, name)
         except (ValueError, OSError, UnicodeError):
+            skipped.append({"path": name.encode("unicode_escape").decode("ascii"),
+                            "reason": "Unsafe or symlinked tracked path"})
             findings.append(_finding("SKIPPED-UNSAFE-PATH", "medium",
                                      name.encode("unicode_escape").decode("ascii"), None,
                                      "Tracked path could not be inspected safely; review independently",
                                      "CONFIRMED", "low", None))
             if len(findings) >= MAX_FINDINGS:
-                return report(findings, len(seen), consumed, truncated=True, triage=triage)
+                return report(findings, len(seen), consumed, truncated=True, triage=triage, skipped=skipped)
             continue
         if not path.is_file():
-            if path.is_dir():
-                # A tracked gitlink is a separate repository boundary, not a
-                # missing source file. Do not recurse into it.
-                continue
-            # Gitlink/submodule directories and unscanned README/media paths
-            # are not configured source inspections. Missing configured inputs
-            # still block a clean result.
-            if path.suffix.lower() in (SOURCE_EXT | KEY_EXT | CONTAINER_EXT) or path.name.startswith(".env"):
-                skipped.append({"path": name, "reason": "Tracked configured path missing or not a regular file"})
+            skipped.append({"path": name, "reason": "Tracked path missing or not a regular file"})
             continue
         if path.name.startswith(".env") and path.name not in {".env.example", ".env.sample", ".env.template"}:
             findings.append(_finding("TRACKED-ENV", "high", name, None,
                                      "A tracked environment file may disclose credentials; inspect privately and rotate exposed values",
                                      "CONFIRMED", "high", None))
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True, triage=triage, skipped=skipped)
             continue
         if path.suffix.lower() in (KEY_EXT | CONTAINER_EXT):
             findings.append(triage_key_material(repo, name) if triage else
                             _finding("TRACKED-KEY-MATERIAL", "high", name, None,
                                      "Review whether tracked key or certificate material is private; never expose its contents",
                                      "LEGACY", "medium", "legacy mode: no contextual triage"))
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True, triage=triage, skipped=skipped)
             continue
         if path.suffix.lower() not in SOURCE_EXT:
             continue
-        if path.stat().st_size > MAX_FILE_BYTES:
+        try:
+            if path.stat().st_size > MAX_FILE_BYTES:
+                skipped.append({"path": name, "reason": "Source file exceeds per-file inspection budget"})
+                continue
+            blob = read_source(path)
+        except OSError:
+            skipped.append({"path": name, "reason": "Source file disappeared or could not be read"})
+            continue
+        if len(blob) > MAX_FILE_BYTES:
             skipped.append({"path": name, "reason": "Source file exceeds per-file inspection budget"})
             continue
-        blob = path.read_bytes()
         consumed += len(blob)
         if consumed > MAX_TOTAL_BYTES:
             raise ValueError("Source scan byte budget exceeded")
@@ -455,6 +487,8 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
         # str.splitlines() also splits on form feeds and Unicode separators,
         # shifting AST lineno values and corrupting rule classification.
         lines = re.split(r"\r\n|\r|\n", body)
+        tls_contexts = {}
+        is_test = triage and repo.is_test_path(name)
         # Detect Python TLS bypasses spanning physical lines. The original
         # per-line rule remains for other languages and ordinary occurrences.
         # AST supplies correct source positions and ignores strings/comments.
@@ -467,6 +501,7 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                 skipped.append({"path": name, "reason": "Python source too complex to parse for TLS checks"})
                 continue
             if syntax is not None:
+                parents = {child: parent for parent in ast.walk(syntax) for child in ast.iter_child_nodes(parent)} if is_test else {}
                 for node in ast.walk(syntax):
                     if not isinstance(node, ast.Call):
                         continue
@@ -474,11 +509,13 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                         if kw.arg != "verify" or not isinstance(kw.value, ast.Constant) or kw.value.value is not False:
                             continue
                         number = kw.value.lineno
+                        context = expected_failure_context(node, parents) if is_test else (None, False)
+                        tls_contexts.setdefault(number, []).append(context)
                         if number == kw.value.end_lineno and RULES[0][2].search(lines[number - 1]):
                             continue
                         classification, confidence, reason = "CONFIRMED", "high", None
-                        if triage and repo.is_test_path(name):
-                            fname, expected = _expected_failure_context(lines, number, "TLS-VERIFY-DISABLED")
+                        if is_test:
+                            fname, expected = context
                             if expected and fname:
                                 classification, confidence = "EXPECTED_NEGATIVE_TEST", "high"
                                 reason = f"test file; enclosing test {fname}() asserts an expected exception"
@@ -489,7 +526,7 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                                                 "Review TLS certificate verification; this may permit interception",
                                                 classification, confidence, reason))
                         if len(findings) >= MAX_FINDINGS:
-                            return report(findings, len(seen), consumed, truncated=True, triage=triage)
+                            return report(findings, len(seen), consumed, truncated=True, triage=triage, skipped=skipped)
         for number, line in enumerate(lines, 1):
             # Credentials are actionable anywhere, including inside tests.
             for code, pattern, severity in LIVE_CREDENTIAL:
@@ -498,13 +535,16 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                                              "Credential-shaped literal in tracked source; verify whether it is live and rotate if so",
                                              "CONFIRMED", "high", None))
                     if len(findings) >= MAX_FINDINGS:
-                        return report(findings, len(seen), consumed, truncated=True, triage=triage)
+                        return report(findings, len(seen), consumed, truncated=True, triage=triage, skipped=skipped)
             for code, severity, pattern, advice in RULES:
                 if not pattern.search(line):
                     continue
                 classification, confidence, reason = "CONFIRMED", "medium", None
-                if triage and repo.is_test_path(name):
-                    fname, expected = _expected_failure_context(lines, number, code)
+                if is_test and code == "TLS-VERIFY-DISABLED":
+                    contexts = tls_contexts.get(number, [])
+                    fname = next((function for function, _ in contexts if function), None)
+                    expected = (len(contexts) == 1 and contexts[0][1]
+                                and len(pattern.findall(line)) == 1)
                     if expected and fname:
                         classification = "EXPECTED_NEGATIVE_TEST"
                         confidence = "high"
@@ -519,7 +559,7 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
                 findings.append(_finding(code, severity, name, number, advice,
                                          classification, confidence, reason))
                 if len(findings) >= MAX_FINDINGS:
-                    return report(findings, len(seen), consumed, truncated=True, triage=triage)
+                    return report(findings, len(seen), consumed, truncated=True, triage=triage, skipped=skipped)
     return report(findings, len(seen), consumed, truncated=False, triage=triage, skipped=skipped)
 
 

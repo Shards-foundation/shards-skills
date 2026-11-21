@@ -44,11 +44,11 @@ class ReviewerRegressionTests(unittest.TestCase):
                 self.assertEqual(result["status"], "WARNINGS_FOUND")
                 self.assertEqual(result["summary"]["actionable"], 1)
 
-    def test_missing_non_scanned_file_does_not_block_completion(self):
+    def test_missing_tracked_non_source_makes_scan_incomplete(self):
         with tempfile.TemporaryDirectory() as d:
             result = guard.inspect(Path(d), ["README.md"])
-            self.assertEqual(result["status"], "CLEAR_HEURISTICS_ONLY")
-            self.assertFalse(result["incomplete"])
+            self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+            self.assertEqual([entry["path"] for entry in result["skipped_paths"]], ["README.md"])
 
     def test_multiline_tls_keyword_is_actionable(self):
         source = 'import requests\nrequests.get("https://x", verify = ' + chr(92) + '\n    False)\n'
@@ -64,7 +64,10 @@ class ReviewerRegressionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             (root / "libs" / "highlight.js").mkdir(parents=True)
-            result = guard.inspect(root, ["libs/highlight.js"])
+            subprocess.run(["git", "-C", str(root), "init", "-q"], check=True, timeout=5)
+            subprocess.run(["git", "-C", str(root), "update-index", "--add", "--cacheinfo",
+                            f"160000,{'a' * 40},libs/highlight.js"], check=True, timeout=5)
+            result = guard.inspect(root, guard.tracked(root))
             self.assertFalse(result["incomplete"])
             self.assertEqual(result["status"], "CLEAR_HEURISTICS_ONLY")
 
@@ -92,7 +95,7 @@ class ReviewerRegressionTests(unittest.TestCase):
             self.assertIn(("tests/server.key", "TRACKED-KEY-MATERIAL"), findings)
             self.assertIn(("config/.env", "TRACKED-ENV"), findings)
             self.assertEqual(result["summary"]["actionable"], 2)
-            self.assertEqual(result["status"], "WARNINGS_FOUND")
+            self.assertEqual(result["status"], "INCOMPLETE_SCAN")
 
     def test_benign_named_internal_link_to_untracked_credential_is_actionable(self):
         with tempfile.TemporaryDirectory() as d:
@@ -172,9 +175,9 @@ class ReviewerRegressionTests(unittest.TestCase):
                  "--repo", str(root)],
                 capture_output=True, text=True, timeout=5,
             )
-            self.assertEqual(proc.returncode, 1)
+            self.assertEqual(proc.returncode, 2)
             result = json.loads(proc.stdout)
-            self.assertEqual(result["status"], "WARNINGS_FOUND")
+            self.assertEqual(result["status"], "INCOMPLETE_SCAN")
             self.assertEqual(result["summary"]["actionable"], 1)
             finding = result["findings"][0]
             self.assertEqual(finding["id"], "SYMLINK-INTERNAL")
@@ -199,6 +202,24 @@ def test_case():
             item = next(f for f in result["findings"] if f["id"] == "TLS-VERIFY-DISABLED")
             self.assertEqual(item["classification"], "TEST_CONTEXT_UNPROVEN")
             self.assertEqual(result["summary"]["actionable"], 1)
+
+    def test_deferred_calls_stay_actionable_with_one_ast_parse(self):
+        source = """def test_tls():
+    with pytest.raises(SSLError):
+        callback = lambda: client.get(url, verify=False)
+        pending = (client.get(url, verify=False) for url in urls)
+        client.get(url, verify=False)
+"""
+        with tempfile.TemporaryDirectory() as location:
+            root = Path(location)
+            (root / "test_tls.py").write_text(source, encoding="utf-8")
+            with patch.object(guard.ast, "parse", wraps=guard.ast.parse) as parse:
+                report = guard.inspect(root, ["test_tls.py"])
+            parse.assert_called_once()
+        self.assertEqual([item["classification"] for item in report["findings"]], [
+            "TEST_CONTEXT_UNPROVEN", "TEST_CONTEXT_UNPROVEN", "EXPECTED_NEGATIVE_TEST",
+        ])
+        self.assertEqual(report["summary"]["actionable"], 2)
 
 
 if __name__ == "__main__":

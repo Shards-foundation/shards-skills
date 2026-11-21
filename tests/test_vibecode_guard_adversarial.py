@@ -101,7 +101,7 @@ def test_symlinked_sibling_certificate_cannot_be_read(tmp_path):
                      {'tests/certs/server.pem': '../../../outside.pem'})
     (tmp_path/'outside.pem').write_text('-----BEGIN CERTIFICATE-----\nnot-certificate\n-----END CERTIFICATE-----\n')
     rc, report = scan(repo)
-    assert rc == 1
+    assert rc == 2
     key = next(f for f in report['findings'] if f['id'] == 'TRACKED-KEY-MATERIAL')
     assert key['classification'] == 'CONFIRMED'
     assert any(f['id'] == 'SYMLINK-ESCAPE' for f in report['findings'])

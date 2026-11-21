@@ -101,7 +101,8 @@ class VibeCodeGuardTests(unittest.TestCase):
         self.assertFalse(sentinel.exists(), "The untrusted fsmonitor command executed")
 
     def test_non_utf8_git_path_is_retained_for_safe_skip(self):
-        fake = SimpleNamespace(returncode=0, stdout=b"valid.py" + bytes([0]) + b"bad-" + bytes([255]) + b".py" + bytes([0]))
+        metadata = b"100644 " + b"a" * 40 + b" 0\t"
+        fake = SimpleNamespace(returncode=0, stdout=metadata + b"valid.py\0" + metadata + b"bad-\xff.py\0")
         with patch.object(guard.subprocess, "run", return_value=fake):
             names = guard.tracked(self.root)
         self.assertEqual(len(names), 2)
@@ -135,6 +136,94 @@ class VibeCodeGuardTests(unittest.TestCase):
         self.file("a.py", "eval(input())")
         result = guard.inspect(self.root, ["b.py", "a.py"])
         self.assertEqual([item["path"] for item in result["findings"]], ["a.py", "b.py"])
+
+
+    def test_cap_blocks_clean_exit_even_when_later_tls_unseen(self):
+        for i in range(guard.MAX_FINDINGS):
+            self.file(f"a/key{i:04}.key", "fixture")
+        self.file("z/unsafe.py", "request.get(url, verify=False)")
+        names = [f"a/key{i:04}.key" for i in range(guard.MAX_FINDINGS)] + ["z/unsafe.py"]
+        r = guard.inspect(self.root, names)
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertTrue(r["truncated"])
+        self.assertTrue(r["incomplete"])
+        with patch.object(guard, "tracked", return_value=names), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 2)
+
+    def test_skipped_source_must_block_clean_exit(self):
+        self.file("oversized.py", "x" * (guard.MAX_FILE_BYTES + 1))
+        r = guard.inspect(self.root, ["oversized.py", "missing.py"])
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertEqual(len(r["skipped_paths"]), 2)
+        with patch.object(guard, "tracked", return_value=["oversized.py"]), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 2)
+
+    def test_tracked_env_findings_count_towards_limit(self):
+        names = [f".env.fixture-{i}" for i in range(3)]
+        for name in names:
+            self.file(name, "EXAMPLE=fixture")
+        with patch.object(guard, "MAX_FINDINGS", 2):
+            result = guard.inspect(self.root, names)
+        self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+        self.assertTrue(result["truncated"])
+        self.assertEqual([finding["id"] for finding in result["findings"]], ["TRACKED-ENV"] * 2)
+
+    def test_unreadable_source_preserves_findings_from_other_files(self):
+        unreadable = self.file("a.py", "# unreadable fixture")
+        self.file("b.py", "DEBUG = True")
+        read_source = guard.read_source
+
+        def read(path):
+            if path == unreadable.resolve():
+                raise PermissionError("denied")
+            return read_source(path)
+
+        with patch.object(guard, "read_source", side_effect=read):
+            result = guard.inspect(self.root, ["a.py", "b.py"])
+        self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([entry["path"] for entry in result["skipped_paths"]], ["a.py"])
+        self.assertEqual([finding["id"] for finding in result["findings"]], ["DEPLOYMENT-DEBUG"])
+
+    def test_changed_source_is_incomplete(self):
+        source = self.file("sample.py", "# original fixture")
+        replaced = self.file("replacement.txt", "# replacement fixture")
+        fstat = os.fstat
+        observations = 0
+
+        def replace_after_read(fd):
+            nonlocal observations
+            observations += 1
+            if observations == 2:
+                replaced.replace(source)
+            return fstat(fd)
+
+        with patch.object(guard.os, "fstat", side_effect=replace_after_read):
+            result = guard.inspect(self.root, ["sample.py"])
+        self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([entry["path"] for entry in result["skipped_paths"]], ["sample.py"])
+
+    def test_invalid_source_content_must_not_pass(self):
+        self.file("nul.py", "a\x00b")
+        (self.root / "nonutf8.py").write_bytes(b"\xff\xfe")
+        r = guard.inspect(self.root, ["nul.py", "nonutf8.py"])
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertEqual(len(r["skipped_paths"]), 2)
+
+    def test_unsafe_symlink_is_incomplete_even_when_other_findings_exist(self):
+        original = self.file("real.py", "eval(input())")
+        (self.root / "link.py").symlink_to(original)
+        r = guard.inspect(self.root, ["link.py", "real.py"])
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([f["id"] for f in r["findings"]], ["SYMLINK-INTERNAL", "DYNAMIC-EVAL"])
+        self.assertEqual([entry["path"] for entry in r["skipped_paths"]], ["link.py"])
+
+    def test_exit_codes_preserve_complete_warning_and_clean(self):
+        self.file("warning.py", "request.get(url, verify=False)")
+        self.file("clean.py", "print('ok')")
+        with patch.object(guard, "tracked", return_value=["warning.py"]), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 1)
+        with patch.object(guard, "tracked", return_value=["clean.py"]), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 0)
 
 if __name__ == "__main__":
     unittest.main()

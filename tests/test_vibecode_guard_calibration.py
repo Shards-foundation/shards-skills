@@ -119,7 +119,7 @@ def test_real_repository_findings_are_classified(tmp_path):
     assert payload["summary"]["by_classification"]["TEST_CONTEXT_UNPROVEN"] == 4
     # Seven tracked key/certificate files require review, including likely fixtures.
     assert payload["summary"]["actionable"] == 13
-    assert code == 1
+    assert code == 2
 
 
 def test_legacy_mode_still_reports_all_13(tmp_path):
@@ -129,7 +129,7 @@ def test_legacy_mode_still_reports_all_13(tmp_path):
     assert payload["triage_mode"] == "signature-only"
     assert payload["summary"]["total"] == 13
     assert payload["summary"]["actionable"] == 13
-    assert code == 1
+    assert code == 2
 
 
 # --------------------------------------------------------------------------
@@ -182,7 +182,7 @@ def test_key_in_fixture_dir_but_referenced_by_production_stays_actionable(tmp_pa
     repo = make_repo(tmp_path / "r", {
         "tests/certs/valid/server/server.key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADAN\n-----END PRIVATE KEY-----\n",
         "tests/certs/valid/server/server.pem": "-----BEGIN CERTIFICATE-----\nMIID\n-----END CERTIFICATE-----\n",
-        "src/client.py": 'KEY = "tests/certs/valid/server/server.key"\n', 
+        "src/client.py": 'KEY = "tests/certs/valid/server/server.key"\n',
     })
     code, payload, err = run_guard(repo)
     assert payload is not None, err
@@ -235,7 +235,7 @@ def test_symlink_escape_is_high_severity(tmp_path):
     assert f["severity"] == "high"
     assert f["classification"] == "CONFIRMED"
     assert "outside the repository" in f["advice"]
-    assert code == 1
+    assert code == 2
 
 
 def test_symlink_internal_requires_review(tmp_path):
@@ -251,7 +251,7 @@ def test_symlink_internal_requires_review(tmp_path):
     assert f["severity"] == "medium"
     assert f["classification"] == "CONFIRMED"
     assert f["target"].endswith("expired/ca")
-    assert code == 1
+    assert code == 2
     assert payload["summary"]["actionable"] >= 1
 
 
@@ -263,8 +263,11 @@ def test_symlinked_content_is_never_read(tmp_path):
         links={"src/leak.txt": "../../outside/secret.txt"},
         outside={"outside/secret.txt": "PRODUCTION-ONLY-SECRET-VALUE\n"},
     )
-    _, payload, err = run_guard(repo)
+    code, payload, err = run_guard(repo)
     assert payload is not None, err
+    assert code == 2
+    assert by_path(payload)["src/leak.txt"][0]["id"] == "SYMLINK-ESCAPE"
+    assert any(entry["path"] == "src/leak.txt" for entry in payload["skipped_paths"])
     assert "PRODUCTION-ONLY-SECRET-VALUE" not in json.dumps(payload)
 
 

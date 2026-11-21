@@ -167,11 +167,11 @@ def _lock_windows_path(path: Path, *, directory: bool):
     close_handle = kernel.CloseHandle
     close_handle.argtypes = (wintypes.HANDLE,)
     close_handle.restype = wintypes.BOOL
-    read = 0x80000000
+    read, list_directory = 0x80000000, 0x0001
     share_read, share_write = 0x1, 0x2
     open_existing = 3
     open_reparse_point, backup_semantics = 0x00200000, 0x02000000
-    access = 0 if directory else read
+    access = list_directory if directory else read
     # Omit delete sharing for all paths, and omit write sharing for staged files.
     share = share_read | share_write if directory else share_read
     flags = open_reparse_point | (backup_semantics if directory else 0)

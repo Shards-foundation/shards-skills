@@ -34,6 +34,7 @@ REGISTRY = {
     "shards-dual-channel": ("read-only", "scripts/shards_agent_harness.py", "dual-channel-check"),
     "shards-subagents": ("read-only", "scripts/shards_agent_harness.py", "subagent-check"),
     "shards-parallel-swarm": ("read-only", "scripts/shards_agent_harness.py", "swarm-check"),
+    "shards-execution-contract": ("read-only", "scripts/validate_execution_contract.py", "validate"),
 }
 
 HARNESS_SKILLS = frozenset({
@@ -135,6 +136,10 @@ def _check_plan_integrity(plan: dict) -> None:
             raise ValueError("Handoff command shape is invalid")
         expected_args = ["--input", str(_state_file(args[1], must_exist=True)),
                          "--output", str(_state_file(args[3], must_exist=False))]
+    elif skill == "shards-execution-contract":
+        if len(args) != 2 or args[0] != "--input":
+            raise ValueError("Contract command shape is invalid")
+        expected_args = ["--input", str(_state_file(args[1], must_exist=True))]
     elif skill == "shards-automation-operator":
         if len(args) != 2 or args[0] != "--workflow" or args[1] not in (
                 "quick", "weekly", "verify"):
@@ -178,6 +183,10 @@ def describe(skill_id: str, *, target_skill: str | None = None,
             raise ValueError("Handoff requires --allow-local-write")
         cmd.extend(["--input", str(_state_file(input_file, must_exist=True)),
                     "--output", str(_state_file(output_file, must_exist=False))])
+    elif skill_id == "shards-execution-contract":
+        if input_file is None:
+            raise ValueError("Contract validation requires --input-file")
+        cmd.extend(["--input", str(_state_file(input_file, must_exist=True))])
     elif skill_id == "shards-automation-operator":
         if profile not in ("quick", "weekly", "verify"):
             raise ValueError("Only named maintenance profiles can run")
@@ -210,7 +219,7 @@ def run(plan: dict, *, executor=None) -> dict:
         stdout = SECRET.sub("[REDACTED]", proc.stdout)[-4000:]
         stderr = SECRET.sub("[REDACTED]", proc.stderr)[-2000:]
         status = "pass" if proc.returncode == 0 else "fail"
-        if plan["skill"] == "shards-release-gate" and proc.returncode == 1:
+        if plan["skill"] in ("shards-release-gate", "shards-execution-contract") and proc.returncode == 1:
             try:
                 if json.loads(proc.stdout).get("decision") == "HOLD":
                     status = "hold"

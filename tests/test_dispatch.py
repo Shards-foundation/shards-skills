@@ -14,19 +14,28 @@ import verify_plugins as integrity
 
 class SkillDispatchTests(unittest.TestCase):
     def test_registry_exact_curated_skill_names(self):
-        self.assertEqual(len(dispatcher.REGISTRY), 11)
+        self.assertEqual(len(dispatcher.REGISTRY), 12)
         self.assertEqual(set(dispatcher.REGISTRY), {
             "shards-repository-health", "shards-skill-audit",
             "shards-release-gate", "shards-agent-handoff",
             "shards-automation-operator", "shards-catalogue-sync",
             "shards-skill-dispatch", "shards-a2a-harness",
             "shards-dual-channel", "shards-subagents", "shards-parallel-swarm",
+            "shards-execution-contract",
         })
 
     def test_structural_plugin_integrity(self):
         report = integrity.validate()
         self.assertEqual(report["status"], "PASS", report["errors"])
-        self.assertEqual(report["registered_skills"], 11)
+        self.assertEqual(report["registered_skills"], 12)
+
+    def test_execution_contract_dispatch_requires_input_and_is_read_only(self):
+        with self.assertRaisesRegex(ValueError, "requires --input-file"):
+            dispatcher.describe("shards-execution-contract")
+        with patch("dispatch_skills._state_file", return_value=ROOT / ".shards/state/example.json"):
+            plan = dispatcher.describe("shards-execution-contract", input_file=".shards/state/example.json")
+            self.assertEqual(plan["effect"], "read-only")
+            self.assertEqual(plan["command"][-2:], ["--input", str(ROOT / ".shards/state/example.json")])
 
     def test_plan_is_read_only(self):
         report = dispatcher.describe("shards-repository-health")
@@ -164,7 +173,7 @@ class SkillDispatchTests(unittest.TestCase):
         listing = subprocess.run([sys.executable, script, "list"],
                                  capture_output=True, text=True, timeout=15)
         self.assertEqual(listing.returncode, 0, listing.stderr)
-        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 11)
+        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 12)
         plan = subprocess.run([sys.executable, script, "plan", "--skill", "shards-repository-health"],
                               capture_output=True, text=True, timeout=15)
         self.assertEqual(plan.returncode, 0, plan.stderr)

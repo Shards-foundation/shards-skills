@@ -12,6 +12,9 @@ on:
       - 'scripts/security_assurance.py'
       - 'scripts/vibecode_guard.py'
       - 'tests/test_vibecode_guard.py'
+      - 'tests/test_vibecode_guard_calibration.py'
+      - 'tests/test_vibecode_guard_review.py'
+      - 'tests/test_vibecode_guard_adversarial.py'
       - 'tests/test_security_assurance.py'
       - 'tests/test_security_suite.py'
       - 'tests/test_security_skill_eval.py'
@@ -49,6 +52,9 @@ on:
       - 'scripts/security_assurance.py'
       - 'scripts/vibecode_guard.py'
       - 'tests/test_vibecode_guard.py'
+      - 'tests/test_vibecode_guard_calibration.py'
+      - 'tests/test_vibecode_guard_review.py'
+      - 'tests/test_vibecode_guard_adversarial.py'
       - 'tests/test_security_assurance.py'
       - 'tests/test_security_suite.py'
       - 'tests/test_security_skill_eval.py'
@@ -105,6 +111,12 @@ jobs:
         run: python scripts/security_lint.py
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+      - name: Validate pinned real Requests repository calibration
+        run: |
+          git clone --filter=blob:none https://github.com/psf/requests.git /tmp/shards-psf-requests
+          git -C /tmp/shards-psf-requests checkout --detach 3c7baaa05ab4aa49cc819ce3a819d260de19c157
+          test "$(git -C /tmp/shards-psf-requests rev-parse HEAD)" = 3c7baaa05ab4aa49cc819ce3a819d260de19c157
+          PSF_REQUESTS=/tmp/shards-psf-requests python -m unittest discover -s tests -p 'test_vibecode_guard_calibration.py' -v
       - name: Exercise skill audit
         run: python plugins/shards-core/scripts/run.py audit-skill --path plugins/shards-core/skills/shards-skill-audit
       - name: Verify plugin and registry

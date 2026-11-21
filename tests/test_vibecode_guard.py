@@ -64,7 +64,7 @@ class VibeCodeGuardTests(unittest.TestCase):
         (self.root / "link.py").symlink_to(original)
         report = guard.inspect(self.root, ["link.py", "real.py"])
         self.assertEqual([x["id"] for x in report["findings"]],
-                         ["SKIPPED-UNSAFE-PATH", "DYNAMIC-EVAL"])
+                         ["SYMLINK-INTERNAL", "DYNAMIC-EVAL"])
 
     def test_unsafe_path_is_recorded_without_aborting(self):
         self.file("safe.py", "eval(input())")

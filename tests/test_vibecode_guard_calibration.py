@@ -96,7 +96,7 @@ def _check_real_repository_findings_are_classified(tmp_path):
         assert path in got, f"missing finding for {path}"
         f = got[path][0]
         assert f["id"] == want_id, f"{path}: {f['id']} != {want_id}"
-        if want_id == "TRACKED-KEY-MATERIAL" and path.endswith((".pem", ".crt")):
+        if want_id == "TRACKED-KEY-MATERIAL" and path.endswith(".pem"):
             assert f["classification"] in {"CONFIRMED", "TEST_FIXTURE_LIKELY_INTENTIONAL",
                                            "TEST_FIXTURE_UNCONFIRMED_DIRECTORY"}, f
         else:

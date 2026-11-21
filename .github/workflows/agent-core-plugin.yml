@@ -123,7 +123,7 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Validate pinned real Requests repository calibration
         run: |
-          git clone --filter=blob:none https://github.com/psf/requests.git /tmp/shards-psf-requests
+          git clone --no-checkout --filter=blob:none https://github.com/psf/requests.git /tmp/shards-psf-requests
           git -C /tmp/shards-psf-requests checkout --detach 3c7baaa05ab4aa49cc819ce3a819d260de19c157
           test "$(git -C /tmp/shards-psf-requests rev-parse HEAD)" = 3c7baaa05ab4aa49cc819ce3a819d260de19c157
           PSF_REQUESTS=/tmp/shards-psf-requests python -m unittest discover -s tests -p 'test_vibecode_guard_calibration.py' -v

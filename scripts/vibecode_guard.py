@@ -8,9 +8,11 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 MAX_FILES = 3000
+MAX_INDEX_BYTES = 1_000_000
 MAX_FILE_BYTES = 256_000
 MAX_TOTAL_BYTES = 20_000_000
 MAX_FINDINGS = 200
@@ -40,24 +42,36 @@ def relative_file(root: Path, raw: str) -> Path:
     return path
 
 def tracked(root: Path) -> list[str]:
+    root = root.resolve()
     try:
-        # Git index reads can invoke core.fsmonitor from local Git config.
-        # Override it, disable optional locks and drop inherited GIT_* overrides.
+        # Disable inherited Git overrides, FS monitors and hooks. Track files
+        # only from the exact checkout root, not a nested path within a repo.
         env = {key: os.environ[key] for key in ("PATH", "HOME", "SYSTEMROOT", "WINDIR", "TMPDIR", "LANG")
                if key in os.environ}
         env.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
                     "GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0"})
-        proc = subprocess.run(
-            ["git", "--no-optional-locks", "-c", "core.fsmonitor=false",
-             "-c", "core.hooksPath=" + os.devnull, "-C", str(root),
-             "ls-files", "-z", "--cached"],
-            capture_output=True, timeout=15, check=False, env=env)
-    except (OSError, subprocess.TimeoutExpired) as exc:
+        base = ["git", "--no-optional-locks", "-c", "core.fsmonitor=false",
+                "-c", "core.hooksPath=" + os.devnull, "-C", str(root)]
+        top = subprocess.run(base + ["rev-parse", "--show-toplevel"],
+                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                             timeout=15, check=False, env=env)
+        if top.returncode or Path(top.stdout.decode("utf-8", errors="surrogateescape").strip()).resolve() != root:
+            raise ValueError("Target must be exact Git repository top-level")
+        # Don't retain an unbounded attacker-controlled index in RAM.
+        with tempfile.TemporaryFile() as output:
+            proc = subprocess.run(base + ["ls-files", "-z", "--cached"],
+                                  stdout=output, stderr=subprocess.DEVNULL,
+                                  timeout=15, check=False, env=env)
+            output.seek(0, 2)
+            if output.tell() > MAX_INDEX_BYTES:
+                raise ValueError("Git tracked-file index exceeds safe budget")
+            output.seek(0)
+            raw = output.read(MAX_INDEX_BYTES + 1)
+    except (OSError, subprocess.TimeoutExpired, UnicodeError) as exc:
         raise ValueError("Cannot enumerate tracked files") from exc
     if proc.returncode:
         raise ValueError("Target is not a readable Git repository")
-    # Git paths are byte sequences, not guaranteed UTF-8.
-    names = proc.stdout.decode("utf-8", errors="surrogateescape").split("\0")
+    names = raw.decode("utf-8", errors="surrogateescape").split("\0")
     return [n for n in names if n]
 
 def inspect(root: Path, files: list[str]) -> dict:
@@ -83,16 +97,30 @@ def inspect(root: Path, files: list[str]) -> dict:
                 return report(findings, len(seen), consumed, truncated=True)
             continue
         if not path.is_file():
+            findings.append({"id": "SKIPPED-MISSING-PATH", "severity": "medium", "path": name, "line": None,
+                             "advice": "Tracked path unavailable in working tree; inspect checkout completeness"})
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True)
             continue
         if path.name.startswith(".env") and path.name not in {".env.example", ".env.sample", ".env.template"}:
             findings.append({"id": "TRACKED-ENV", "severity": "high", "path": name, "line": None,
                 "advice": "A tracked environment file may disclose credentials; inspect privately and rotate exposed values"})
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True)
             continue
         if path.suffix.lower() in {".pem", ".key", ".p12", ".pfx"}:
             findings.append({"id": "TRACKED-KEY-MATERIAL", "severity": "high", "path": name, "line": None,
                 "advice": "Review whether tracked key or certificate material is private; never expose its contents"})
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True)
             continue
-        if path.suffix.lower() not in SOURCE_EXT or path.stat().st_size > MAX_FILE_BYTES:
+        if path.suffix.lower() not in SOURCE_EXT:
+            continue
+        if path.stat().st_size > MAX_FILE_BYTES:
+            findings.append({"id": "SKIPPED-OVERSIZE-SOURCE", "severity": "medium", "path": name,
+                             "line": None, "advice": "Source exceeds per-file scan limit; inspect independently"})
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True)
             continue
         blob = path.read_bytes()
         consumed += len(blob)
@@ -104,7 +132,7 @@ def inspect(root: Path, files: list[str]) -> dict:
             body = blob.decode("utf-8")
         except UnicodeDecodeError:
             continue
-        for number, line in enumerate(body.splitlines(), 1):
+        for number, line in enumerate(body.split("\n"), 1):
             for code, severity, pattern, advice in RULES:
                 if pattern.search(line):
                     findings.append({"id": code, "severity": severity, "path": name, "line": number, "advice": advice})

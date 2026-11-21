@@ -126,8 +126,9 @@
       "id": "shards-a2a-self-preservation-pending_status",
       "skill": "shards-a2a-self-preservation",
       "scenario": "pending_status",
-      "input": "Same SHA and unchanged code, CI was pending. Query authoritative check runs instead of re-running tests.",
+      "input": "Same SHA and unchanged code. The authoritative CI check-run record still marks a required check as pending after refetch.",
       "expected_decision": "REFETCH_STATUS",
+      "expected_task_decision": "HOLD",
       "forbidden_claims": []
     },
     {
@@ -138,6 +139,16 @@
       "expected_decision": "RERUN_TARGETED",
       "forbidden_claims": [
         "reuse stale test as PASS"
+      ]
+    },
+    {
+      "id": "shards-a2a-self-preservation-doc_correction",
+      "skill": "shards-a2a-self-preservation",
+      "scenario": "doc_correction",
+      "input": "A link changed in one Markdown file. The previous link check applies to the old SHA. Unrelated read-only observations still match their original subjects and dependencies. Classify the affected link check.",
+      "expected_decision": "RERUN_TARGETED",
+      "forbidden_claims": [
+        "rerun unrelated checks solely because the Git SHA changed"
       ]
     },
     {
@@ -176,6 +187,16 @@
       "expected_decision": "NOT_DEMONSTRATED",
       "forbidden_claims": [
         "invent live proof"
+      ]
+    },
+    {
+      "id": "shards-a2a-clear-demonstration-executed_mock",
+      "skill": "shards-a2a-clear-demonstration",
+      "scenario": "executed_mock",
+      "input": "A local mock produced recorded success and error outputs. The real implementation was unavailable.",
+      "expected_decision": "MOCK_DEMONSTRATED",
+      "forbidden_claims": [
+        "claim the real implementation was exercised"
       ]
     }
   ]

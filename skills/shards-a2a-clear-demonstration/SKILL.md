@@ -25,7 +25,7 @@ A falsifiable claim, intended audience, exact artifact/revision, available safe 
 5. **Show a negative/control case.** Demonstrate relevant failure refusal, denied permission, rollback or error path using an authorised harmless test. A positive-only demo is insufficient to claim a security boundary is enforced.
 6. **Make it understandable.** Provide a short narrated script: `before -> input -> action -> expected vs observed -> negative case -> limitations -> next step`. Avoid unexplained jargon; provide technical appendix for experts, not as a substitute for the plain-language outcome.
 7. **Cross-check independently** where needed. Another actor should be able to reproduce the steps and compare raw outputs at exact SHA. A mock, screenshot, animated UI, simulated agent or test badge cannot establish actual production execution.
-8. **Conclude precisely.** `DEMONSTRATED_LOCALLY`, `INDEPENDENTLY_REPRODUCED`, `PLAN_ONLY`, `NOT_DEMONSTRATED`, or `FAILED`. Distinguish absence of demonstration from proof of nonexistence. Stop at the agreed evidence threshold.
+8. **Conclude precisely.** `DEMONSTRATED_LOCALLY`, `INDEPENDENTLY_REPRODUCED`, `MOCK_DEMONSTRATED`, `PLAN_ONLY`, `NOT_DEMONSTRATED`, or `FAILED`. Use `MOCK_DEMONSTRATED` only for observed execution of a mock. It establishes only the mock's behaviour. Stop at the agreed evidence threshold.
 
 ## Execution
 Run only authorised read-only or disposable local tests using reviewed tools; never launch production signing, purchases, live trading, third-party scanning, deployment or credential exposure merely to make a demo impressive. If tooling is missing, record the exact blocker and offer a safe reproduction recipe.
@@ -38,12 +38,12 @@ POSITIVE_CASE: {expected, observed, evidence_ref, status}
 NEGATIVE_CASE: {expected, observed, evidence_ref, status}
 HUMAN_WALKTHROUGH: before -> action -> visible result -> caveat
 REPRODUCTION_STEPS / LIMITATIONS / UNRUN_CHECKS:
-VERDICT: DEMONSTRATED_LOCALLY|INDEPENDENTLY_REPRODUCED|PLAN_ONLY|NOT_DEMONSTRATED|FAILED
+VERDICT: DEMONSTRATED_LOCALLY|INDEPENDENTLY_REPRODUCED|MOCK_DEMONSTRATED|PLAN_ONLY|NOT_DEMONSTRATED|FAILED
 NEXT_AUTHORIZED_ACTION:
 ```
 
 ## Verification
-Ensure both positive and negative results point to real records if reported as executed; independently verify the named SHA, commands, environment and scope. Test an honest mock-only demo (`PLAN_ONLY` or explicitly *mock demonstrated*, not deployed), an unavailable live service (`NOT_DEMONSTRATED`) and a local positive/negative control with observed results (`DEMONSTRATED_LOCALLY`). Use [frozen scenarios](../../evals/shards-a2a-five-workflows.json). Readability is a design goal, not a claim that every human will fully understand complex systems.
+Ensure both positive and negative results point to real records if reported as executed. Verify the named SHA, commands, environment and scope. Test a still screenshot with no execution (`PLAN_ONLY`), an executed mock (`MOCK_DEMONSTRATED`), an unavailable live service (`NOT_DEMONSTRATED`) and a local positive/negative control of the real implementation (`DEMONSTRATED_LOCALLY`). Use [frozen scenarios](../../evals/shards-a2a-five-workflows.json).
 
 ## Failure handling
 If an operation cannot be demonstrated safely or with current access, say precisely which component is unobserved and return the minimum safe next step. Do not replace missing evidence with confident narrative, invent a passing test, or infer production certification from a local demo. A failed negative test is a genuine failure and requires correction before claiming the control.

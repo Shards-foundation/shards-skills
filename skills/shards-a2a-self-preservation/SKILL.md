@@ -24,7 +24,7 @@ Original task and owner, last verified SHA, exact changed artifacts, previous re
 4. **REFETCH first.** Query existing CI run/review/merge/deployment records by ID and SHA. A new review comment may invalidate a prior gate even with no code change. Re-fetch is itself an observation and must be time-stamped; do not claim the original test re-executed.
 5. **REEXECUTE narrowly.** For an actual content or environment change, run the affected tests/checks only if locally authorised; independently observe any CI reruns triggered by the platform. Never fabricate a cached PASS or repeat side-effecting operations to diagnose their status.
 6. **PRESERVE findings.** Keep current claims categorised as `VERIFIED_UNCHANGED`, `UPDATED_BY_REFETCH`, `INVALIDATED`, `NOT_RUN`, `BLOCKED`. Record the reason for any reused evidence, including actor/operation/sha and the exact trust boundary.
-7. **HANDOFF & STOP.** Give the next agent only relevant state delta, known-good artifacts and minimum next action. Do not extend authority, spawn a new agent, purchase compute or keep yourself running merely to preserve continuity.
+7. **HANDOFF & STOP.** Record every required gate still pending or unverified. If a refetched required check remains pending, return `HOLD` and recheck the existing run when appropriate. Use `CLOSED` only after all required gates have current completion evidence. Give the next agent the relevant state delta, known-good artifacts and minimum next action. Do not extend authority, spawn a new agent, purchase compute or keep yourself running merely to preserve continuity.
 
 ## Execution
 Use existing read-only tools (e.g. `git rev-parse`, PR metadata, check-run identifiers, verified digests). Execute tests only when demanded by dependency impact or host/repository policy. This skill has no scheduler, memory persistence, cache of credentials, model self-preservation or waiving live security gates.
@@ -35,7 +35,7 @@ TASK_ID / ACTOR / TASK_OWNER / TARGET / BASE_SHA / CURRENT_SHA:
 PREVIOUS_EVIDENCE: [{id, source, actor, operation, sha, observed_at}]
 CHANGED_DEPENDENCIES / NEW_FINDINGS:
 CHECK_DECISIONS: [{check_id, action: REUSE_BY_REF|REFETCH_STATUS|RERUN_TARGETED|RERUN_FULL|HOLD, reason, evidence_ref, timestamp}]
-VALIDATED_STATE / STALE_CLAIMS / UNRUN_CHECKS / SIDE_EFFECTS:
+VALIDATED_STATE / STALE_CLAIMS / UNRUN_CHECKS / PENDING_REQUIRED_GATES / SIDE_EFFECTS:
 DECISION: CONTINUE|HOLD|ESCALATE|CLOSED
 NEXT_OWNER / NEXT_AUTHORIZED_ACTION:
 ```

@@ -54,10 +54,14 @@ class A2AFiveWorkflowTests(unittest.TestCase):
         cases = data["cases"]
         self.assertEqual({case["skill"] for case in cases}, set(NAMES))
         self.assertEqual(len({case["id"] for case in cases}), len(cases))
+        extra_cases = {"shards-a2a-leakage-audit": 3, "shards-a2a-clear-demonstration": 1,
+                       "shards-a2a-self-preservation": 1}
+        positive_controls = dict(zip(NAMES, ("ACCEPT_CONDITIONALLY", "CLEAR", "CLOSE",
+                                            "REFETCH_STATUS", "DEMONSTRATED_LOCALLY"), strict=True))
         for name in NAMES:
             skill_cases = [case for case in cases if case["skill"] == name]
-            expected_count = 6 if name == "shards-a2a-leakage-audit" else 3
-            self.assertEqual(len(skill_cases), expected_count)
+            self.assertEqual(len(skill_cases), 3 + extra_cases.get(name, 0))
+            self.assertIn(positive_controls[name], {case["expected_decision"] for case in skill_cases})
             self.assertTrue(any(case["forbidden_claims"] for case in skill_cases))
         for case in cases:
             self.assertTrue(case["input"].strip())
@@ -81,6 +85,10 @@ class A2AFiveWorkflowTests(unittest.TestCase):
                     state = re.search(r"^STATE: ([A-Z_|]+)$", record, re.MULTILINE)
                     self.assertIsNotNone(state)
                     self.assertIn(case["expected_state"], state[1].split("|"))
+                if "expected_task_decision" in case:
+                    decision = re.search(r"^DECISION: ([A-Z_|]+)$", record, re.MULTILINE)
+                    self.assertIsNotNone(decision)
+                    self.assertIn(case["expected_task_decision"], decision[1].split("|"))
 
     def test_leakage_verification_table_matches_frozen_scenarios(self):
         name = "shards-a2a-leakage-audit"

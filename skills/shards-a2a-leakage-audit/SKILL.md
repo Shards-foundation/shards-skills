@@ -39,6 +39,8 @@ DECISION: CLEAR|FINDING|HOLD_UNVERIFIED|ESCALATE
 SIDE_EFFECTS_OBSERVED / UNAPPROVED_EFFECTS / NEXT_OWNER / NEXT_AUTHORIZED_ACTION:
 ```
 
+For the progress of an action, use `PROPOSED`, `ATTEMPTED`, `OBSERVED` or `INDEPENDENTLY_VERIFIED` in either state field. For CI or verification, use `NOT_RUN`, `SKIPPED`, `PENDING`, `FAILED`, `PASSED_AT_SHA` or `NOT_VERIFIED`. Use `UNKNOWN` when the claim or observation is unavailable. Capture any original source label in the evidence reference or finding.
+
 ## Verification
 Compare each assessment with its [frozen scenario](../../evals/shards-a2a-five-workflows.json). Check the subject actor, observed operation, target, revision and timestamp in the source record.
 

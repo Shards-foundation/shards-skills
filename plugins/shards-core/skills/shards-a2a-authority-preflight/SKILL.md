@@ -14,7 +14,7 @@ license: MIT
 
 ## Preconditions
 
-- Know the delegator's requested objective, target repository/resource, exact revision or its explicitly unresolved state, scope and acceptance criteria. If `#49` could mean several repositories, do read-only discovery and **HOLD** instead of choosing.
+- Know the delegator's requested objective, target repository or resource, exact revision or its explicitly unresolved state, scope and acceptance criteria. If the target is ambiguous, use read-only discovery and **HOLD** until it is resolved.
 - Identify task roles: delegator, coordinator, executor, integrator/publisher, independent reviewer and merge/production decision maker. A person or agent may hold several roles except that independent review must be independent of execution and publication.
 - Inspect *this session's* host tool list, identity and connector status. Do not infer access from another agent's capabilities, earlier conversations, a plugin being installed or a `SKILL.md` file.
 - Do not read, print, request, transfer or test raw tokens/keys. Only capture nonsecret credential **presence/absence** and verified capability outcomes when already safely exposed by the host.
@@ -47,7 +47,7 @@ python scripts/dispatch_skills.py plan --skill shards-a2a-authority-preflight --
 python scripts/dispatch_skills.py run --skill shards-a2a-authority-preflight --input-file .shards/state/authority.json --execute --expect-plan-sha256 <digest-from-plan>
 ```
 
-Exit codes: **0** structurally complete claims; **1** valid record with unresolved gates (`HOLD`); **2** invalid input/schema. The validator is optional where an agent has no Python/shell tool: perform the same procedure manually and label it **NOT_EXECUTED**.
+The direct validator exits **0** for complete claims, **1** for `HOLD` and **2** for `INVALID`. The dispatcher exits **0** for `pass` and **1** for both `hold` and `fail`. Use the dispatch receipt's `observation.status` and `observation.exit_code` to distinguish an unresolved gate from invalid input. Where Python or shell access is unavailable, perform the procedure manually and label validation **NOT_EXECUTED**.
 
 ## Output contract
 

@@ -25,7 +25,7 @@ execution or measurable usefulness.
 ## Get a useful result — no paid AI credits required
 
 This repository has **two distinct capabilities**: instructions for agents (the
-`skills/` catalogue) and **eleven curated workflows with executable entrypoints**
+`skills/` catalogue) and **twelve curated workflows with executable entrypoints**
 under `plugins/shards-core/`. Finding an imported skill does not authorise
 running its scripts. The list of catalogue skills is not a count of tested agents.
 
@@ -144,7 +144,7 @@ The offline [assurance CLI](scripts/security_assurance.py) draws from [45 versio
 | Ethical testing | [shards-sec-authorized-testing](skills/shards-sec-authorized-testing/SKILL.md) | Scoped defensive rules of engagement and findings |
 | Crypto compliance | [shards-sec-crypto-fincrime](skills/shards-sec-crypto-fincrime/SKILL.md) | FATF/VASP/AML applicability issues and review ownership |
 
-### Existing curated Shards Core skills — eleven runnable local workflows
+### Existing curated Shards Core skills — twelve runnable local workflows
 
 | Purpose | Curated skill |
 | --- | --- |
@@ -156,6 +156,7 @@ The offline [assurance CLI](scripts/security_assurance.py) draws from [45 versio
 | Catalogue reconciliation | `shards-catalogue-sync` |
 | Reviewed dispatch and receipts | `shards-skill-dispatch` |
 | Local A2A-oriented checks | `shards-a2a-harness` |
+| Cross-agent authority preflight | `shards-a2a-authority-preflight` |
 | Control/data channel separation | `shards-dual-channel` |
 | Bounded delegated sub-agent checks | `shards-subagents` |
 | Read-only concurrent swarm | `shards-parallel-swarm` |
@@ -277,7 +278,7 @@ Agents should start with [AGENTS.md](AGENTS.md) and [agent.md](agent.md). The cu
 Use the [automation operations guide](docs/automation.md) to plan and run bounded maintenance workflows, generate skill-portfolio reports, and explicitly reconcile catalogue metadata. A GitHub Actions audit runs every Monday at 05:17 UTC and retains JSON/Markdown artifacts for 14 days. Imported skill scripts are never auto-executed; catalogue write mode is deliberately excluded from unattended schedules.
 
 ## Governed skill execution
-The eleven curated plugin skills are exposed through a bounded, JSON-reporting dispatcher. Use scripts/dispatch_skills.py list and plan first, then explicitly run approved read-only or scoped local workflows. Details: [Governed skill execution](docs/skill-dispatch.md). Imported catalogue skills are not executable by discovery alone.
+The twelve curated plugin skills are exposed through a bounded, JSON-reporting dispatcher. Use scripts/dispatch_skills.py list and plan first, then explicitly run approved read-only or scoped local workflows. Details: [Governed skill execution](docs/skill-dispatch.md). Imported catalogue skills are not executable by discovery alone.
 
 ## Deterministic skill discovery
 

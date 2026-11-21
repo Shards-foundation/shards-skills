@@ -51,7 +51,7 @@ class SkillDispatchTests(unittest.TestCase):
                 dispatcher.run(plan)
             result = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"])
             self.assertEqual(result["observation"]["status"], "pass", result)
-            self.assertEqual(json.loads(result["observation"]["stdout_tail"])["decision"], "CLAIMS_COMPLETE")
+            self.assertEqual(result["observation"]["report"]["decision"], "CLAIMS_COMPLETE")
 
             forged = dict(plan, command=plan["command"] + ["--unsafe"])
             forged["plan_sha256"] = dispatcher._plan_fingerprint(forged)
@@ -67,6 +67,18 @@ class SkillDispatchTests(unittest.TestCase):
             hold = dispatcher.describe("shards-a2a-authority-preflight", input_file=str(sample))
             result = dispatcher.run(hold, expect_plan_sha256=hold["plan_sha256"])
             self.assertEqual(result["observation"]["status"], "hold", result)
+
+            original = changed["actions"][0]
+            changed["actions"] = [dict(original, actor=actor, operation=operation, evidence_ids=[])
+                                  for actor in sorted(set(changed["roles"].values()))
+                                  for operation in ("repo.read", "git.fetch", "pr.read", "ci.read", "git.pull")]
+            sample.write_text(json.dumps(changed), encoding="utf-8")
+            full = dispatcher.describe("shards-a2a-authority-preflight", input_file=str(sample))
+            observed = dispatcher.run(full, expect_plan_sha256=full["plan_sha256"])["observation"]
+            self.assertEqual(observed["status"], "hold", observed)
+            self.assertEqual(len(observed["stdout_tail"]), 4000)
+            self.assertEqual(len(observed["report"]["operations"]), len(changed["actions"]))
+            self.assertEqual(len(observed["report"]["blockers"]), len(changed["actions"]))
 
     def test_plan_is_read_only(self):
         report = dispatcher.describe("shards-repository-health")

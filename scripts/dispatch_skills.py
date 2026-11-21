@@ -47,6 +47,7 @@ HARNESS_SKILLS = frozenset({
 })
 
 STATE_VALIDATORS = frozenset({"shards-a2a-authority-preflight"})
+MAX_VALIDATOR_REPORT_CHARS = 262_144
 
 LOCAL_IMPORTS = {
     "scripts/catalogue_sync.py": ("validate_skills",),
@@ -458,9 +459,19 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
                         timeout=plan["timeout_seconds"], check=False, input=payload)
         stdout_text = proc.stdout.decode("utf-8", "replace") if isinstance(proc.stdout, bytes) else proc.stdout
         stderr_text = proc.stderr.decode("utf-8", "replace") if isinstance(proc.stderr, bytes) else proc.stderr
-        stdout = SECRET.sub("[REDACTED]", stdout_text)[-4000:]
-        stderr = SECRET.sub("[REDACTED]", stderr_text)[-2000:]
+        stdout = SECRET.sub("[REDACTED]", stdout_text)
+        stderr = SECRET.sub("[REDACTED]", stderr_text)
         status = "pass" if proc.returncode == 0 else "fail"
+        validator_report = None
+        if plan["skill"] in STATE_VALIDATORS:
+            out = stdout or stderr
+            if 0 < len(out) <= MAX_VALIDATOR_REPORT_CHARS:
+                try:
+                    report = json.loads(out)
+                    if isinstance(report, dict):
+                        validator_report = report
+                except json.JSONDecodeError:
+                    pass
         if proc.returncode == 1 and (plan["skill"] == "shards-release-gate" or plan["skill"] in STATE_VALIDATORS):
             try:
                 report = json.loads(stdout_text)
@@ -469,7 +480,9 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
             except json.JSONDecodeError:
                 pass
         observed = {"status": status, "exit_code": proc.returncode,
-                    "stdout_tail": stdout, "stderr_tail": stderr}
+                    "stdout_tail": stdout[-4000:], "stderr_tail": stderr[-2000:]}
+        if validator_report is not None:
+            observed["report"] = validator_report
         if status == "pass" and "output_file" in plan:
             try:
                 report = json.loads(stdout_text)

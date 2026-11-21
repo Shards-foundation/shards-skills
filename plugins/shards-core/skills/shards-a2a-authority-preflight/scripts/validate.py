@@ -171,10 +171,9 @@ def validate(data: object) -> dict:
         if access == "OBSERVED" and "capability" not in kinds_current: reasons.append("CAPABILITY_EVIDENCE_MISSING_OR_STALE")
         if policy in ("UNKNOWN", "DENIED"): reasons.append("POLICY_" + policy)
         if policy == "VERIFIED" and "policy" not in kinds_current: reasons.append("POLICY_EVIDENCE_MISSING_OR_STALE")
-        next_owner = (role_ids["merge_decider"] if op in ("pr.merge", "deployment.run", "credentials.rotate")
-                      else role_ids["reviewer"] if op == "pr.approve"
-                      else role_ids["coordinator"])
         if reasons:
+            next_owner = next((role_ids[role] for role in ("coordinator", "delegator")
+                               if role_ids[role] != actor), None)
             blocked.append({"actor": actor, "operation": op, "reasons": sorted(set(reasons)),
                             "escalate_to": next_owner})
         matrix.append({"actor": actor, "operation": op, "effect": OPERATIONS[op],

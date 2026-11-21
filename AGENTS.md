@@ -17,6 +17,9 @@ Build and maintain a portable, evidence-based, security-aware skills platform. P
 For task-to-skill discovery, use `python scripts/search_skills.py --query "<task terms>"`
 to obtain ranked, metadata-only matches; inspect the relevant descriptor and provenance
 after selection. Search results never authorise execution of imported packages.
+- For any multi-step change, establish or recover a stable task contract with shards-task-contract and shards-context-recovery; use the append-only operating ledger described in docs/operating-loop.md. Do not reinterpret earlier approval or mutate original criteria.
+- Invoke shards-tool-selection before broad tool discovery, shards-progress-control before repeating a failed attempt, and shards-evidence-verification before claiming completion. Route reviewer findings through shards-review-resolution and lessons through shards-learning-capture.
+- Use shards-skill-evaluation and shards-skill-improver for evidence-gated changes only. Document actual host adapter tests through shards-host-compatibility; none of these draft skills grants elevated permissions or dispatcher execution.
 - Repository inspection: plugin skill shards-repository-health.
 - Third-party or local skill assessment: shards-skill-audit.
 - Release decision: shards-release-gate.

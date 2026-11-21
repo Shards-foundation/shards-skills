@@ -12,18 +12,23 @@ This is a human/agent exchange envelope. It is not a signed permit or proof of e
 - `executor`: agent/operator identifier.
 - `steps`: `{id, owner, effect, status, evidence_ids}`. Allowed effects: `read-only`, `local-write`, `local-execute`, `external-write`, `production`, `paid`, `merge`, `destructive`, `sensitive`. Reported executed/verified effects that contradict forbidden constraints cause FAIL; sensitive/destructive effects require host verification and remain HOLD. Status values: `PROPOSED`, `EXECUTED`, `VERIFIED`, `FAILED`, `BLOCKED`. Completed claims must reference evidence. An executed step is not necessarily verified.
 - `checks`: `{id, result, evidence_ids}`. Result values: `PASS`, `FAIL`, `NOT_RUN`, `BLOCKED`.
-- `reviews`: `{reviewer, revision, verdict, open_findings, evidence_ids}`. Verdict: `APPROVED`, `CHANGES_REQUESTED`, `BLOCKED`. Reviewer must differ from both the executor and every step owner to be counted as independent *by reported identity*. No signature or identity verification occurs here.
-- `evidence`: `{id, kind, ref, revision, observed_by}`. References must be nonempty, linked by ID, and bound to current head revision. This is a provenance claim; the validator does not open URLs.
+- Each review records `reviewer`, `revision`, `verdict`, `open_findings`, `step_ids` and `evidence_ids`. The verdict is one of `APPROVED`, `CHANGES_REQUESTED` or `BLOCKED`. List each covered step ID once. An approval can cover several steps, and separate approvals can cover different steps. The reviewer must differ from the executor and every owner in that review's scope. Independence comparisons ignore surrounding whitespace and letter case, including the display-only `@` prefix on GitHub handles.
+- Each evidence record has an `id`, `kind`, `ref`, `revision` and `observed_by`. An approval must reference a `formal-review` record with the same `step_ids`, `verdict`, current revision and exact reviewer identifier in `observed_by`. For a formal review, use a distinct artifact reference. Cite its evidence ID wherever it applies. A test receipt, comment or informal approval uses its own evidence kind.
+- A verified step or passing check needs a current `test`, `self-reported-test` or `check` artifact. A receipt may support both the step it verifies and the corresponding test result. The step owner must match the evidence's `subject_actor`, or its `observed_by` for a self-report. A check can specify `observed_by` to require that observer. An explicit evidence `result` must be `PASS` to support either claim. Evidence with a declared `repository` or `branch` must match the contract scope.
+- Use evidence `step_ids` and `check_ids` to mark the work a receipt covers. Legacy receipts can omit the relevant list when the contract has only one step or only one check, respectively. In a larger contract, add the IDs supported by the source artifact.
+- A GitHub formal review reference identifies the individual review through its `#pullrequestreview-ID` PR permalink or its REST API review URL under the scoped repository. Issue comments, discussion anchors and generic PR URLs cannot support approval. Repeated references to one GitHub review event denote the same artifact. Opaque host-local references still require independent host lookup. References with surrounding whitespace or control characters are invalid.
+- The validator checks the declared artifact type and scope locally. The host must retrieve the formal review, verify the event type, reviewer identity, reviewed work and SHA, and apply its approval policy.
+
+### Migrating v1 reviews
+
+Add `step_ids` to each review. For an actual formal review, record its artifact with `kind: "formal-review"`, `step_ids` and `verdict`. Only supply attributes supported by the source record. Legacy unscoped reviews and generic `review` evidence remain readable and yield no approval coverage. A contributor can review someone else's step when a separate reviewer covers their own contribution.
 
 ## Decision semantics
 
-`INVALID`: malformed fields, unknown states, duplicate IDs, unreferenced evidence, suspected embedded credentials.
-
-`HOLD`: structurally valid but incomplete execution, unresolved material ambiguity, failed/not-run check, no matching independent review, open finding, unknown SHA or any high-impact effect declared allowed without host permission verification.
-
-`EVIDENCE_READY`: all listed steps are reported VERIFIED, checks PASS with evidence, and a different reported reviewer APPROVED the current SHA with zero open findings. This **does not** mean mergeable, approved by the real host, independently verified or safe for production. A host must retrieve the referenced evidence, review policy and approvals, then decide the next permissible action.
-
-`FAIL`: any explicit FAILED step or FAIL check; no automatic advance.
+- `INVALID` (exit 2) identifies malformed or unsafe input, including duplicate field names, invalid ID references, nesting deeper than 64 levels, or payloads larger than 200,000 bytes. Both `structural_status` and `decision` report `INVALID`. Earlier v1 clients may have expected `decision: HOLD` for exit 2.
+- `FAIL` (exit 1) identifies a reported failed step or check, or an executed effect contradicting the declared constraints. Reasons identify the affected step or check.
+- `HOLD` (exit 1) identifies incomplete execution, unresolved material ambiguity, outstanding findings, missing current review coverage, an unknown SHA or consequential authority requiring host verification.
+- `EVIDENCE_READY` (exit 0) describes structurally complete claims. Every listed step reports VERIFIED, every check reports PASS, references are current, and qualifying formal review claims cover every step. The flags `approval_verified`, `independent_review_verified` and `execution_performed` remain false for every verdict. The host owns authentication and authorization.
 
 ## Rules for consumers
 

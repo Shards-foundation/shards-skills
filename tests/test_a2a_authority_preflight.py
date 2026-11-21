@@ -152,6 +152,20 @@ class AuthorityPreflightTests(unittest.TestCase):
         self.assertIn("MISSING_CONNECTOR", out["blockers"][0]["reasons"])
         self.assertEqual(out["blockers"][0]["escalate_to"], "coordinator-agent")
 
+    def test_blocked_approver_and_merge_decider_escalate_to_another_actor(self):
+        for role, operation in (("reviewer", "pr.approve"), ("merge_decider", "pr.merge")):
+            with self.subTest(role=role):
+                record = sample()
+                actor = record["roles"][role]
+                record["actions"][0].update(actor=actor, operation=operation, permission="UNKNOWN",
+                                             policy="UNKNOWN", evidence_ids=[])
+                blocker = module.validate(record)["blockers"][0]
+                self.assertEqual(blocker["escalate_to"], "coordinator-agent")
+                record["roles"]["coordinator"] = actor
+                blocker = module.validate(record)["blockers"][0]
+                expected = record["roles"]["delegator"] if role == "reviewer" else None
+                self.assertEqual(blocker["escalate_to"], expected)
+
     def test_missing_credentials_is_a_blocker_not_a_request_for_secret(self):
         o = sample()
         o["actions"][0].update(access="UNKNOWN", access_issue="MISSING_CREDENTIAL")

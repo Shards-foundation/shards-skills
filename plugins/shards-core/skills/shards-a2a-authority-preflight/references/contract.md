@@ -28,7 +28,7 @@ For any `GRANTED` permission, current-revision `delegation` evidence is required
 ## Decisions and safety
 
 - `CLAIMS_COMPLETE` (exit 0): all **self-reported** required gates contain current-revision supporting references. This **never** authorises an effect, demonstrates host enforcement or proves a real permission.
-- `HOLD` (exit 1): one or more effects lack scoped delegation, current effective access, destination-policy evidence or fresh supporting references. Output lists per-action causes and the role to escalate to; it never automatically changes the executor.
+- `HOLD` (exit 1): one or more effects lack scoped delegation, current effective access, destination-policy evidence or fresh supporting references. Output lists per-action causes and the coordinator or delegator to escalate to (`null` when neither is a different actor); it never automatically changes the executor.
 - `INVALID` (exit 2): malformed schema, invalid target/scope, unknown operation/status, inconsistent access issue, duplicate IDs, self-review, misassigned merge/review/edit or apparent secret data. Errors do not echo the rejected source content.
 
 Practical interpretation: Claude `git.fetch` can be observed while `git.push` remains UNKNOWN/MISSING_CREDENTIAL. Route an exact file+SHA to an integrator, but require a **separate** authorised task/verification before that integrator publishes. Branch protection 403 means policy UNKNOWN, not disabled. `git.pull` is a local working-tree mutation, unlike `git.fetch`.

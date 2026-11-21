@@ -47,7 +47,7 @@ python scripts/dispatch_skills.py plan --skill shards-a2a-authority-preflight --
 python scripts/dispatch_skills.py run --skill shards-a2a-authority-preflight --input-file .shards/state/authority.json --execute --expect-plan-sha256 <digest-from-plan>
 ```
 
-The direct validator exits **0** for complete claims, **1** for `HOLD` and **2** for `INVALID`. The dispatcher exits **0** for `pass` and **1** for both `hold` and `fail`. Use the dispatch receipt's `observation.status` and `observation.exit_code` to distinguish an unresolved gate from invalid input. Where Python or shell access is unavailable, perform the procedure manually and label validation **NOT_EXECUTED**.
+The direct validator exits **0** for complete claims, **1** for `HOLD` and **2** for `INVALID`. The dispatcher exits **0** for `pass` and **1** for both `hold` and `fail`. Use `observation.status` and `observation.exit_code` to distinguish an unresolved gate from invalid input. The dispatch receipt carries the complete bounded validator result in `observation.report`; the diagnostic tails may be truncated. Where Python or shell access is unavailable, perform the procedure manually and label validation **NOT_EXECUTED**.
 
 ## Output contract
 

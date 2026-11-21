@@ -186,8 +186,11 @@ def main() -> int:
     checkpoint.add_argument("--input", type=Path, required=True)
     checkpoint.add_argument("--output", type=Path)
     args = p.parse_args()
-    if args.command == "handoff" and args.input != Path("-") and args.output is None:
-        p.error("handoff from a file requires --output")
+    if args.command == "handoff":
+        if args.input == Path("-") and args.output is not None:
+            p.error("stdin handoff returns validated data on stdout")
+        if args.input != Path("-") and args.output is None:
+            p.error("handoff from a file requires --output")
     try:
         if args.command == "catalogue":
             report = catalogue()

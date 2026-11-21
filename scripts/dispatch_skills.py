@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import hmac
 import json
@@ -12,6 +13,7 @@ import stat
 import subprocess
 import sys
 import uuid
+from contextlib import ExitStack, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -42,23 +44,43 @@ HARNESS_SKILLS = frozenset({
     "shards-subagents", "shards-parallel-swarm",
 })
 
+LOCAL_IMPORTS = {
+    "scripts/catalogue_sync.py": ("validate_skills",),
+    "scripts/shards_agent_harness.py": ("dispatch_skills",),
+    "scripts/verify_plugins.py": ("dispatch_skills",),
+}
+
 # The interpreter receives the verified entry point and optional input together.
 # Restore script-mode argv and imports without reopening the entry-point pathname.
 SOURCE_LAUNCHER = """
+import base64
+import importlib.abc
+import importlib.util
 import io
-import os
+import json
 import sys
 
 stream = sys.stdin.buffer
-source_size = int.from_bytes(stream.read(8), 'big')
-source = stream.read(source_size)
-if len(source) != source_size:
-    raise SystemExit('Incomplete verified script payload')
+metadata_size = int.from_bytes(stream.read(8), 'big')
+bundle = json.loads(stream.read(metadata_size))
 sys.stdin = io.TextIOWrapper(io.BytesIO(stream.read()), encoding='utf-8')
 sys.argv = sys.argv[1:]
 __file__ = sys.argv[0]
-sys.path[0] = os.path.dirname(__file__)
-exec(compile(source, __file__, 'exec'), globals())
+
+class ReviewedModules(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+    def find_spec(self, name, path=None, target=None):
+        if name in bundle['modules']:
+            return importlib.util.spec_from_loader(name, self)
+
+    def create_module(self, spec):
+        return None
+
+    def exec_module(self, module):
+        module.__file__, encoded = bundle['modules'][module.__name__]
+        exec(compile(base64.b64decode(encoded), module.__file__, 'exec'), module.__dict__)
+
+sys.meta_path.insert(0, ReviewedModules())
+exec(compile(base64.b64decode(bundle['entry']), __file__, 'exec'), globals())
 """
 LAUNCHER_SHA256 = hashlib.sha256(SOURCE_LAUNCHER.encode("utf-8")).hexdigest()
 
@@ -132,6 +154,37 @@ def _read_regular_bytes(path: Path) -> bytes:
             raise ValueError("Dispatch source exceeds byte limit")
         return data
 
+@contextmanager
+def _lock_windows_path(path: Path, *, directory: bool):
+    """Keep a Windows path entry from being renamed or replaced while published."""
+    from ctypes import WinDLL, WinError, get_last_error, wintypes
+
+    kernel = WinDLL("kernel32", use_last_error=True)
+    open_file = kernel.CreateFileW
+    open_file.argtypes = (wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID,
+                          wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE)
+    open_file.restype = wintypes.HANDLE
+    close_handle = kernel.CloseHandle
+    close_handle.argtypes = (wintypes.HANDLE,)
+    close_handle.restype = wintypes.BOOL
+    read = 0x80000000
+    share_read, share_write = 0x1, 0x2
+    open_existing = 3
+    open_reparse_point, backup_semantics = 0x00200000, 0x02000000
+    access = 0 if directory else read
+    # Omit delete sharing for all paths, and omit write sharing for staged files.
+    share = share_read | share_write if directory else share_read
+    flags = open_reparse_point | (backup_semantics if directory else 0)
+    handle = open_file(str(path), access, share, None, open_existing, flags, None)
+    if handle == wintypes.HANDLE(-1).value:
+        raise WinError(get_last_error())
+    try:
+        if path.lstat().st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+            raise ValueError("Checkpoint publication refuses Windows reparse points")
+        yield
+    finally:
+        close_handle(handle)
+
 def _publish_checkpoint(path: Path, data: bytes) -> str | None:
     """Publish complete bytes from private staging without overwriting the destination."""
     directory = staging_fd = None
@@ -139,6 +192,7 @@ def _publish_checkpoint(path: Path, data: bytes) -> str | None:
     target = path
     created_directory = created_file = published = False
     cleanup_warning = None
+    windows_handles = ExitStack()
     try:
         if {os.open, os.mkdir, os.link, os.unlink, os.rmdir}.issubset(os.supports_dir_fd) and hasattr(os, "O_NOFOLLOW"):
             flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
@@ -155,9 +209,17 @@ def _publish_checkpoint(path: Path, data: bytes) -> str | None:
                 os.close(directory)
                 directory = child
             staging, target = Path(staging.name), Path(path.name)
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
+        elif os.name == "nt":
+            # Anchor every state-directory component before naming the next one.
+            parent = ROOT
+            windows_handles.enter_context(_lock_windows_path(parent, directory=True))
+            for part in path.parent.relative_to(ROOT).parts:
+                parent /= part
+                parent.mkdir(mode=0o700, exist_ok=True)
+                windows_handles.enter_context(_lock_windows_path(parent, directory=True))
             _state_file(str(path), must_exist=False)
+        else:
+            raise ValueError("Protected checkpoint publication is unavailable on this platform")
 
         os.mkdir(staging, mode=0o700, dir_fd=directory)
         created_directory = True
@@ -173,9 +235,15 @@ def _publish_checkpoint(path: Path, data: bytes) -> str | None:
         created_file = True
         with os.fdopen(fd, "wb") as stream:
             stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
         if directory is None:
-            _state_file(str(path), must_exist=False)
-        os.link(source, target, src_dir_fd=staging_fd, dst_dir_fd=directory)
+            with _lock_windows_path(staging, directory=True), _lock_windows_path(source, directory=False):
+                if source.read_bytes() != data:
+                    raise ValueError("Staged checkpoint changed before publication")
+                os.link(source, target)
+        else:
+            os.link(source, target, src_dir_fd=staging_fd, dst_dir_fd=directory)
         published = True
     finally:
         try:
@@ -191,6 +259,7 @@ def _publish_checkpoint(path: Path, data: bytes) -> str | None:
                 os.close(staging_fd)
             if directory is not None:
                 os.close(directory)
+            windows_handles.close()
     return cleanup_warning
 
 def _check_descriptor(skill_id: str) -> None:
@@ -202,6 +271,16 @@ def _check_descriptor(skill_id: str) -> None:
     if not first.startswith("---\n") or ("\nname: " + skill_id + "\n") not in first:
         raise ValueError("Curated skill frontmatter does not match: " + skill_id)
 
+def _read_local_modules(script_path: str) -> dict[str, tuple[Path, bytes]]:
+    modules = {}
+    for name in LOCAL_IMPORTS.get(script_path, ()):
+        path = _repository_path(f"scripts/{name}.py")
+        modules[name] = (path, _read_regular_bytes(path))
+    return modules
+
+def _module_digests(modules: dict[str, tuple[Path, bytes]]) -> dict[str, str]:
+    return {name: hashlib.sha256(data).hexdigest() for name, (_, data) in modules.items()}
+
 def _source_revision() -> str | None:
     try:
         p = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--verify", "HEAD^{commit}"],
@@ -212,7 +291,8 @@ def _source_revision() -> str | None:
 
 def _plan_fingerprint(plan: dict) -> str:
     """Stable digest of the command and effects the operator actually reviewed."""
-    fields = ("skill", "effect", "command", "script_sha256", "launcher_sha256", "commit", "timeout_seconds")
+    fields = ("skill", "effect", "command", "script_sha256", "launcher_sha256", "module_sha256",
+              "commit", "timeout_seconds")
     payload = {key: plan[key] for key in fields}
     if "input_file" in plan:
         payload.update(input_file=plan["input_file"], input_sha256=plan.get("input_sha256"))
@@ -221,7 +301,7 @@ def _plan_fingerprint(plan: dict) -> str:
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
-def _check_plan_integrity(plan: dict) -> tuple[bytes, bytes]:
+def _check_plan_integrity(plan: dict) -> tuple[bytes, dict[str, tuple[Path, bytes]], bytes]:
     """Fail closed if a reviewed plan, trusted script or checkout changed."""
     skill = plan.get("skill")
     if not isinstance(skill, str) or skill not in REGISTRY:
@@ -271,6 +351,9 @@ def _check_plan_integrity(plan: dict) -> tuple[bytes, bytes]:
         raise ValueError("Trusted executable changed since planning")
     if plan.get("launcher_sha256") != LAUNCHER_SHA256:
         raise ValueError("Dispatcher launcher changed since planning")
+    modules = _read_local_modules(script_path)
+    if plan.get("module_sha256") != _module_digests(modules):
+        raise ValueError("Trusted Python dependencies changed since planning")
     if not plan.get("commit"):
         raise ValueError("Repository revision unavailable for execution")
     if plan.get("commit") != _source_revision():
@@ -284,10 +367,10 @@ def _check_plan_integrity(plan: dict) -> tuple[bytes, bytes]:
         data = _read_regular_bytes(path)
         if hashlib.sha256(data).hexdigest() != plan.get("input_sha256"):
             raise ValueError("Reviewed input changed since planning")
-        return source, data
+        return source, modules, data
     if "input_file" in plan or "input_sha256" in plan:
         raise ValueError("Unexpected input in execution plan")
-    return source, b""
+    return source, modules, b""
 
 def describe(skill_id: str, *, target_skill: str | None = None,
              profile: str = "quick", input_file: str | None = None,
@@ -322,6 +405,7 @@ def describe(skill_id: str, *, target_skill: str | None = None,
     plan = {"skill": skill_id, "effect": effect, "command": cmd,
             "script_sha256": hashlib.sha256(_read_regular_bytes(script)).hexdigest(),
             "launcher_sha256": LAUNCHER_SHA256,
+            "module_sha256": _module_digests(_read_local_modules(relative_script)),
             "commit": _source_revision(), "timeout_seconds": timeout,
             "approved_by": "host-required", "executed": False}
     if "--input" in cmd:
@@ -336,7 +420,9 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
     plan = dict(plan)
     if isinstance(plan.get("command"), list):
         plan["command"] = plan["command"].copy()
-    source, input_data = _check_plan_integrity(plan)
+    if isinstance(plan.get("module_sha256"), dict):
+        plan["module_sha256"] = plan["module_sha256"].copy()
+    source, modules, input_data = _check_plan_integrity(plan)
     requires_pin = ("input_file" in plan or plan["effect"] != "read-only"
                     or plan["skill"] == "shards-release-gate")
     if requires_pin and expect_plan_sha256 is None:
@@ -353,8 +439,11 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
     env["PYTHONUTF8"] = "1"
     started = timestamp()
     try:
-        command = [sys.executable, "-c", SOURCE_LAUNCHER, *plan["command"][1:]]
-        payload = len(source).to_bytes(8, "big") + source + input_data
+        command = [sys.executable, "-I", "-B", "-X", "utf8", "-c", SOURCE_LAUNCHER, *plan["command"][1:]]
+        bundle = json.dumps({"entry": base64.b64encode(source).decode("ascii"),
+                             "modules": {name: (str(path), base64.b64encode(data).decode("ascii"))
+                                         for name, (path, data) in modules.items()}}).encode("utf-8")
+        payload = len(bundle).to_bytes(8, "big") + bundle + input_data
         proc = executor(command, cwd=str(ROOT), env=env, capture_output=True,
                         timeout=plan["timeout_seconds"], check=False, input=payload)
         stdout_text = proc.stdout.decode("utf-8", "replace") if isinstance(proc.stdout, bytes) else proc.stdout
@@ -371,11 +460,11 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
         observed = {"status": status, "exit_code": proc.returncode,
                     "stdout_tail": stdout, "stderr_tail": stderr}
         if status == "pass" and "output_file" in plan:
-            report = json.loads(stdout_text)
-            if (not isinstance(report, dict) or report.get("workflow") != "handoff"
-                    or report.get("status") != "VALIDATED" or not isinstance(report.get("checkpoint"), dict)):
-                raise ValueError("Child did not return a validated checkpoint")
             try:
+                report = json.loads(stdout_text)
+                if (not isinstance(report, dict) or report.get("workflow") != "handoff"
+                        or report.get("status") != "VALIDATED" or not isinstance(report.get("checkpoint"), dict)):
+                    raise ValueError("Child did not return a validated checkpoint")
                 destination = _state_file(plan["output_file"], must_exist=False)
                 warning = _publish_checkpoint(destination, stdout_text.encode("utf-8"))
                 if warning:
@@ -392,6 +481,7 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
             "effect": plan["effect"], "commit": plan["commit"],
             "plan_sha256": plan["plan_sha256"],
             "script_sha256": plan["script_sha256"], "launcher_sha256": plan["launcher_sha256"],
+            "module_sha256": plan["module_sha256"],
             "command": plan["command"],
             "started_at": started, "finished_at": timestamp(), "executed": True,
             "observation": observed, "production_verified": False}

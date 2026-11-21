@@ -29,6 +29,14 @@ class DispatchInputTests(unittest.TestCase):
     def handoff(self):
         return dispatcher.describe("shards-agent-handoff", **self.options)
 
+    def make_symlink(self, path, target, *, directory=False):
+        try:
+            path.symlink_to(target, target_is_directory=directory)
+        except (OSError, NotImplementedError) as exc:
+            if os.environ.get("CI", "").lower() == "true":
+                self.fail(f"CI must support symlinks for this check: {exc}")
+            self.skipTest(f"Symbolic link creation unavailable: {exc}")
+
     def test_same_path_different_bytes_refused(self):
         plan = self.handoff()
         self.source.write_text(json.dumps(dict(self.record, goal="later")), encoding="utf-8")
@@ -58,7 +66,7 @@ class DispatchInputTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as outside:
             def redirect_at_launch(argv, **kwargs):
                 output_dir.rmdir()
-                output_dir.symlink_to(outside, target_is_directory=True)
+                self.make_symlink(output_dir, outside, directory=True)
                 return subprocess.run(argv, **kwargs)
 
             receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=redirect_at_launch)
@@ -75,26 +83,49 @@ class DispatchInputTests(unittest.TestCase):
         self.assertEqual(receipt["observation"]["status"], "timeout")
         self.assertFalse(self.target.exists())
 
-    def test_output_is_create_only_in_both_publication_modes(self):
-        for fallback in (False, True):
-            with self.subTest(fallback=fallback):
-                path = self.target.with_name(f"output-{fallback}.json")
-                support = set() if fallback else os.supports_dir_fd
-                with patch.object(os, "supports_dir_fd", support):
-                    dispatcher._publish_checkpoint(path, b'{"original":true}')
-                    with self.assertRaises((FileExistsError, ValueError)):
-                        dispatcher._publish_checkpoint(path, b'{"replacement":true}')
-                self.assertEqual(json.loads(path.read_bytes()), {"original": True})
-                self.assertFalse(list(path.parent.glob(".handoff-*")))
+    def test_invalid_child_output_returns_failed_receipt(self):
+        plan = self.handoff()
+
+        def invalid(argv, **kwargs):
+            return subprocess.CompletedProcess(argv, 0, stdout=b"invalid JSON", stderr=b"")
+
+        receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=invalid)
+        self.assertEqual(receipt["observation"]["status"], "fail")
+        self.assertFalse(self.target.exists())
+
+    def test_output_is_create_only_and_removes_private_staging(self):
+        dispatcher._publish_checkpoint(self.target, b'{"original":true}')
+        with self.assertRaises((FileExistsError, ValueError)):
+            dispatcher._publish_checkpoint(self.target, b'{"replacement":true}')
+        self.assertEqual(json.loads(self.target.read_bytes()), {"original": True})
+        self.assertFalse(list(self.target.parent.glob(".handoff-*")))
+
+    @unittest.skipIf(os.name == "nt", "Windows has native path locking")
+    def test_platform_without_path_anchors_refuses_publication(self):
+        with patch.object(os, "supports_dir_fd", set()):
+            with self.assertRaisesRegex(ValueError, "Protected checkpoint publication is unavailable"):
+                dispatcher._publish_checkpoint(self.target, b"{}")
+        self.assertFalse(self.target.exists())
+
+    @unittest.skipUnless(os.name == "nt", "Windows path locking test")
+    def test_locked_windows_directory_cannot_be_moved(self):
+        parent = self.target.parent / "locked"
+        parent.mkdir()
+        with dispatcher._lock_windows_path(parent, directory=True):
+            with self.assertRaises(OSError):
+                parent.rename(parent.with_name("moved"))
+        self.assertTrue(parent.is_dir())
 
     def test_complete_output_is_staged_before_publication(self):
         link = os.link
         staged_payloads = []
 
-        def observe_publication(source, target, *, src_dir_fd, dst_dir_fd):
+        def observe_publication(source, target, *, src_dir_fd=None, dst_dir_fd=None):
             self.assertFalse(self.target.exists())
             with os.fdopen(os.open(source, os.O_RDONLY, dir_fd=src_dir_fd), "rb") as stream:
                 staged_payloads.append(json.load(stream))
+            if src_dir_fd is None:
+                return link(source, target)
             return link(source, target, src_dir_fd=src_dir_fd, dst_dir_fd=dst_dir_fd)
 
         support = os.supports_dir_fd
@@ -103,6 +134,20 @@ class DispatchInputTests(unittest.TestCase):
         with patch.object(os, "link", observe_publication), patch.object(os, "supports_dir_fd", support):
             dispatcher._publish_checkpoint(self.target, b'{"verified":true}')
         self.assertEqual(staged_payloads, [{"verified": True}])
+        self.assertEqual(json.loads(self.target.read_bytes()), {"verified": True})
+
+    def test_staging_cleanup_failure_does_not_invalidate_completed_output(self):
+        unlink = os.unlink
+
+        def fail_cleanup(*args, **kwargs):
+            raise PermissionError("staging cleanup denied")
+
+        support = os.supports_dir_fd
+        if unlink in support:
+            support = (support - {unlink}) | {fail_cleanup}
+        with patch.object(os, "unlink", fail_cleanup), patch.object(os, "supports_dir_fd", support):
+            warning = dispatcher._publish_checkpoint(self.target, b'{"verified":true}')
+        self.assertIn("Checkpoint published", warning)
         self.assertEqual(json.loads(self.target.read_bytes()), {"verified": True})
 
     def test_unknown_revision_refuses_execution(self):
@@ -114,7 +159,7 @@ class DispatchInputTests(unittest.TestCase):
 
     def test_input_symlink_refused(self):
         alias = self.source.with_name("alias.json")
-        alias.symlink_to(self.source)
+        self.make_symlink(alias, self.source)
         with self.assertRaisesRegex(ValueError, "symlink"):
             dispatcher.describe("shards-agent-handoff", **dict(self.options, input_file=str(alias)))
 

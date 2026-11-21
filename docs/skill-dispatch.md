@@ -18,12 +18,13 @@ For a **plan-pinned run**, inspect the full JSON returned by `plan`, retain its
     python scripts/dispatch_skills.py plan --skill shards-repository-health
     python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 <reviewed-64-character-sha256> --save-receipt
 
-The digest covers the script argv, effect, timeout, entry-point digest, interpreter launcher digest and checkout revision.
+The digest covers the script argv, effect, timeout, entry point, allowlisted
+local Python imports, interpreter launcher and checkout revision.
 For commands with an explicit JSON input, the plan also records the absolute
 `input_file` and the SHA-256 of its bytes in `input_sha256`. The child receives those
 bytes on stdin (`--input -`). The dispatcher rechecks the path, file digest, argv,
-descriptor, executable and revision, then runs the verified entry-point bytes
-without reopening the script path. A missing revision or mismatched digest exits 2.
+descriptor, executable and revision, then runs the verified entry point and
+local imports without reopening their files. A missing revision or mismatched digest exits 2.
 Regenerate plans created before this digest format.
 
 File-input operations, local writes, maintenance runs and release gates require
@@ -41,9 +42,9 @@ For a validated checkpoint handoff, create sanitized JSON input in .shards/state
 
 The plan records the destination in `output_file`. The dispatcher publishes the
 complete checkpoint from private staging only after the validator exits successfully.
-The filesystem must support hard links for create-only publication. On platforms
-without directory-relative file operations, use a checkout and state directory
-protected from concurrent untrusted changes by the host.
+The filesystem must support hard links for create-only publication. Publication
+uses directory-relative operations on POSIX and retained path handles on Windows.
+Other platforms require a supported way to anchor the destination before writing.
 
 No dispatcher operation can publish packages, deploy, merge pull requests, call external APIs or run imported scripts. The catalogue audit may inspect any existing skill by NAME but does not execute it.
 

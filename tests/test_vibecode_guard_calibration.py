@@ -70,9 +70,10 @@ def by_path(payload: dict) -> dict[str, list[dict]]:
 
 
 # --------------------------------------------------------------------------
-# Family A — the 13 reviewed real-world findings (7 key material, 2 symlinks, 4 TLS)
+# Family A — 14 findings (8 key material, 2 symlinks, 4 TLS)
 # --------------------------------------------------------------------------
 EXPECTED_REAL = {
+    "tests/certs/expired/ca/ca.crt": ("TRACKED-KEY-MATERIAL", "CONFIRMED"),
     "tests/certs/expired/ca/ca-private.key": ("TRACKED-KEY-MATERIAL", "CONFIRMED"),
     "tests/certs/expired/server/server.key": ("TRACKED-KEY-MATERIAL", "CONFIRMED"),
     "tests/certs/expired/server/server.pem": ("TRACKED-KEY-MATERIAL", "TEST_FIXTURE_LIKELY_INTENTIONAL"),
@@ -85,17 +86,17 @@ EXPECTED_REAL = {
 }
 
 
-def test_real_repository_findings_are_classified(tmp_path):
+def _check_real_repository_findings_are_classified(tmp_path):
     code, payload, err = run_guard(Path(PSF))
     assert payload is not None, err
     assert payload["schema_version"] == 2
-    assert payload["summary"]["total"] == 13, payload["summary"]
+    assert payload["summary"]["total"] == 14, payload["summary"]
     got = by_path(payload)
     for path, (want_id, want_class) in EXPECTED_REAL.items():
         assert path in got, f"missing finding for {path}"
         f = got[path][0]
         assert f["id"] == want_id, f"{path}: {f['id']} != {want_id}"
-        if want_id == "TRACKED-KEY-MATERIAL" and path.endswith(".pem"):
+        if want_id == "TRACKED-KEY-MATERIAL" and path.endswith((".pem", ".crt")):
             assert f["classification"] in {"CONFIRMED", "TEST_FIXTURE_LIKELY_INTENTIONAL",
                                            "TEST_FIXTURE_UNCONFIRMED_DIRECTORY"}, f
         else:
@@ -114,28 +115,28 @@ def test_real_repository_findings_are_classified(tmp_path):
         assert f["classification"] == "TEST_CONTEXT_UNPROVEN", f
         assert f["confidence"] == "low"
         assert "no expected-failure assertion" in f["suppression_reason"]
-    # 2 symlinks + 7 key material + 4 TLS is the whole set
+    # 2 symlinks + 8 key material + 4 TLS is the whole set
     assert sum(f["id"] == "SYMLINK-INTERNAL" and f["classification"] == "CONFIRMED" for f in payload["findings"]) == 2
     assert payload["summary"]["by_classification"]["TEST_CONTEXT_UNPROVEN"] == 4
-    # Seven tracked key/certificate files require review, including likely fixtures.
-    assert payload["summary"]["actionable"] == 13
+    # All eight tracked key/certificate files require review, including likely fixtures.
+    assert payload["summary"]["actionable"] == 14
     assert code == 2
 
 
-def test_legacy_mode_still_reports_all_13(tmp_path):
+def _check_legacy_mode_still_reports_all_findings(tmp_path):
     """Triage must never reduce previously emitted findings, only annotate them."""
     code, payload, err = run_guard(Path(PSF), "--no-triage")
     assert payload is not None, err
     assert payload["triage_mode"] == "signature-only"
-    assert payload["summary"]["total"] == 13
-    assert payload["summary"]["actionable"] == 13
+    assert payload["summary"]["total"] == 14
+    assert payload["summary"]["actionable"] == 14
     assert code == 2
 
 
 # --------------------------------------------------------------------------
 # Family B — the 5 seeded genuine defects + a real credential under tests/
 # --------------------------------------------------------------------------
-def test_seeded_defects_and_credential_under_tests(tmp_path):
+def _check_seeded_defects_and_credential_under_tests(tmp_path):
     repo = make_repo(tmp_path / "r", {
         "src/a.py": 'import requests\nrequests.get("https://x", verify=False)\n',
         "src/b.py": 'import yaml\nyaml.load(open("f"), Loader=yaml.Loader)\n',
@@ -165,7 +166,7 @@ def test_seeded_defects_and_credential_under_tests(tmp_path):
     assert code == 1
 
 
-def test_private_key_block_under_tests_is_not_suppressed(tmp_path):
+def _check_private_key_block_under_tests_is_not_suppressed(tmp_path):
     # The rule detects an opening marker. No key material is needed in the fixture.
     repo = make_repo(tmp_path / "r", {
         "tests/fixtures/key.py": 'K = "-----BEGIN RSA PRIVATE KEY-----"\n',
@@ -178,7 +179,7 @@ def test_private_key_block_under_tests_is_not_suppressed(tmp_path):
     assert code == 1
 
 
-def test_key_in_fixture_dir_but_referenced_by_production_stays_actionable(tmp_path):
+def _check_key_in_fixture_dir_but_referenced_by_production_stays_actionable(tmp_path):
     """A test-path certificate referenced from non-test source must never be suppressed."""
     repo = make_repo(tmp_path / "r", {
         "tests/certs/valid/server/server.key": "Placeholder for filename and reference checks\n",
@@ -194,7 +195,7 @@ def test_key_in_fixture_dir_but_referenced_by_production_stays_actionable(tmp_pa
     assert code == 1
 
 
-def test_docs_only_reference_does_not_escalate_a_fixture(tmp_path):
+def _check_docs_only_reference_does_not_escalate_a_fixture(tmp_path):
     """Documentation prose is not production code; it must not force CONFIRMED."""
     repo = make_repo(tmp_path / "r", {
         "docs/advanced.rst": "Use tests/certs/valid/server/server.key with the bundle.\n",
@@ -207,7 +208,7 @@ def test_docs_only_reference_does_not_escalate_a_fixture(tmp_path):
     assert "referenced from non-test source" not in key["advice"], key
 
 
-def test_verify_false_in_test_without_expected_failure_stays_actionable(tmp_path):
+def _check_verify_false_in_test_without_expected_failure_stays_actionable(tmp_path):
     repo = make_repo(tmp_path / "r", {
         "tests/test_app.py": "def test_thing():\n    requests.get('u', verify=False)\n",
     })
@@ -222,7 +223,7 @@ def test_verify_false_in_test_without_expected_failure_stays_actionable(tmp_path
 # --------------------------------------------------------------------------
 # Family C — symlink escape vs internal
 # --------------------------------------------------------------------------
-def test_symlink_escape_is_high_severity(tmp_path):
+def _check_symlink_escape_is_high_severity(tmp_path):
     repo = make_repo(
         tmp_path / "r",
         {"src/a.py": "print(1)\n"},
@@ -239,7 +240,7 @@ def test_symlink_escape_is_high_severity(tmp_path):
     assert code == 2
 
 
-def test_symlink_internal_requires_review(tmp_path):
+def _check_symlink_internal_requires_review(tmp_path):
     repo = make_repo(
         tmp_path / "r",
         {"tests/certs/expired/ca/ca.pem": "-----BEGIN CERTIFICATE-----\nMIID\n-----END CERTIFICATE-----\n"},
@@ -256,7 +257,7 @@ def test_symlink_internal_requires_review(tmp_path):
     assert payload["summary"]["actionable"] >= 1
 
 
-def test_symlinked_content_is_never_read(tmp_path):
+def _check_symlinked_content_is_never_read(tmp_path):
     """The escaping target's contents must not appear anywhere in the output."""
     repo = make_repo(
         tmp_path / "r",
@@ -275,7 +276,7 @@ def test_symlinked_content_is_never_read(tmp_path):
 # --------------------------------------------------------------------------
 # Fail-closed behaviour
 # --------------------------------------------------------------------------
-def test_non_git_directory_is_blocked(tmp_path):
+def _check_non_git_directory_is_blocked(tmp_path):
     d = tmp_path / "plain"
     d.mkdir()
     (d / "f.txt").write_text("x")
@@ -285,7 +286,7 @@ def test_non_git_directory_is_blocked(tmp_path):
     assert json.loads(proc.stderr)["status"] == "BLOCKED"
 
 
-def test_clean_repository_is_clear(tmp_path):
+def _check_clean_repository_is_clear(tmp_path):
     repo = make_repo(tmp_path / "r", {"src/a.py": "print('hello')\n"})
     code, payload, err = run_guard(repo)
     assert payload is not None, err
@@ -300,38 +301,38 @@ class VibeCodeGuardCalibrationTests(unittest.TestCase):
 
     @unittest.skipUnless(PSF and Path(PSF).is_dir(), "PSF_REQUESTS checkout unavailable")
     def test_real_repository_findings_are_classified(self):
-        test_real_repository_findings_are_classified(Path(self.temp.name))
+        _check_real_repository_findings_are_classified(Path(self.temp.name))
 
     @unittest.skipUnless(PSF and Path(PSF).is_dir(), "PSF_REQUESTS checkout unavailable")
-    def test_legacy_mode_still_reports_all_13(self):
-        test_legacy_mode_still_reports_all_13(Path(self.temp.name))
+    def test_legacy_mode_still_reports_all_findings(self):
+        _check_legacy_mode_still_reports_all_findings(Path(self.temp.name))
 
     def test_seeded_defects_and_credential_under_tests(self):
-        test_seeded_defects_and_credential_under_tests(Path(self.temp.name))
+        _check_seeded_defects_and_credential_under_tests(Path(self.temp.name))
 
     def test_private_key_block_under_tests_is_not_suppressed(self):
-        test_private_key_block_under_tests_is_not_suppressed(Path(self.temp.name))
+        _check_private_key_block_under_tests_is_not_suppressed(Path(self.temp.name))
 
     def test_key_in_fixture_dir_but_referenced_by_production_stays_actionable(self):
-        test_key_in_fixture_dir_but_referenced_by_production_stays_actionable(Path(self.temp.name))
+        _check_key_in_fixture_dir_but_referenced_by_production_stays_actionable(Path(self.temp.name))
 
     def test_docs_only_reference_does_not_escalate_a_fixture(self):
-        test_docs_only_reference_does_not_escalate_a_fixture(Path(self.temp.name))
+        _check_docs_only_reference_does_not_escalate_a_fixture(Path(self.temp.name))
 
     def test_verify_false_in_test_without_expected_failure_stays_actionable(self):
-        test_verify_false_in_test_without_expected_failure_stays_actionable(Path(self.temp.name))
+        _check_verify_false_in_test_without_expected_failure_stays_actionable(Path(self.temp.name))
 
     def test_symlink_escape_is_high_severity(self):
-        test_symlink_escape_is_high_severity(Path(self.temp.name))
+        _check_symlink_escape_is_high_severity(Path(self.temp.name))
 
     def test_symlink_internal_requires_review(self):
-        test_symlink_internal_requires_review(Path(self.temp.name))
+        _check_symlink_internal_requires_review(Path(self.temp.name))
 
     def test_symlinked_content_is_never_read(self):
-        test_symlinked_content_is_never_read(Path(self.temp.name))
+        _check_symlinked_content_is_never_read(Path(self.temp.name))
 
     def test_non_git_directory_is_blocked(self):
-        test_non_git_directory_is_blocked(Path(self.temp.name))
+        _check_non_git_directory_is_blocked(Path(self.temp.name))
 
     def test_clean_repository_is_clear(self):
-        test_clean_repository_is_clear(Path(self.temp.name))
+        _check_clean_repository_is_clear(Path(self.temp.name))

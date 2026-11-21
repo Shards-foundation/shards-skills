@@ -158,6 +158,23 @@ class ReviewerRegressionTests(unittest.TestCase):
                     self.assertEqual(report["status"], "INCOMPLETE_SCAN")
                     self.assertEqual(report["skipped_paths"][0]["path"], "source.py")
 
+    def test_invalid_python_syntax_marks_inspection_incomplete(self):
+        with tempfile.TemporaryDirectory() as location:
+            root = Path(location)
+            (root / "invalid.py").write_text("def invalid(:\n", encoding="utf-8")
+            report = guard.inspect(root, ["invalid.py"])
+        self.assertEqual(report["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([item["path"] for item in report["skipped_paths"]], ["invalid.py"])
+
+    def test_tracked_certificate_extensions_require_review(self):
+        with tempfile.TemporaryDirectory() as location:
+            root = Path(location)
+            for name in ("server.crt", "client.cer"):
+                (root / name).write_text("Non-key certificate fixture", encoding="utf-8")
+            report = guard.inspect(root, ["server.crt", "client.cer"])
+        self.assertEqual(report["summary"]["actionable"], 2)
+        self.assertEqual({item["id"] for item in report["findings"]}, {"TRACKED-KEY-MATERIAL"})
+
     def test_benign_named_symlink_to_untracked_credential_requires_review(self):
         """Manus counterexample: never approve an unread internal target."""
         with tempfile.TemporaryDirectory() as d:

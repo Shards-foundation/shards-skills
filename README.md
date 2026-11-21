@@ -79,7 +79,8 @@ python scripts/vibecode_guard.py --repo /path/to/your/app
 ```
 
 The `plan` command returns controls to investigate, not results. For a complete
-local scan, **0 = no actionable heuristic findings** and **1 = actionable warnings**. Use `--no-triage` for signature-only warnings.
+local scan, **0 = no actionable heuristic findings** and **1 = actionable warnings**.
+For a legacy baseline, `--no-triage` reports every signature match as actionable.
 **2 = blocked input or incomplete scan**. Review any reported findings, skipped
 paths and truncation before proceeding.
 A clean run is not an automatic security sign-off. For observed evidence and a

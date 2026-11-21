@@ -34,7 +34,7 @@ MAX_FILE_BYTES = 256_000
 MAX_TOTAL_BYTES = 20_000_000
 MAX_FINDINGS = 200
 SOURCE_EXT = {".js", ".jsx", ".ts", ".tsx", ".py", ".sql", ".tf", ".yml", ".yaml", ".toml", ".json"}
-KEY_EXT = {".pem", ".key"}
+KEY_EXT = {".pem", ".key", ".crt", ".cer"}
 CONTAINER_EXT = {".p12", ".pfx"}
 
 RULES = [
@@ -496,6 +496,7 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
             try:
                 syntax = ast.parse(body)
             except SyntaxError:
+                skipped.append({"path": name, "reason": "Python syntax prevented complete TLS inspection"})
                 syntax = None
             except (RecursionError, MemoryError, ValueError):
                 skipped.append({"path": name, "reason": "Python source too complex to parse for TLS checks"})

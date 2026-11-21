@@ -107,6 +107,7 @@ class VibeCodeGuardTests(unittest.TestCase):
             names = guard.tracked(self.root)
         self.assertEqual(len(names), 2)
         self.assertEqual(names[0], "valid.py")
+        self.assertEqual(names[1].encode("utf-8", "surrogateescape"), b"bad-\xff.py")
 
     def test_git_disables_local_fsmonitor_and_untrusted_env(self):
         fake = SimpleNamespace(returncode=0, stdout=b"")

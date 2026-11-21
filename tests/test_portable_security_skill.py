@@ -333,8 +333,8 @@ class PortableSkillTests(unittest.TestCase):
                     guard.tracked(root)
             self.assertNotIn("submodule.js", guard.tracked(root))
             report = guard.inspect(root, guard.tracked(root))
-            self.assertEqual(report["status"], "WARNINGS_FOUND")
-            self.assertIn("SKIPPED-OVERSIZE-SOURCE", {x["id"] for x in report["findings"]})
+            self.assertEqual(report["status"], "INCOMPLETE_SCAN")
+            self.assertIn("huge.py", {item["path"] for item in report["skipped_paths"]})
             self.assertIn("TRACKED-ENV", {x["id"] for x in report["findings"]})
             # For special-file findings, the report cap also applies.
             for i in range(guard.MAX_FINDINGS + 2):

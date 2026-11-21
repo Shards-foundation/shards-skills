@@ -1,5 +1,6 @@
 """Non-execution and redaction contracts for the Shards vibe-code preflight."""
 import importlib.util
+import io
 import os
 from unittest.mock import patch
 from types import SimpleNamespace
@@ -101,35 +102,32 @@ class VibeCodeGuardTests(unittest.TestCase):
         self.assertFalse(sentinel.exists(), "The untrusted fsmonitor command executed")
 
     def test_non_utf8_git_path_is_retained_for_safe_skip(self):
-        raw = b"valid.py" + bytes([0]) + b"bad-" + bytes([255]) + b".py" + bytes([0])
-        def fake_run(args, **kwargs):
-            if args[-1] == "--show-toplevel":
-                return SimpleNamespace(returncode=0, stdout=str(self.root.resolve()).encode())
-            if args[-3:] == ["ls-files", "-z", "--cached"]:
-                kwargs["stdout"].write(raw)
-                return SimpleNamespace(returncode=0, stdout=None)
-            raise AssertionError("Unexpected Git command")
-        with patch.object(guard.subprocess, "run", side_effect=fake_run) as runner:
+        metadata = b"100644 " + b"a" * 40 + b" 0\t"
+        raw = metadata + b"valid.py\0" + metadata + b"bad-\xff.py\0"
+        top = SimpleNamespace(returncode=0, stdout=os.fsencode(self.root.resolve()) + b"\n")
+        with patch.object(guard.subprocess, "run", return_value=top) as runner, patch.object(guard.subprocess, "Popen") as launch:
+            process = launch.return_value.__enter__.return_value
+            process.stdout = io.BytesIO(raw)
+            process.wait.return_value = process.poll.return_value = 0
             names = guard.tracked(self.root)
-        self.assertEqual(runner.call_count, 2)
+        runner.assert_called_once()
+        launch.assert_called_once()
         self.assertEqual(len(names), 2)
         self.assertEqual(names[0], "valid.py")
         self.assertEqual(names[1].encode("utf-8", "surrogateescape"), b"bad-\xff.py")
 
     def test_git_disables_local_fsmonitor_and_untrusted_env(self):
-        def fake_run(args, **kwargs):
-            if args[-1] == "--show-toplevel":
-                return SimpleNamespace(returncode=0, stdout=str(self.root.resolve()).encode())
-            if args[-3:] == ["ls-files", "-z", "--cached"]:
-                kwargs["stdout"].write(b"")
-                return SimpleNamespace(returncode=0, stdout=None)
-            raise AssertionError("Unexpected Git command")
+        top = SimpleNamespace(returncode=0, stdout=os.fsencode(self.root.resolve()) + b"\n")
         with patch.dict(os.environ, {"GIT_CONFIG_PARAMETERS": "core.fsmonitor=bad",
                                      "GIT_INDEX_FILE": "/tmp/untrusted-index"}):
-            with patch.object(guard.subprocess, "run", side_effect=fake_run) as runner:
+            with patch.object(guard.subprocess, "run", return_value=top) as runner, patch.object(guard.subprocess, "Popen") as launch:
+                process = launch.return_value.__enter__.return_value
+                process.stdout = io.BytesIO()
+                process.wait.return_value = process.poll.return_value = 0
                 guard.tracked(self.root)
-        self.assertEqual(runner.call_count, 2)
-        for call in runner.call_args_list:
+        runner.assert_called_once()
+        launch.assert_called_once()
+        for call in (runner.call_args, launch.call_args):
             args, kw = call
             self.assertIn("core.fsmonitor=false", args[0])
             self.assertIn("--no-optional-locks", args[0])
@@ -152,6 +150,93 @@ class VibeCodeGuardTests(unittest.TestCase):
         self.file("a.py", "eval(input())")
         result = guard.inspect(self.root, ["b.py", "a.py"])
         self.assertEqual([item["path"] for item in result["findings"]], ["a.py", "b.py"])
+
+
+    def test_cap_blocks_clean_exit_even_when_later_tls_unseen(self):
+        for i in range(guard.MAX_FINDINGS):
+            self.file(f"a/key{i:04}.key", "fixture")
+        self.file("z/unsafe.py", "request.get(url, verify=False)")
+        names = [f"a/key{i:04}.key" for i in range(guard.MAX_FINDINGS)] + ["z/unsafe.py"]
+        r = guard.inspect(self.root, names)
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertTrue(r["truncated"])
+        self.assertTrue(r["incomplete"])
+        with patch.object(guard, "tracked", return_value=names), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 2)
+
+    def test_skipped_source_must_block_clean_exit(self):
+        self.file("oversized.py", "x" * (guard.MAX_FILE_BYTES + 1))
+        r = guard.inspect(self.root, ["oversized.py", "missing.py"])
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertEqual(len(r["skipped_paths"]), 2)
+        with patch.object(guard, "tracked", return_value=["oversized.py"]), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 2)
+
+    def test_tracked_env_findings_count_towards_limit(self):
+        names = [f".env.fixture-{i}" for i in range(3)]
+        for name in names:
+            self.file(name, "EXAMPLE=fixture")
+        with patch.object(guard, "MAX_FINDINGS", 2):
+            result = guard.inspect(self.root, names)
+        self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+        self.assertTrue(result["truncated"])
+        self.assertEqual([finding["id"] for finding in result["findings"]], ["TRACKED-ENV"] * 2)
+
+    def test_unreadable_source_preserves_findings_from_other_files(self):
+        unreadable = self.file("a.py", "# unreadable fixture")
+        self.file("b.py", "DEBUG = True")
+        read_source = guard.read_source
+
+        def read(path):
+            if path == unreadable.resolve():
+                raise PermissionError("denied")
+            return read_source(path)
+
+        with patch.object(guard, "read_source", side_effect=read):
+            result = guard.inspect(self.root, ["a.py", "b.py"])
+        self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([entry["path"] for entry in result["skipped_paths"]], ["a.py"])
+        self.assertEqual([finding["id"] for finding in result["findings"]], ["DEPLOYMENT-DEBUG"])
+
+    def test_changed_source_is_incomplete(self):
+        source = self.file("sample.py", "# original fixture")
+        replaced = self.file("replacement.txt", "# replacement fixture")
+        fstat = os.fstat
+        observations = 0
+
+        def replace_after_read(fd):
+            nonlocal observations
+            observations += 1
+            if observations == 2:
+                replaced.replace(source)
+            return fstat(fd)
+
+        with patch.object(guard.os, "fstat", side_effect=replace_after_read):
+            result = guard.inspect(self.root, ["sample.py"])
+        self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([entry["path"] for entry in result["skipped_paths"]], ["sample.py"])
+
+    def test_invalid_source_content_must_not_pass(self):
+        self.file("nul.py", "a\x00b")
+        (self.root / "nonutf8.py").write_bytes(b"\xff\xfe")
+        r = guard.inspect(self.root, ["nul.py", "nonutf8.py"])
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertEqual(len(r["skipped_paths"]), 2)
+
+    def test_unsafe_symlink_is_incomplete_even_when_other_findings_exist(self):
+        original = self.file("real.py", "eval(input())")
+        (self.root / "link.py").symlink_to(original)
+        r = guard.inspect(self.root, ["link.py", "real.py"])
+        self.assertEqual(r["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([f["id"] for f in r["findings"]], ["SKIPPED-UNSAFE-PATH", "DYNAMIC-EVAL"])
+
+    def test_exit_codes_preserve_complete_warning_and_clean(self):
+        self.file("warning.py", "request.get(url, verify=False)")
+        self.file("clean.py", "print('ok')")
+        with patch.object(guard, "tracked", return_value=["warning.py"]), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 1)
+        with patch.object(guard, "tracked", return_value=["clean.py"]), patch("sys.stdout"):
+            self.assertEqual(guard.main(["--repo", str(self.root)]), 0)
 
 if __name__ == "__main__":
     unittest.main()

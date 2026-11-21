@@ -6,10 +6,11 @@ import argparse
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
-from threading import Timer
 from pathlib import Path
+from threading import Timer
 
 MAX_FILES = 3000
 MAX_INDEX_BYTES = 1_000_000
@@ -91,6 +92,25 @@ def tracked(root: Path) -> list[str]:
             names.append(name.decode("utf-8", errors="surrogateescape"))
     return names
 
+def read_source(path: Path) -> bytes:
+    def open_regular(name, flags):
+        return os.open(name, flags | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+
+    def version(info):
+        return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+    before = path.lstat()
+    with open(path, "rb", opener=open_regular) as stream:
+        opened = os.fstat(stream.fileno())
+        if (not stat.S_ISREG(opened.st_mode) or version(before) != version(opened)
+                or path.resolve() != path):
+            raise OSError("Source path changed before inspection")
+        data = stream.read(MAX_FILE_BYTES + 1)
+        if (version(os.fstat(stream.fileno())) != version(opened)
+                or version(path.lstat()) != version(opened) or path.resolve() != path):
+            raise OSError("Source changed during inspection")
+        return data
+
 def inspect(root: Path, files: list[str]) -> dict:
     root = root.resolve()
     if not root.is_dir() or len(files) > MAX_FILES:
@@ -98,6 +118,7 @@ def inspect(root: Path, files: list[str]) -> dict:
     findings = []
     consumed = 0
     seen = set()
+    skipped = []
     for name in sorted(files):
         if name in seen:
             continue
@@ -106,62 +127,73 @@ def inspect(root: Path, files: list[str]) -> dict:
             path = relative_file(root, name)
         except (ValueError, OSError, UnicodeError):
             # Preserve useful results for other files. Never follow a symlink.
+            safe_name = name.encode("unicode_escape").decode("ascii")
+            skipped.append({"path": safe_name, "reason": "Unsafe or symlinked tracked path"})
             findings.append({"id": "SKIPPED-UNSAFE-PATH", "severity": "medium",
-                             "path": name.encode("unicode_escape").decode("ascii"),
+                             "path": safe_name,
                              "line": None,
                              "advice": "Tracked path could not be inspected safely; review independently"})
             if len(findings) >= MAX_FINDINGS:
-                return report(findings, len(seen), consumed, truncated=True)
+                return report(findings, len(seen), consumed, truncated=True, skipped=skipped)
             continue
         if not path.is_file():
-            findings.append({"id": "SKIPPED-MISSING-PATH", "severity": "medium", "path": name, "line": None,
-                             "advice": "Tracked path unavailable in working tree; inspect checkout completeness"})
-            if len(findings) >= MAX_FINDINGS:
-                return report(findings, len(seen), consumed, truncated=True)
+            skipped.append({"path": name, "reason": "Tracked path missing or not a regular file"})
             continue
         if path.name.startswith(".env") and path.name not in {".env.example", ".env.sample", ".env.template"}:
             findings.append({"id": "TRACKED-ENV", "severity": "high", "path": name, "line": None,
                 "advice": "A tracked environment file may disclose credentials; inspect privately and rotate exposed values"})
             if len(findings) >= MAX_FINDINGS:
-                return report(findings, len(seen), consumed, truncated=True)
+                return report(findings, len(seen), consumed, truncated=True, skipped=skipped)
             continue
         if path.suffix.lower() in {".pem", ".key", ".p12", ".pfx"}:
             findings.append({"id": "TRACKED-KEY-MATERIAL", "severity": "high", "path": name, "line": None,
                 "advice": "Review whether tracked key or certificate material is private; never expose its contents"})
             if len(findings) >= MAX_FINDINGS:
-                return report(findings, len(seen), consumed, truncated=True)
+                return report(findings, len(seen), consumed, truncated=True, skipped=skipped)
             continue
         if path.suffix.lower() not in SOURCE_EXT:
             continue
-        if path.stat().st_size > MAX_FILE_BYTES:
-            findings.append({"id": "SKIPPED-OVERSIZE-SOURCE", "severity": "medium", "path": name,
-                             "line": None, "advice": "Source exceeds per-file scan limit; inspect independently"})
-            if len(findings) >= MAX_FINDINGS:
-                return report(findings, len(seen), consumed, truncated=True)
+        try:
+            if path.stat().st_size > MAX_FILE_BYTES:
+                skipped.append({"path": name, "reason": "Source file exceeds inspection budget"})
+                continue
+            blob = read_source(path)
+        except OSError:
+            skipped.append({"path": name, "reason": "Source file disappeared or could not be read"})
             continue
-        blob = path.read_bytes()
+        if len(blob) > MAX_FILE_BYTES:
+            skipped.append({"path": name, "reason": "Source file exceeds inspection budget"})
+            continue
         consumed += len(blob)
         if consumed > MAX_TOTAL_BYTES:
             raise ValueError("Source scan byte budget exceeded")
         if b"\0" in blob:
+            skipped.append({"path": name, "reason": "Source file contains NUL bytes"})
             continue
         try:
             body = blob.decode("utf-8")
         except UnicodeDecodeError:
+            skipped.append({"path": name, "reason": "Source file is not UTF-8"})
             continue
-        for number, line in enumerate(body.split("\n"), 1):
+        for number, line in enumerate(body.splitlines(), 1):
             for code, severity, pattern, advice in RULES:
                 if pattern.search(line):
                     findings.append({"id": code, "severity": severity, "path": name, "line": number, "advice": advice})
                     if len(findings) >= MAX_FINDINGS:
-                        return report(findings, len(seen), consumed, truncated=True)
-    return report(findings, len(seen), consumed, truncated=False)
+                        return report(findings, len(seen), consumed, truncated=True, skipped=skipped)
+    return report(findings, len(seen), consumed, truncated=False, skipped=skipped)
 
-def report(findings: list[dict], inspected: int, byte_count: int, truncated: bool) -> dict:
-    return {"schema_version": 1, "status": "WARNINGS_FOUND" if findings else "CLEAR_HEURISTICS_ONLY",
+def report(findings: list[dict], inspected: int, byte_count: int, truncated: bool,
+           skipped: list[dict] | None = None) -> dict:
+    skipped = skipped or []
+    incomplete = bool(truncated or skipped)
+    status = ("INCOMPLETE_SCAN" if incomplete else
+              "WARNINGS_FOUND" if findings else "CLEAR_HEURISTICS_ONLY")
+    return {"schema_version": 1, "status": status,
             "risk_boundary": "Heuristic tracked-source inspection only; not a vulnerability scan, safety proof or approval",
             "inspected_paths": inspected, "inspected_source_bytes": byte_count,
-            "truncated": truncated, "findings": findings}
+            "truncated": truncated, "incomplete": incomplete,
+            "skipped_paths": skipped, "findings": findings}
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
@@ -181,7 +213,7 @@ def main(argv=None):
             with output.open("x", encoding="utf-8") as stream:
                 stream.write(content)
         print(content, end="")
-        return 1 if result["findings"] else 0
+        return 2 if result["incomplete"] else (1 if result["findings"] else 0)
     except (ValueError, OSError, UnicodeError) as exc:
         print(json.dumps({"status": "BLOCKED", "reason": str(exc)}), file=sys.stderr)
         return 2

@@ -11,8 +11,13 @@ from pathlib import Path
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 ID = re.compile(r"[A-Za-z][A-Za-z0-9._-]{0,63}\Z")
 REPO = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
-SECRET = re.compile(r"(?:gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)", re.I)
-SENSITIVE = re.compile(r"(?:password|token|api[_-]?key|private[_-]?key|secret|credential[_-]?value)", re.I)
+SECRET = re.compile(
+    r"(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|"
+    r"(?:AKIA|ASIA)[0-9A-Z]{16}|Bearer\s+\S+|-----BEGIN [A-Z ]*PRIVATE KEY-----|"
+    r"(?:[a-z][a-z0-9+.-]*:)?//[^\s/?#@]+@|[?&](?:access_token|token|api_key|x-amz-signature)=\S+)",
+    re.I,
+)
+SENSITIVE = re.compile(r"(?:password|token|api[_-]?key|private[_-]?key|secret|credential|authorization|cookie)", re.I)
 MAX_INPUT_BYTES = 262144
 MAX_DEPTH = 32
 ROLES = ("delegator", "coordinator", "executor", "integrator", "reviewer", "merge_decider")

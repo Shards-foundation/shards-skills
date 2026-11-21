@@ -252,7 +252,7 @@ class AuthorityPreflightTests(unittest.TestCase):
             module.validate(o)
 
     def test_suspected_secrets_rejected(self):
-        for field in ("api_key", "token", "refresh_token", "accessToken"):
+        for field in ("api_key", "token", "refresh_token", "accessToken", "credentials", "authorization", "cookie"):
             with self.subTest(field=field):
                 o = sample()
                 o["extra"] = {field: "no-real-value"}
@@ -262,6 +262,13 @@ class AuthorityPreflightTests(unittest.TestCase):
         o["task"]["goal"] = "do stuff with ghp_" + "x" * 22
         with self.assertRaisesRegex(ValueError, "Potential sensitive"):
             module.validate(o)
+        for locator in ("https://fixture-user:fixture-pass@example.invalid/receipt",
+                        "https://example.invalid/receipt?access_token=placeholder"):
+            with self.subTest(locator=locator):
+                o = sample()
+                o["evidence"][0]["reference"] = locator
+                with self.assertRaisesRegex(ValueError, "Potential sensitive"):
+                    module.validate(o)
 
     def test_observed_access_with_missing_connector_is_invalid(self):
         o = sample()

@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -60,6 +61,18 @@ def tracked(root: Path) -> list[str]:
     names = proc.stdout.decode("utf-8", errors="surrogateescape").split("\0")
     return [n for n in names if n]
 
+def read_source(path: Path) -> bytes:
+    def open_regular(name, flags):
+        return os.open(name, flags | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+
+    before = path.lstat()
+    with open(path, "rb", opener=open_regular) as stream:
+        opened = os.fstat(stream.fileno())
+        if (not stat.S_ISREG(opened.st_mode) or not os.path.samestat(before, opened)
+                or path.resolve() != path):
+            raise OSError("Source path changed before inspection")
+        return stream.read(MAX_FILE_BYTES + 1)
+
 def inspect(root: Path, files: list[str]) -> dict:
     root = root.resolve()
     if not root.is_dir() or len(files) > MAX_FILES:
@@ -102,10 +115,17 @@ def inspect(root: Path, files: list[str]) -> dict:
             continue
         if path.suffix.lower() not in SOURCE_EXT:
             continue
-        if path.stat().st_size > MAX_FILE_BYTES:
+        try:
+            if path.stat().st_size > MAX_FILE_BYTES:
+                skipped.append({"path": name, "reason": "Source file exceeds inspection budget"})
+                continue
+            blob = read_source(path)
+        except OSError:
+            skipped.append({"path": name, "reason": "Source file disappeared or could not be read"})
+            continue
+        if len(blob) > MAX_FILE_BYTES:
             skipped.append({"path": name, "reason": "Source file exceeds inspection budget"})
             continue
-        blob = path.read_bytes()
         consumed += len(blob)
         if consumed > MAX_TOTAL_BYTES:
             raise ValueError("Source scan byte budget exceeded")

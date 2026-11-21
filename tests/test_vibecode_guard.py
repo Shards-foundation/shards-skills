@@ -157,6 +157,32 @@ class VibeCodeGuardTests(unittest.TestCase):
         with patch.object(guard, "tracked", return_value=["oversized.py"]), patch("sys.stdout"):
             self.assertEqual(guard.main(["--repo", str(self.root)]), 2)
 
+    def test_tracked_env_findings_count_towards_limit(self):
+        names = [f".env.fixture-{i}" for i in range(3)]
+        for name in names:
+            self.file(name, "EXAMPLE=fixture")
+        with patch.object(guard, "MAX_FINDINGS", 2):
+            result = guard.inspect(self.root, names)
+        self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+        self.assertTrue(result["truncated"])
+        self.assertEqual([finding["id"] for finding in result["findings"]], ["TRACKED-ENV"] * 2)
+
+    def test_unreadable_source_preserves_findings_from_other_files(self):
+        unreadable = self.file("a.py", "# unreadable fixture")
+        self.file("b.py", "DEBUG = True")
+        read_source = guard.read_source
+
+        def read(path):
+            if path == unreadable.resolve():
+                raise PermissionError("denied")
+            return read_source(path)
+
+        with patch.object(guard, "read_source", side_effect=read):
+            result = guard.inspect(self.root, ["a.py", "b.py"])
+        self.assertEqual(result["status"], "INCOMPLETE_SCAN")
+        self.assertEqual([entry["path"] for entry in result["skipped_paths"]], ["a.py"])
+        self.assertEqual([finding["id"] for finding in result["findings"]], ["DEPLOYMENT-DEBUG"])
+
     def test_invalid_source_content_must_not_pass(self):
         self.file("nul.py", "a\x00b")
         (self.root / "nonutf8.py").write_bytes(b"\xff\xfe")

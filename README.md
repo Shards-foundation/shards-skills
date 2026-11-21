@@ -26,8 +26,10 @@ python scripts/security_assurance.py plan --system "My application" --profiles w
 python scripts/vibecode_guard.py --repo /path/to/your/app
 ```
 
-The `plan` command returns controls to investigate, not results. The local guard uses
-**0 = no configured patterns found**, **1 = warnings found**, and **2 = blocked input**.
+The `plan` command returns controls to investigate, not results. For a complete
+local scan, **0 = no configured patterns found** and **1 = warnings found**.
+**2 = blocked input or incomplete scan**. Review any reported findings, skipped
+paths and truncation before proceeding.
 A clean run is not an automatic security sign-off. For observed evidence and a
 reproducible assessment, follow [the evidence and assessment walkthrough](docs/security-assurance.md).
 

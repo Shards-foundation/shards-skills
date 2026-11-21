@@ -6,7 +6,12 @@ on:
       - 'skills/trader-*/**'
       - 'third_party/day-trader-skill/**'
       - 'docs/day-trader-skills.md'
-      - 'skills/shards-sec-*/**'
+      - 'skills/shards-*/**'
+      - 'scripts/skill_improver.py'
+      - 'scripts/operating_ledger.py'
+      - 'tests/test_skill_improver.py'
+      - 'tests/test_operating_ledger.py'
+      - 'docs/operating-loop.md'
       - 'catalogue/catalogue.json'
       - 'catalogue/shards-security-controls.json'
       - 'scripts/security_assurance.py'
@@ -44,7 +49,12 @@ on:
       - 'skills/trader-*/**'
       - 'third_party/day-trader-skill/**'
       - 'docs/day-trader-skills.md'
-      - 'skills/shards-sec-*/**'
+      - 'skills/shards-*/**'
+      - 'scripts/skill_improver.py'
+      - 'scripts/operating_ledger.py'
+      - 'tests/test_skill_improver.py'
+      - 'tests/test_operating_ledger.py'
+      - 'docs/operating-loop.md'
       - 'catalogue/catalogue.json'
       - 'catalogue/shards-security-controls.json'
       - 'scripts/security_assurance.py'
@@ -90,7 +100,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Compile Python entry points
-        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/shards_agent_harness.py scripts/search_skills.py scripts/verify_plugins.py scripts/security_assurance.py scripts/vibecode_guard.py scripts/security_skill_eval.py
+        run: python -m py_compile plugins/shards-core/scripts/run.py scripts/run_workflow.py scripts/dispatch_skills.py scripts/shards_agent_harness.py scripts/search_skills.py scripts/verify_plugins.py scripts/security_assurance.py scripts/vibecode_guard.py scripts/security_skill_eval.py scripts/skill_improver.py scripts/operating_ledger.py
       - name: Smoke test security assurance profiles
         run: |
           python scripts/security_assurance.py list

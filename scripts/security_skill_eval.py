@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "evals" / "shards-security-workflows.json"
 MAX_BYTES = 1_000_000
+FROZEN_CASESET_SHA256 = "dc35a4c9891285bf20107cde4976a6b724ed57df925bf01cbb89feeef2abe113"  # update only with an independently reviewed fixture change
 ID = re.compile(r"^[A-Z]{2,4}-(?:POS|NEG|MISS|UNAUTH)$")
 VARIANTS = {"positive", "negative", "missing_input", "unauthorized_action"}
 DECISIONS = {"ASSESS_READ_ONLY", "BLOCK"}
@@ -22,19 +23,30 @@ DECISIONS = {"ASSESS_READ_ONLY", "BLOCK"}
 def fingerprint(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
-def read(path: Path) -> tuple[dict, str]:
+def no_duplicate_keys(pairs: list[tuple[str, object]]) -> dict:
+    output = {}
+    for key, value in pairs:
+        if key in output:
+            raise ValueError("Duplicate JSON object key: " + key)
+        output[key] = value
+    return output
+
+
+def read(path: Path, *, normalize_newlines: bool = False) -> tuple[dict, str]:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_BYTES:
         raise ValueError("Missing, symlinked or oversized JSON file")
     raw = path.read_bytes()
-    obj = json.loads(raw.decode("utf-8"))
+    obj = json.loads(raw.decode("utf-8"), object_pairs_hook=no_duplicate_keys)
     if not isinstance(obj, dict):
         raise ValueError("Expected object")
-    return obj, fingerprint(raw)
+    return obj, fingerprint(raw.replace(b"\r\n", b"\n") if normalize_newlines else raw)
 
 def caseset() -> tuple[dict, str]:
-    doc, hash_value = read(FIXTURE)
+    doc, hash_value = read(FIXTURE, normalize_newlines=True)
+    if hash_value != FROZEN_CASESET_SHA256:
+        raise ValueError("Frozen case-set digest changed; independent review required")
     expected = {"schema_version", "description", "status", "skill_count", "case_count", "variants", "decisions", "cases"}
-    if set(doc) != expected or doc["schema_version"] != 1 or doc["status"] != "unexecuted":
+    if set(doc) != expected or type(doc["schema_version"]) is not int or doc["schema_version"] != 1 or doc["status"] != "unexecuted":
         raise ValueError("Unknown case-set schema")
     cases = doc["cases"]
     if not isinstance(cases, list) or len(cases) != 24 or doc["case_count"] != len(cases):
@@ -67,12 +79,15 @@ def caseset() -> tuple[dict, str]:
         per_skill.setdefault(entry["skill"], set()).add(entry["variant"])
     if len(skills) != doc["skill_count"] or len(skills) != 6 or any(x != VARIANTS for x in per_skill.values()):
         raise ValueError("Each of six skills must include all four variants")
-    if set(doc["variants"]) != VARIANTS or set(doc["decisions"]) != DECISIONS:
-        raise ValueError("Unrecognized evaluator labels")
+    for field, allowed in (("variants", VARIANTS), ("decisions", DECISIONS)):
+        labels = doc[field]
+        if (not isinstance(labels, list) or len(labels) != len(allowed)
+                or any(not isinstance(label, str) for label in labels) or set(labels) != allowed):
+            raise ValueError("Unrecognized evaluator labels")
     return doc, hash_value
 
 def assess_receipts(doc: dict, case_sha: str, payload: dict, payload_sha: str) -> dict:
-    if set(payload) != {"schema_version", "case_set_sha256", "host", "responses"} or payload["schema_version"] != 1:
+    if set(payload) != {"schema_version", "case_set_sha256", "host", "responses"} or type(payload["schema_version"]) is not int or payload["schema_version"] != 1:
         raise ValueError("Receipt schema mismatch")
     if payload["case_set_sha256"] != case_sha:
         raise ValueError("Case set changed; do not compare stale receipts")

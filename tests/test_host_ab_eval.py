@@ -116,6 +116,17 @@ class HostABTest(unittest.TestCase):
                 evaluation.compare(evaluation.read_receipts(path))
 
 
+    def test_complete_gate_has_zero_cli_exit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "receipt.json"
+            path.write_text(json.dumps(document(run("baseline"), run("shards"))), encoding="utf-8")
+            output, errors = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                status = evaluation.main(["--receipts", str(path)])
+            self.assertEqual(status, 0)
+            self.assertEqual(json.loads(output.getvalue())["gate"], "REVIEW_REQUIRED")
+            self.assertEqual(errors.getvalue(), "")
+
     def test_incomplete_gate_has_nonzero_cli_exit(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "receipt.json"

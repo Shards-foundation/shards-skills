@@ -28,8 +28,10 @@ import stat
 import subprocess
 import sys
 from pathlib import Path
+from threading import Timer
 
 MAX_FILES = 3000
+MAX_INDEX_BYTES = 1_000_000
 MAX_FILE_BYTES = 256_000
 MAX_TOTAL_BYTES = 20_000_000
 MAX_FINDINGS = 200
@@ -250,24 +252,45 @@ def symlink_state(root: Path, raw: str) -> dict:
 
 
 def tracked(root: Path) -> list[str]:
+    root = root.resolve()
     try:
-        # Git index reads can invoke core.fsmonitor from local Git config.
-        # Override it, disable optional locks and drop inherited GIT_* overrides.
+        # Disable inherited Git overrides, FS monitors and hooks. Track files
+        # only from the exact checkout root, not a nested path within a repo.
         env = {key: os.environ[key] for key in ("PATH", "HOME", "SYSTEMROOT", "WINDIR", "TMPDIR", "LANG")
                if key in os.environ}
         env.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
                     "GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0"})
-        proc = subprocess.run(
-            ["git", "--no-optional-locks", "-c", "core.fsmonitor=false",
-             "-c", "core.hooksPath=" + os.devnull, "-C", str(root),
-             "ls-files", "-z", "--stage"],
-            capture_output=True, timeout=15, check=False, env=env)
-    except (OSError, subprocess.TimeoutExpired) as exc:
+        top = subprocess.run(
+            ["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-c",
+             "core.hooksPath=" + os.devnull, "-C", str(root), "rev-parse", "--show-toplevel"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15, check=False, env=env,
+        )
+        top_path = Path(top.stdout.removesuffix(b"\n").decode("utf-8", errors="surrogateescape"))
+        if top.returncode or top_path.resolve() != root:
+            raise ValueError("Target must be exact Git repository top-level")
+        with subprocess.Popen(
+            ["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-c",
+             "core.hooksPath=" + os.devnull, "-C", str(root), "ls-files", "-z", "--stage"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env,
+        ) as proc:
+            # The deadline covers both a stalled pipe and process exit.
+            deadline = Timer(15, proc.kill)
+            deadline.start()
+            try:
+                raw = proc.stdout.read(MAX_INDEX_BYTES + 1)
+                if len(raw) > MAX_INDEX_BYTES:
+                    raise ValueError("Git tracked-file index exceeds safe budget")
+                if proc.wait():
+                    raise ValueError("Git index inspection failed or exceeded its deadline")
+            finally:
+                deadline.cancel()
+                deadline.join()
+                if proc.poll() is None:
+                    proc.kill()
+    except (OSError, subprocess.TimeoutExpired, UnicodeError) as exc:
         raise ValueError("Cannot enumerate tracked files") from exc
-    if proc.returncode:
-        raise ValueError("Target is not a readable Git repository")
     names = []
-    for record in proc.stdout.split(b"\0"):
+    for record in raw.split(b"\0"):
         if not record:
             continue
         metadata, name = record.split(b"\t", 1)
@@ -277,7 +300,6 @@ def tracked(root: Path) -> list[str]:
         if mode != b"160000":
             names.append(name.decode("utf-8", errors="surrogateescape"))
     return names
-
 
 def _finding(code, severity, name, line, advice, classification, confidence, reason):
     return {"id": code, "severity": severity, "path": name, "line": line, "advice": advice,

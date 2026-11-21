@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -49,6 +50,40 @@ class SkillDispatchTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "executable changed"):
                 dispatcher.run(plan, executor=executor)
             executor.assert_not_called()
+
+    def test_launch_executes_verified_entry_point_after_file_changes(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            script = Path(directory).resolve() / "check.py"
+            script.write_text('print("verified entry point")\n', encoding="utf-8")
+            with patch.object(dispatcher, "_repository_path", return_value=script):
+                plan = dispatcher.describe("shards-repository-health")
+
+                def change_at_launch(argv, **options):
+                    script.write_text('print("changed entry point")\n', encoding="utf-8")
+                    return subprocess.run(argv, **options)
+
+                receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=change_at_launch)
+        self.assertEqual(receipt["observation"]["status"], "pass", receipt)
+        self.assertEqual(receipt["observation"]["stdout_tail"].strip(), "verified entry point")
+
+    def test_launch_imports_verified_local_module_after_file_changes(self):
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            root = Path(directory).resolve()
+            entry = root / "check.py"
+            dependency = root / "dispatch_skills.py"
+            entry.write_text("from dispatch_skills import LABEL\nprint(LABEL)\n", encoding="utf-8")
+            dependency.write_text('LABEL = "verified module"\n', encoding="utf-8")
+            paths = {"scripts/verify_plugins.py": entry, "scripts/dispatch_skills.py": dependency}
+            with patch.object(dispatcher, "_repository_path", side_effect=paths.__getitem__):
+                plan = dispatcher.describe("shards-skill-dispatch")
+
+                def change_at_launch(argv, **options):
+                    dependency.write_text('LABEL = "changed module"\n', encoding="utf-8")
+                    return subprocess.run(argv, **options)
+
+                receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=change_at_launch)
+        self.assertEqual(receipt["observation"]["status"], "pass", receipt)
+        self.assertEqual(receipt["observation"]["stdout_tail"].strip(), "verified module")
 
     def test_mutated_plan_or_revision_fails_before_subprocess(self):
         plan = dispatcher.describe("shards-repository-health")
@@ -148,7 +183,7 @@ class SkillDispatchTests(unittest.TestCase):
         plan = dispatcher.describe("shards-release-gate")
         def fake(argv, **kwargs):
             return subprocess.CompletedProcess(argv, 1, stdout='{"decision":"HOLD"}', stderr="")
-        receipt = dispatcher.run(plan, executor=fake)
+        receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=fake)
         self.assertEqual(receipt["observation"]["status"], "hold")
         self.assertFalse(receipt["production_verified"])
 

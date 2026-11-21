@@ -61,7 +61,7 @@ class ManualSkillActionTests(unittest.TestCase):
                 plan = dispatcher.describe(skill)
                 self.assertEqual(plan["effect"], "read-only")
                 self.assertEqual(dispatcher._plan_fingerprint(plan), plan["plan_sha256"])
-                receipt = dispatcher.run(plan, executor=fake)
+                receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=fake)
                 self.assertEqual(receipt["observation"]["status"], "pass")
                 self.assertEqual(receipt["plan_sha256"], plan["plan_sha256"])
 

@@ -17,14 +17,13 @@ spec.loader.exec_module(runner)
 class PluginRuntimeTests(unittest.TestCase):
     def test_allowlisted_catalogue(self):
         data = runner.catalogue()
-        self.assertEqual(data["count"], 12)
+        self.assertEqual(data["count"], 13)
         self.assertEqual({x["name"] for x in data["skills"]}, {
             "shards-repository-health", "shards-skill-audit",
             "shards-release-gate", "shards-agent-handoff",
             "shards-automation-operator", "shards-catalogue-sync",
-            "shards-skill-dispatch", "shards-a2a-harness", "shards-dual-channel",
-            "shards-subagents", "shards-parallel-swarm",
-            "shards-execution-contract"})
+            "shards-skill-dispatch", "shards-a2a-harness", "shards-a2a-authority-preflight", "shards-dual-channel",
+            "shards-subagents", "shards-parallel-swarm", "shards-execution-contract"})
 
     def test_manifests(self):
         for name in ("plugin.json", ".claude-plugin/plugin.json",
@@ -99,7 +98,7 @@ class PluginRuntimeTests(unittest.TestCase):
         proc = subprocess.run([sys.executable, str(RUNNER), "catalogue"],
                               text=True, capture_output=True, timeout=15)
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(json.loads(proc.stdout)["count"], 12)
+        self.assertEqual(json.loads(proc.stdout)["count"], 13)
 
     def test_first_party_workflow_adapters(self):
         cases = (

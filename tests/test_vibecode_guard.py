@@ -1,5 +1,6 @@
 """Non-execution and redaction contracts for the Shards vibe-code preflight."""
 import importlib.util
+import io
 import os
 from unittest.mock import patch
 from types import SimpleNamespace
@@ -64,7 +65,7 @@ class VibeCodeGuardTests(unittest.TestCase):
         (self.root / "link.py").symlink_to(original)
         report = guard.inspect(self.root, ["link.py", "real.py"])
         self.assertEqual([x["id"] for x in report["findings"]],
-                         ["SKIPPED-UNSAFE-PATH", "DYNAMIC-EVAL"])
+                         ["SYMLINK-INTERNAL", "DYNAMIC-EVAL"])
 
     def test_unsafe_path_is_recorded_without_aborting(self):
         self.file("safe.py", "eval(input())")
@@ -101,24 +102,38 @@ class VibeCodeGuardTests(unittest.TestCase):
         self.assertFalse(sentinel.exists(), "The untrusted fsmonitor command executed")
 
     def test_non_utf8_git_path_is_retained_for_safe_skip(self):
-        fake = SimpleNamespace(returncode=0, stdout=b"valid.py" + bytes([0]) + b"bad-" + bytes([255]) + b".py" + bytes([0]))
-        with patch.object(guard.subprocess, "run", return_value=fake):
+        metadata = b"100644 " + b"a" * 40 + b" 0\t"
+        raw = metadata + b"valid.py\0" + metadata + b"bad-\xff.py\0"
+        top = SimpleNamespace(returncode=0, stdout=os.fsencode(self.root.resolve()) + b"\n")
+        with patch.object(guard.subprocess, "run", return_value=top) as runner, patch.object(guard.subprocess, "Popen") as launch:
+            process = launch.return_value.__enter__.return_value
+            process.stdout = io.BytesIO(raw)
+            process.wait.return_value = process.poll.return_value = 0
             names = guard.tracked(self.root)
+        runner.assert_called_once()
+        launch.assert_called_once()
         self.assertEqual(len(names), 2)
         self.assertEqual(names[0], "valid.py")
+        self.assertEqual(names[1].encode("utf-8", "surrogateescape"), b"bad-\xff.py")
 
     def test_git_disables_local_fsmonitor_and_untrusted_env(self):
-        fake = SimpleNamespace(returncode=0, stdout=b"")
+        top = SimpleNamespace(returncode=0, stdout=os.fsencode(self.root.resolve()) + b"\n")
         with patch.dict(os.environ, {"GIT_CONFIG_PARAMETERS": "core.fsmonitor=bad",
                                      "GIT_INDEX_FILE": "/tmp/untrusted-index"}):
-            with patch.object(guard.subprocess, "run", return_value=fake) as run:
+            with patch.object(guard.subprocess, "run", return_value=top) as runner, patch.object(guard.subprocess, "Popen") as launch:
+                process = launch.return_value.__enter__.return_value
+                process.stdout = io.BytesIO()
+                process.wait.return_value = process.poll.return_value = 0
                 guard.tracked(self.root)
-        args, kw = run.call_args
-        self.assertIn("core.fsmonitor=false", args[0])
-        self.assertIn("--no-optional-locks", args[0])
-        self.assertEqual(kw["env"]["GIT_CONFIG_NOSYSTEM"], "1")
-        self.assertNotIn("GIT_CONFIG_PARAMETERS", kw["env"])
-        self.assertNotIn("GIT_INDEX_FILE", kw["env"])
+        runner.assert_called_once()
+        launch.assert_called_once()
+        for call in (runner.call_args, launch.call_args):
+            args, kw = call
+            self.assertIn("core.fsmonitor=false", args[0])
+            self.assertIn("--no-optional-locks", args[0])
+            self.assertEqual(kw["env"]["GIT_CONFIG_NOSYSTEM"], "1")
+            self.assertNotIn("GIT_CONFIG_PARAMETERS", kw["env"])
+            self.assertNotIn("GIT_INDEX_FILE", kw["env"])
 
 
     def test_skips_unlisted_extensions(self):
@@ -213,7 +228,8 @@ class VibeCodeGuardTests(unittest.TestCase):
         (self.root / "link.py").symlink_to(original)
         r = guard.inspect(self.root, ["link.py", "real.py"])
         self.assertEqual(r["status"], "INCOMPLETE_SCAN")
-        self.assertEqual([f["id"] for f in r["findings"]], ["SKIPPED-UNSAFE-PATH", "DYNAMIC-EVAL"])
+        self.assertEqual([f["id"] for f in r["findings"]], ["SYMLINK-INTERNAL", "DYNAMIC-EVAL"])
+        self.assertEqual([entry["path"] for entry in r["skipped_paths"]], ["link.py"])
 
     def test_exit_codes_preserve_complete_warning_and_clean(self):
         self.file("warning.py", "request.get(url, verify=False)")

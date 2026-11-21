@@ -20,13 +20,22 @@ VERDICTS = {"pass", "fail", "not_applicable"}
 def sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
+def no_duplicate_keys(pairs: list[tuple[str, object]]) -> dict:
+    output = {}
+    for key, value in pairs:
+        if key in output:
+            raise ValueError("Duplicate JSON object key: " + key)
+        output[key] = value
+    return output
+
+
 def read_json(path: Path) -> tuple[dict, str]:
     if path.is_symlink() or not path.is_file():
         raise ValueError("Input must be a regular non-symlink file")
     if path.stat().st_size > MAX_INPUT_BYTES:
         raise ValueError("Input exceeds size limit")
     raw = path.read_bytes()
-    payload = json.loads(raw.decode("utf-8"))
+    payload = json.loads(raw.decode("utf-8"), object_pairs_hook=no_duplicate_keys)
     if not isinstance(payload, dict):
         raise ValueError("Expected JSON object")
     return payload, sha(raw)
@@ -38,7 +47,7 @@ def require_text(value: object, what: str) -> str:
 
 def registry() -> tuple[dict, str]:
     data, registry_sha = read_json(REGISTRY)
-    if data.get("schema_version") != 1 or not isinstance(data.get("profiles"), list) or not isinstance(data.get("controls"), list):
+    if type(data.get("schema_version")) is not int or data["schema_version"] != 1 or not isinstance(data.get("profiles"), list) or not isinstance(data.get("controls"), list) or not data["controls"]:
         raise ValueError("Unsupported control registry")
     profiles = data["profiles"]
     if not profiles or "base" not in profiles or any(not isinstance(p, str) or not p.isidentifier() for p in profiles) or len(profiles) != len(set(profiles)):
@@ -80,7 +89,7 @@ def plan(data: dict, registry_sha: str, system: str, profiles: str) -> dict:
             "note": "Proposed control checklist only; no tests performed, no compliance established."}
 
 def assess(data: dict, registry_sha: str, payload: dict, input_sha: str) -> dict:
-    if set(payload) != {"schema_version", "scope", "observations"} or payload["schema_version"] != 1:
+    if set(payload) != {"schema_version", "scope", "observations"} or type(payload["schema_version"]) is not int or payload["schema_version"] != 1:
         raise ValueError("Assessment must contain exactly schema_version, scope, observations")
     scope = payload["scope"]
     if not isinstance(scope, dict) or set(scope) != {"system", "owner", "jurisdictions", "revision", "environment", "authorised_scope", "profiles"}:
@@ -135,8 +144,8 @@ def assess(data: dict, registry_sha: str, payload: dict, input_sha: str) -> dict
             counts["reported_pass"] += 1
         results.append({"id": c["id"], "severity": c["severity"], "title": c["title"],
                         "status": status, "reason": cause,
-                        "evidence_reference": item["reference"] if item else None,
-                        "observed_revision": item["revision"] if item else None})
+                        "evidence_reference": require_text(item["reference"], "reference") if item else None,
+                        "observed_revision": require_text(item["revision"], "revision") if item else None})
     # An external reviewer must independently validate sources and jurisdiction.
     verdict = "REVIEW_READY_NOT_CERTIFIED" if not counts["blocked"] and not counts["fail"] else "HOLD"
     # Preserve the assessed owner, environment and authorisation boundary with every verdict.

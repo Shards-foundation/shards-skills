@@ -4,8 +4,8 @@ The four candidate skills draw on the first-party recovery workflows. Their nati
 
 ## Installation
 - Codex native CLI, IDE or desktop users can check out this repository with `.agents/skills/` intact or copy each complete skill directory into `~/.agents/skills/`.
-- For an OpenHands validation trial, pin the checkout to a reviewed commit. The individual source directories at that revision are `.agents/skills/shards-native-agent-handoff`, `.agents/skills/shards-native-context-recovery`, `.agents/skills/shards-native-progress-control` and `.agents/skills/shards-native-a2a-self-preservation`. For example, the handoff source URL is `https://github.com/Shards-foundation/shards-skills/tree/<reviewed-commit>/.agents/skills/shards-native-agent-handoff`. Confirm each skill in the host's list before using it.
-- Codex CLI `0.172.0-alpha.2` discovered all four repository skill IDs in an offline `skills/list` check. The curated handoff fixture was also discovered with its own ID in the same isolated check. OpenHands discovery requires validation on that host.
+- For OpenHands, pin the checkout to a reviewed commit and open that checkout as the project. OpenHands discovers [project skills in `.agents/skills/`](https://docs.openhands.dev/overview/skills). Each candidate lives in `.agents/skills/<skill-id>/` using the IDs above. Confirm the four names in the host's available skills before using them.
+- Codex CLI `0.172.0-alpha.2` found all four candidates and the distinct curated handoff ID in an offline `skills/list` check. The OpenHands SDK `1.63.1` project skill loader also found all four and their descriptions in an offline check. These checks exercised discovery without running a model.
 
 ## Hardening performed
 - Context recovery works with missing Shards-specific operating ledger by marking unknowns.

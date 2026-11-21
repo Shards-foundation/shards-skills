@@ -25,11 +25,12 @@ bytes on stdin (`--input -`). The dispatcher rechecks the path, file digest, arg
 descriptor, executable and revision before launching the child. A missing revision
 or mismatched digest exits 2. Regenerate older file-input plans before use.
 
-The CLI requires `--expect-plan-sha256` for all file-input operations, local
-writes, maintenance runs and release gates. Generate the plan with the same
-options and retain its digest after reviewing it. Other read-only commands
-accept an optional digest. Source trees inspected by a workflow and scripts
-launched by a secondary runner remain outside the explicit JSON input digest.
+File-input operations, local writes, maintenance runs and release gates require
+a reviewed digest through `--expect-plan-sha256` or the Python entry point's
+`expect_plan_sha256` argument. Generate the plan with the same options and
+retain its digest after reviewing it. Other read-only commands accept an
+optional digest. Source trees inspected by a workflow and scripts launched by
+a secondary runner remain outside the explicit JSON input digest.
 
 A release check may yield HOLD and a nonzero CLI exit code; this is an expected gate outcome.
 

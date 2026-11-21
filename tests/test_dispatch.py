@@ -148,7 +148,7 @@ class SkillDispatchTests(unittest.TestCase):
         plan = dispatcher.describe("shards-release-gate")
         def fake(argv, **kwargs):
             return subprocess.CompletedProcess(argv, 1, stdout='{"decision":"HOLD"}', stderr="")
-        receipt = dispatcher.run(plan, executor=fake)
+        receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=fake)
         self.assertEqual(receipt["observation"]["status"], "hold")
         self.assertFalse(receipt["production_verified"])
 

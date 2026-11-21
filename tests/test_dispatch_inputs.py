@@ -43,7 +43,7 @@ class DispatchInputTests(unittest.TestCase):
             self.source.write_text(json.dumps(dict(self.record, goal="later")), encoding="utf-8")
             return subprocess.run(argv, **kwargs)
 
-        receipt = dispatcher.run(plan, executor=replace_at_launch)
+        receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=replace_at_launch)
         self.assertEqual(receipt["observation"]["status"], "pass", receipt)
         self.assertEqual(json.loads(self.target.read_bytes())["checkpoint"], self.record)
         self.assertEqual(receipt["input_sha256"], plan["input_sha256"])
@@ -60,7 +60,7 @@ class DispatchInputTests(unittest.TestCase):
                 output_dir.symlink_to(outside, target_is_directory=True)
                 return subprocess.run(argv, **kwargs)
 
-            receipt = dispatcher.run(plan, executor=redirect_at_launch)
+            receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=redirect_at_launch)
             self.assertEqual(receipt["observation"]["status"], "fail", receipt)
             self.assertEqual(list(Path(outside).iterdir()), [])
 
@@ -84,4 +84,12 @@ class DispatchInputTests(unittest.TestCase):
                                "--execute"], text=True, capture_output=True)
         self.assertEqual(proc.returncode, 2, proc.stdout)
         self.assertIn("--expect-plan-sha256", proc.stderr)
+        self.assertFalse(self.target.exists())
+
+    def test_consequential_api_requires_separately_reviewed_digest(self):
+        plan = self.handoff()
+        for digest, message in ((None, "--expect-plan-sha256"), ("f" * 64, "does not match")):
+            with self.subTest(digest=digest), self.assertRaisesRegex(ValueError, message):
+                dispatcher.run(plan, expect_plan_sha256=digest,
+                               executor=lambda *args, **kwargs: self.fail("executed"))
         self.assertFalse(self.target.exists())

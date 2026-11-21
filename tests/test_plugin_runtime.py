@@ -108,6 +108,21 @@ class PluginRuntimeTests(unittest.TestCase):
                 self.assertEqual(json.loads(path.read_bytes()), {"original": True})
                 self.assertEqual(list(path.parent.iterdir()), [path])
 
+    def test_dispatched_output_stages_complete_checkpoint_before_publication(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            path = root / ".shards" / "state" / "output.json"
+            link = runner.os.link
+
+            def observe_publication(source, target, **kwargs):
+                self.assertFalse(path.exists())
+                self.assertEqual(json.loads(Path(source).read_bytes()), {"verified": True})
+                return link(source, target, **kwargs)
+
+            with patch.object(Path, "cwd", return_value=root), patch.object(runner.os, "link", observe_publication):
+                runner.publish_dispatched_checkpoint(path, '{"verified":true}')
+            self.assertEqual(json.loads(path.read_bytes()), {"verified": True})
+
     def test_cli_catalogue(self):
         proc = subprocess.run([sys.executable, str(RUNNER), "catalogue"],
                               text=True, capture_output=True, timeout=15)

@@ -244,8 +244,16 @@ def describe(skill_id: str, *, target_skill: str | None = None,
     plan["plan_sha256"] = _plan_fingerprint(plan)
     return plan
 
-def run(plan: dict, *, executor=None) -> dict:
+def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> dict:
     input_data = _check_plan_integrity(plan)
+    requires_pin = ("input_file" in plan or plan["effect"] != "read-only"
+                    or plan["skill"] == "shards-release-gate")
+    if requires_pin and expect_plan_sha256 is None:
+        raise ValueError("This operation requires --expect-plan-sha256 from a reviewed plan")
+    if expect_plan_sha256 is not None:
+        expected = expect_plan_sha256.lower() if isinstance(expect_plan_sha256, str) else ""
+        if not re.fullmatch(r"[0-9a-f]{64}", expected) or not hmac.compare_digest(expected, plan["plan_sha256"]):
+            raise ValueError("Reviewed plan SHA-256 does not match current execution plan")
     if executor is None:
         executor = subprocess.run
     env = {key: value for key, value in os.environ.items() if key in
@@ -322,16 +330,7 @@ def main(argv=None) -> int:
             return 0
         if not args.execute:
             raise ValueError("Run requires --execute; use plan first")
-        requires_pin = ("input_file" in plan or plan["effect"] != "read-only"
-                        or plan["skill"] == "shards-release-gate")
-        if requires_pin and args.expect_plan_sha256 is None:
-            raise ValueError("This operation requires --expect-plan-sha256 from a reviewed plan")
-        if args.expect_plan_sha256 is not None:
-            expected = args.expect_plan_sha256.lower()
-            if not re.fullmatch(r"[0-9a-f]{64}", expected) or not hmac.compare_digest(
-                    expected, plan["plan_sha256"]):
-                raise ValueError("Reviewed plan SHA-256 does not match current execution plan")
-        receipt = run(plan)
+        receipt = run(plan, expect_plan_sha256=args.expect_plan_sha256)
         if args.save_receipt:
             receipt["report_path"] = str(persist(receipt))
         print(json.dumps(receipt, indent=2))

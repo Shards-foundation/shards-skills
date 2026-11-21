@@ -123,3 +123,19 @@ jobs:
         run: python scripts/search_skills.py --query "repository health" --status curated --limit 3
       - name: Exercise repository health
         run: python plugins/shards-core/scripts/run.py repository-health --repo .
+
+  dispatch-windows:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify dispatcher inputs and atomic checkpoint publication
+        run: |
+          python -m unittest discover -s tests -p test_dispatch_inputs.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s tests -p test_plugin_runtime.py -k test_dispatched_output -v

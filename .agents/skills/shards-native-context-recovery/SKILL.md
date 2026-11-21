@@ -1,5 +1,5 @@
 ---
-name: shards-context-recovery
+name: shards-native-context-recovery
 description: "Use after context compaction, agent replacement or sandbox loss to reconstruct what is verified, reported, pending and next without replaying completed work."
 license: MIT
 compatibility: "Portable instruction-only workflow; runs without repository-specific AGENTS.md or operating ledger."
@@ -18,9 +18,9 @@ Original human objective and constraints (if available), task/owner IDs, source 
 2. **Recover source identity:** enumerate target repository/branch/40-hex SHA and available artifact hashes. Verify source by ref only if it materially affects the next decision; branch/review state is mutable. Never silently change pinned targets.
 3. **Inventory evidence:** mark each item `OBSERVED`, `REPORTED_ONLY`, `SYNTHETIC`, `NOT_AVAILABLE` or `STALE`. Count of receipts without bytes/IDs is only `REPORTED_ONLY`.
 4. **Reconcile progress in three distinct lanes:** `executed` (action or test actually ran), `adjudicated` (result independently evaluated), `exported` (artifact durably available to receiver). Do not infer one from another.
-5. **Choose reuse/refetch/rerun/hold:** defer to `shards-a2a-self-preservation` if present, otherwise compare source digest, dependencies and typed locators. A missing previous sandbox does not automatically justify rerunning a side-effecting operation.
+5. **Choose reuse/refetch/rerun/hold:** defer to `shards-native-a2a-self-preservation` if present, otherwise compare source digest, dependencies and typed locators. A missing previous sandbox does not automatically justify rerunning a side-effecting operation.
 6. **Output one next authorised action** and blocker/owner. Do not silently broaden the task or start unrelated work.
-7. **Checkpoint when possible:** use `shards-agent-handoff` if installed, otherwise return the same fields as JSON or structured Markdown. Missing integration is a known limitation, not grounds to invent completed work.
+7. **Checkpoint when possible:** use `shards-native-agent-handoff` if installed, otherwise return the same fields as JSON or structured Markdown. Missing integration is a known limitation, not grounds to invent completed work.
 
 ## No-ledger fallback
 If `AGENTS.md`, `docs/operating-loop.md` or an operating ledger are unavailable, build a **partial recovery record** from the actual checkpoint and source observations. Keep unresolved fields as `UNKNOWN`; list missing sources separately. Do not fail just because a Shards repository-specific document is absent. Do not claim original tests were run because a later report mentions them.

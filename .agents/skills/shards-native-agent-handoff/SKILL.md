@@ -1,5 +1,5 @@
 ---
-name: shards-agent-handoff
+name: shards-native-agent-handoff
 description: "Use when transferring an interrupted or partially completed task to another AI agent or session: validate a portable, evidence-linked, authority-scoped recovery checkpoint without granting permissions."
 license: MIT
 compatibility: "Python 3.11+ for optional offline schema validator; advisory handoff possible without execution."

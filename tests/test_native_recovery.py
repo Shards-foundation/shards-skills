@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-VALIDATOR=ROOT/'.agents/skills/shards-agent-handoff/scripts/validate.py'
+VALIDATOR=ROOT/'.agents/skills/shards-native-agent-handoff/scripts/validate.py'
 SAMPLE=ROOT/'fixtures/valid-multi-target.json'
 MOD=runpy.run_path(str(VALIDATOR))
 validate=MOD['validate']
@@ -158,6 +158,14 @@ class ShardsNativeRecovery(unittest.TestCase):
     def test_all_skills_native_frontmatter_and_scope(self):
         p=list((ROOT/'.agents/skills').glob('*/SKILL.md'))
         self.assertEqual(len(p),4)
+        native_names = {path.parent.name for path in p}
+        self.assertEqual(native_names, {
+            'shards-native-agent-handoff', 'shards-native-context-recovery',
+            'shards-native-progress-control', 'shards-native-a2a-self-preservation',
+        })
+        shipped_paths = [*ROOT.glob('skills/*/SKILL.md'),
+                         *ROOT.glob('plugins/shards-core/skills/*/SKILL.md')]
+        self.assertTrue(native_names.isdisjoint(path.parent.name for path in shipped_paths))
         for x in p:
             t=x.read_text()
             self.assertTrue(t.startswith('---\n'))

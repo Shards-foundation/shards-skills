@@ -1,5 +1,5 @@
 ---
-name: shards-progress-control
+name: shards-native-progress-control
 description: "Use on multi-step agent tasks to detect no-evidence loops, unnecessary repeated SHA checks and retry churn; record the smallest next action with a bounded evidence-gain budget."
 license: MIT
 compatibility: "Portable instruction-only workflow; no ledger or host-specific runtime required."

@@ -42,6 +42,26 @@ HARNESS_SKILLS = frozenset({
     "shards-subagents", "shards-parallel-swarm",
 })
 
+# The interpreter receives the verified entry point and optional input together.
+# Restore script-mode argv and imports without reopening the entry-point pathname.
+SOURCE_LAUNCHER = """
+import io
+import os
+import sys
+
+stream = sys.stdin.buffer
+source_size = int.from_bytes(stream.read(8), 'big')
+source = stream.read(source_size)
+if len(source) != source_size:
+    raise SystemExit('Incomplete verified script payload')
+sys.stdin = io.TextIOWrapper(io.BytesIO(stream.read()), encoding='utf-8')
+sys.argv = sys.argv[1:]
+__file__ = sys.argv[0]
+sys.path[0] = os.path.dirname(__file__)
+exec(compile(source, __file__, 'exec'), globals())
+"""
+LAUNCHER_SHA256 = hashlib.sha256(SOURCE_LAUNCHER.encode("utf-8")).hexdigest()
+
 def timestamp() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -81,8 +101,8 @@ def _state_file(raw: str, *, must_exist: bool) -> Path:
         raise ValueError("Checkpoint output already exists")
     return path
 
-def _input_bytes(path: Path) -> bytes:
-    """Read once from a bounded regular file, rejecting links in the checkout path."""
+def _read_regular_bytes(path: Path) -> bytes:
+    """Read a bounded regular file without following links in the checkout path."""
     limit = 2_000_000  # Largest supported checkpoint; consumers enforce their own limits.
     if os.open in os.supports_dir_fd and hasattr(os, "O_NOFOLLOW"):
         directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
@@ -99,18 +119,79 @@ def _input_bytes(path: Path) -> bytes:
     else:
         # On platforms without relative directory FDs, check before opening and recheck before reading.
         if not stat.S_ISREG(path.lstat().st_mode):
-            raise ValueError("Checkpoint input must be a regular file")
+            raise ValueError("Dispatch source must be a regular file")
         stream = path.open("rb")
     with stream:
         info = os.fstat(stream.fileno())
         if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
-            raise ValueError("Checkpoint input must be a bounded regular file")
+            raise ValueError("Dispatch source must be a bounded regular file")
         if path != path.resolve() or not os.path.samestat(info, path.lstat()):
-            raise ValueError("Checkpoint input changed during open")
+            raise ValueError("Dispatch source changed during open")
         data = stream.read(limit + 1)
         if len(data) > limit:
-            raise ValueError("Checkpoint input exceeds byte limit")
+            raise ValueError("Dispatch source exceeds byte limit")
         return data
+
+def _publish_checkpoint(path: Path, data: bytes) -> str | None:
+    """Publish complete bytes from private staging without overwriting the destination."""
+    directory = staging_fd = None
+    staging = path.parent / (".handoff-" + uuid.uuid4().hex)
+    target = path
+    created_directory = created_file = published = False
+    cleanup_warning = None
+    try:
+        if {os.open, os.mkdir, os.link, os.unlink, os.rmdir}.issubset(os.supports_dir_fd) and hasattr(os, "O_NOFOLLOW"):
+            flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+            directory = os.open(ROOT, flags)
+            for part in path.parent.relative_to(ROOT).parts:
+                try:
+                    child = os.open(part, flags, dir_fd=directory)
+                except FileNotFoundError:
+                    try:
+                        os.mkdir(part, mode=0o700, dir_fd=directory)
+                    except FileExistsError:
+                        pass
+                    child = os.open(part, flags, dir_fd=directory)
+                os.close(directory)
+                directory = child
+            staging, target = Path(staging.name), Path(path.name)
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            _state_file(str(path), must_exist=False)
+
+        os.mkdir(staging, mode=0o700, dir_fd=directory)
+        created_directory = True
+        source = staging / "checkpoint.json"
+        if directory is not None:
+            staging_fd = os.open(staging, flags, dir_fd=directory)
+            info = os.fstat(staging_fd)
+            if info.st_uid != os.geteuid() or stat.S_IMODE(info.st_mode) & 0o077:
+                raise ValueError("Checkpoint staging directory is not private")
+            source = Path(source.name)
+
+        fd = os.open(source, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600, dir_fd=staging_fd)
+        created_file = True
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(data)
+        if directory is None:
+            _state_file(str(path), must_exist=False)
+        os.link(source, target, src_dir_fd=staging_fd, dst_dir_fd=directory)
+        published = True
+    finally:
+        try:
+            if created_file:
+                os.unlink(source, dir_fd=staging_fd)
+            if created_directory:
+                os.rmdir(staging, dir_fd=directory)
+        except OSError:
+            if published:
+                cleanup_warning = "Checkpoint published. Private staging cleanup failed."
+        finally:
+            if staging_fd is not None:
+                os.close(staging_fd)
+            if directory is not None:
+                os.close(directory)
+    return cleanup_warning
 
 def _check_descriptor(skill_id: str) -> None:
     skill = CORE / "skills" / skill_id
@@ -131,14 +212,16 @@ def _source_revision() -> str | None:
 
 def _plan_fingerprint(plan: dict) -> str:
     """Stable digest of the command and effects the operator actually reviewed."""
-    fields = ("skill", "effect", "command", "script_sha256", "commit", "timeout_seconds")
+    fields = ("skill", "effect", "command", "script_sha256", "launcher_sha256", "commit", "timeout_seconds")
     payload = {key: plan[key] for key in fields}
     if "input_file" in plan:
         payload.update(input_file=plan["input_file"], input_sha256=plan.get("input_sha256"))
+    if "output_file" in plan:
+        payload["output_file"] = plan["output_file"]
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
-def _check_plan_integrity(plan: dict) -> bytes | None:
+def _check_plan_integrity(plan: dict) -> tuple[bytes, bytes]:
     """Fail closed if a reviewed plan, trusted script or checkout changed."""
     skill = plan.get("skill")
     if not isinstance(skill, str) or skill not in REGISTRY:
@@ -166,10 +249,8 @@ def _check_plan_integrity(plan: dict) -> bytes | None:
             raise ValueError("Audit command shape is invalid")
         expected_args = ["--path", str(_selected_skill(Path(args[1]).name))]
     elif skill == "shards-agent-handoff":
-        if len(args) != 4 or args[0] != "--input" or args[2] != "--output":
-            raise ValueError("Handoff command shape is invalid")
-        expected_args = ["--input", "-",
-                         "--output", str(_state_file(args[3], must_exist=False))]
+        _state_file(plan.get("output_file"), must_exist=False)
+        expected_args = ["--input", "-"]
     elif skill == "shards-automation-operator":
         if len(args) != 2 or args[0] != "--workflow" or args[1] not in (
                 "quick", "weekly", "verify"):
@@ -181,10 +262,15 @@ def _check_plan_integrity(plan: dict) -> bytes | None:
         expected_args = []
     if command != [sys.executable, str(script), operation] + expected_args:
         raise ValueError("Execution plan command differs from curated registry")
-    digest = hashlib.sha256(script.read_bytes()).hexdigest()
+    if "output_file" in plan and skill != "shards-agent-handoff":
+        raise ValueError("Unexpected output in execution plan")
+    source = _read_regular_bytes(script)
+    digest = hashlib.sha256(source).hexdigest()
     expected_script = plan.get("script_sha256")
     if not isinstance(expected_script, str) or not hmac.compare_digest(digest, expected_script):
         raise ValueError("Trusted executable changed since planning")
+    if plan.get("launcher_sha256") != LAUNCHER_SHA256:
+        raise ValueError("Dispatcher launcher changed since planning")
     if not plan.get("commit"):
         raise ValueError("Repository revision unavailable for execution")
     if plan.get("commit") != _source_revision():
@@ -195,13 +281,13 @@ def _check_plan_integrity(plan: dict) -> bytes | None:
         raise ValueError("Execution plan changed since planning")
     if "--input" in expected_args:
         path = _state_file(plan.get("input_file"), must_exist=True)
-        data = _input_bytes(path)
+        data = _read_regular_bytes(path)
         if hashlib.sha256(data).hexdigest() != plan.get("input_sha256"):
             raise ValueError("Reviewed input changed since planning")
-        return data
+        return source, data
     if "input_file" in plan or "input_sha256" in plan:
         raise ValueError("Unexpected input in execution plan")
-    return None
+    return source, b""
 
 def describe(skill_id: str, *, target_skill: str | None = None,
              profile: str = "quick", input_file: str | None = None,
@@ -222,8 +308,7 @@ def describe(skill_id: str, *, target_skill: str | None = None,
     elif skill_id == "shards-agent-handoff":
         if not allow_local_write:
             raise ValueError("Handoff requires --allow-local-write")
-        cmd.extend(["--input", "-",
-                    "--output", str(_state_file(output_file, must_exist=False))])
+        cmd.extend(["--input", "-"])
     elif skill_id == "shards-automation-operator":
         if profile not in ("quick", "weekly", "verify"):
             raise ValueError("Only named maintenance profiles can run")
@@ -235,17 +320,23 @@ def describe(skill_id: str, *, target_skill: str | None = None,
         cmd.append("--execute")
         timeout = 420
     plan = {"skill": skill_id, "effect": effect, "command": cmd,
-            "script_sha256": hashlib.sha256(script.read_bytes()).hexdigest(),
+            "script_sha256": hashlib.sha256(_read_regular_bytes(script)).hexdigest(),
+            "launcher_sha256": LAUNCHER_SHA256,
             "commit": _source_revision(), "timeout_seconds": timeout,
             "approved_by": "host-required", "executed": False}
     if "--input" in cmd:
         path = _state_file(input_file, must_exist=True)
-        plan.update(input_file=str(path), input_sha256=hashlib.sha256(_input_bytes(path)).hexdigest())
+        plan.update(input_file=str(path), input_sha256=hashlib.sha256(_read_regular_bytes(path)).hexdigest())
+    if skill_id == "shards-agent-handoff":
+        plan["output_file"] = str(_state_file(output_file, must_exist=False))
     plan["plan_sha256"] = _plan_fingerprint(plan)
     return plan
 
 def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> dict:
-    input_data = _check_plan_integrity(plan)
+    plan = dict(plan)
+    if isinstance(plan.get("command"), list):
+        plan["command"] = plan["command"].copy()
+    source, input_data = _check_plan_integrity(plan)
     requires_pin = ("input_file" in plan or plan["effect"] != "read-only"
                     or plan["skill"] == "shards-release-gate")
     if requires_pin and expect_plan_sha256 is None:
@@ -262,9 +353,10 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
     env["PYTHONUTF8"] = "1"
     started = timestamp()
     try:
-        options = {"text": True} if input_data is None else {"input": input_data}
-        proc = executor(plan["command"], cwd=str(ROOT), env=env, capture_output=True,
-                        timeout=plan["timeout_seconds"], check=False, **options)
+        command = [sys.executable, "-c", SOURCE_LAUNCHER, *plan["command"][1:]]
+        payload = len(source).to_bytes(8, "big") + source + input_data
+        proc = executor(command, cwd=str(ROOT), env=env, capture_output=True,
+                        timeout=plan["timeout_seconds"], check=False, input=payload)
         stdout_text = proc.stdout.decode("utf-8", "replace") if isinstance(proc.stdout, bytes) else proc.stdout
         stderr_text = proc.stderr.decode("utf-8", "replace") if isinstance(proc.stderr, bytes) else proc.stderr
         stdout = SECRET.sub("[REDACTED]", stdout_text)[-4000:]
@@ -278,16 +370,29 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
                 pass
         observed = {"status": status, "exit_code": proc.returncode,
                     "stdout_tail": stdout, "stderr_tail": stderr}
+        if status == "pass" and "output_file" in plan:
+            report = json.loads(stdout_text)
+            if (not isinstance(report, dict) or report.get("workflow") != "handoff"
+                    or report.get("status") != "VALIDATED" or not isinstance(report.get("checkpoint"), dict)):
+                raise ValueError("Child did not return a validated checkpoint")
+            try:
+                destination = _state_file(plan["output_file"], must_exist=False)
+                warning = _publish_checkpoint(destination, stdout_text.encode("utf-8"))
+                if warning:
+                    observed["warning"] = warning
+            except (OSError, ValueError) as exc:
+                observed.update(status="fail", error=str(exc))
     except subprocess.TimeoutExpired:
         observed = {"status": "timeout", "exit_code": None,
                     "error": "Process exceeded timeout"}
     except OSError as exc:
         observed = {"status": "error", "exit_code": None, "error": type(exc).__name__}
-    pinned = {key: plan[key] for key in ("input_file", "input_sha256") if key in plan}
+    pinned = {key: plan[key] for key in ("input_file", "input_sha256", "output_file") if key in plan}
     return {**pinned, "receipt_id": str(uuid.uuid4()), "skill": plan["skill"],
             "effect": plan["effect"], "commit": plan["commit"],
             "plan_sha256": plan["plan_sha256"],
-            "script_sha256": plan["script_sha256"], "command": plan["command"],
+            "script_sha256": plan["script_sha256"], "launcher_sha256": plan["launcher_sha256"],
+            "command": plan["command"],
             "started_at": started, "finished_at": timestamp(), "executed": True,
             "observation": observed, "production_verified": False}
 

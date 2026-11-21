@@ -1,5 +1,6 @@
 """The dispatcher binds explicit JSON input bytes to the reviewed plan."""
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -48,7 +49,7 @@ class DispatchInputTests(unittest.TestCase):
         self.assertEqual(json.loads(self.target.read_bytes())["checkpoint"], self.record)
         self.assertEqual(receipt["input_sha256"], plan["input_sha256"])
 
-    def test_child_refuses_redirected_output_directory(self):
+    def test_dispatcher_refuses_redirected_output_directory(self):
         output_dir = self.target.parent / "output"
         output_dir.mkdir()
         self.options["output_file"] = str(output_dir / self.target.name)
@@ -63,6 +64,46 @@ class DispatchInputTests(unittest.TestCase):
             receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=redirect_at_launch)
             self.assertEqual(receipt["observation"]["status"], "fail", receipt)
             self.assertEqual(list(Path(outside).iterdir()), [])
+
+    def test_timeout_never_publishes_checkpoint(self):
+        plan = self.handoff()
+
+        def timeout(argv, **kwargs):
+            raise subprocess.TimeoutExpired(argv, kwargs["timeout"])
+
+        receipt = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"], executor=timeout)
+        self.assertEqual(receipt["observation"]["status"], "timeout")
+        self.assertFalse(self.target.exists())
+
+    def test_output_is_create_only_in_both_publication_modes(self):
+        for fallback in (False, True):
+            with self.subTest(fallback=fallback):
+                path = self.target.with_name(f"output-{fallback}.json")
+                support = set() if fallback else os.supports_dir_fd
+                with patch.object(os, "supports_dir_fd", support):
+                    dispatcher._publish_checkpoint(path, b'{"original":true}')
+                    with self.assertRaises((FileExistsError, ValueError)):
+                        dispatcher._publish_checkpoint(path, b'{"replacement":true}')
+                self.assertEqual(json.loads(path.read_bytes()), {"original": True})
+                self.assertFalse(list(path.parent.glob(".handoff-*")))
+
+    def test_complete_output_is_staged_before_publication(self):
+        link = os.link
+        staged_payloads = []
+
+        def observe_publication(source, target, *, src_dir_fd, dst_dir_fd):
+            self.assertFalse(self.target.exists())
+            with os.fdopen(os.open(source, os.O_RDONLY, dir_fd=src_dir_fd), "rb") as stream:
+                staged_payloads.append(json.load(stream))
+            return link(source, target, src_dir_fd=src_dir_fd, dst_dir_fd=dst_dir_fd)
+
+        support = os.supports_dir_fd
+        if link in support:
+            support = (support - {link}) | {observe_publication}
+        with patch.object(os, "link", observe_publication), patch.object(os, "supports_dir_fd", support):
+            dispatcher._publish_checkpoint(self.target, b'{"verified":true}')
+        self.assertEqual(staged_payloads, [{"verified": True}])
+        self.assertEqual(json.loads(self.target.read_bytes()), {"verified": True})
 
     def test_unknown_revision_refuses_execution(self):
         with patch.object(dispatcher, "_source_revision", return_value=None):

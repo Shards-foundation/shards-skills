@@ -12,12 +12,57 @@ from dispatch_skills import REGISTRY
 
 ROOT = Path(__file__).resolve().parents[1]
 TOKENS = re.compile(r"[a-z0-9]+")
+# Explicitly prohibited actions are constraints, not positive evidence of a
+# skill the agent should select. Strip bounded negative clauses only from
+# relevance scoring; retain the original task in the output. This is a
+# conservative lexical heuristic, NOT a semantic intent classifier.
+NEGATED_CLAUSE = re.compile(
+    # Retain a positive instruction after "but", "and then", "instead",
+    # punctuation, or a newline rather than swallowing the whole task.
+    r"\b(?:do\s+not|don['’]t|dont|never|without)\b"
+    r"[^,;.!?\n]*?(?=\b(?:but|and\s+then|instead|then)\b|[,;.!?\n]|$)",
+    re.IGNORECASE,
+)
 NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 VALID_STATUSES = {"draft", "review", "verified", "deprecated"}
 
 
 def words(value: str) -> set[str]:
     return set(TOKENS.findall(value.lower()))
+
+
+# Common task prose is not useful evidence of skill relevance.
+# Use conservative, deterministic inflection reduction; never execute skill code.
+STOPWORDS = set(
+    "a an the in on at to for of is are was were with into when by from and or "
+    "but without not no do does dont should have has had this that those these "
+    "who which your my me us our it its all any as before after just only please "
+    "there what how would could can".split()
+)
+
+
+def normalized_words(value: str) -> set[str]:
+    result = set()
+    for token in words(value):
+        # Short technical abbreviations (CI, AI, UI, Go) are meaningful even
+        # when a query also contains longer words. Remove only stopwords.
+        if token in STOPWORDS:
+            continue
+        if token.endswith("ies") and len(token) > 4:
+            result.add(token[:-3] + "y")
+        elif token.endswith("ing") and len(token) > 6:
+            stem = token[:-3]
+            result.update((stem, stem + "e"))
+        elif token.endswith("ed") and len(token) > 5:
+            stem = token[:-2]
+            result.update((stem, stem + "e"))
+        elif token.endswith("es") and len(token) > 4:
+            result.update((token[:-1], token[:-2]))
+        elif token.endswith("s") and len(token) > 3:
+            result.add(token[:-1])
+        else:
+            result.add(token)
+    return result
 
 
 def catalogue_entries(root: Path = ROOT) -> list[dict]:
@@ -92,10 +137,26 @@ def curated_entries(root: Path = ROOT) -> list[dict]:
 
 def rank(entries: list[dict], query: str, *, category: str | None = None,
          status: str | None = None) -> list[dict]:
-    query_tokens = words(query)
-    if not query_tokens:
+    if not words(query):
         raise ValueError("Query must contain at least one letter or number")
-    phrase = " ".join(query.lower().split())
+    # For example, "import skills; do not connect a broker" is an import
+    # task, not an instruction to invoke a broker skill. If a request has
+    # only negative instructions, recommend no skill.
+    negated_clauses = NEGATED_CLAUSE.findall(query)
+    positive_query = NEGATED_CLAUSE.sub(" ", query)
+    if not words(positive_query):
+        return []
+    query_tokens = normalized_words(positive_query)
+    raw_fallback = not query_tokens
+    if raw_fallback:
+        query_tokens = words(positive_query)
+    term_words = words if raw_fallback else normalized_words
+    # Prevent a weak leftover word such as "trading" from resurfacing a
+    # specifically prohibited broker skill under --limit or --category.
+    # Preserve explicitly requested targets: "audit broker code; don't
+    # execute orders" still contains a positive "broker" reference.
+    negative_tokens = set().union(*(term_words(clause) for clause in negated_clauses))
+    excluded_name_tokens = negative_tokens - query_tokens
     ranked = []
     for item in entries:
         if category and item["category"] != category:
@@ -103,12 +164,14 @@ def rank(entries: list[dict], query: str, *, category: str | None = None,
         if status and item["status"] != status:
             continue
         name = item["name"].replace("-", " ").lower()
+        if excluded_name_tokens & term_words(name):
+            continue
         desc = item["description"].lower()
-        hits_name = len(query_tokens & words(name))
-        hits_desc = len(query_tokens & words(desc))
-        hits_cat = len(query_tokens & words(item["category"]))
-        score = (12 * (phrase in name) + 6 * (phrase in desc) +
-                 6 * hits_name + 2 * hits_desc + 2 * hits_cat)
+        hits_name = len(query_tokens & term_words(name))
+        hits_desc = len(query_tokens & term_words(desc))
+        hits_cat = len(query_tokens & term_words(item["category"]))
+        # Short skill names are high-signal; generic prose overlap is not.
+        score = 10 * hits_name + 4 * hits_desc + 2 * hits_cat
         if score == 0:
             continue
         ranked.append({**item, "score": score})

@@ -2,7 +2,170 @@
 
 **A security-aware, cross-agent skills library for engineering, research, design, security, data, AI agents, blockchain, and operations.**
 
-> Status: curated mega-library release candidate. Shards-authored and imported packages are clearly separated by provenance and review status; third-party content is not silently treated as first-party.
+> **Usable now:** First-party skills are written procedures that an agent can read and apply immediately. The `draft` metadata records the limits of independent host-level evaluation; it does **not** disable use. The Python preflight and assurance tools run locally. Imported skills remain separate and subject to their own provenance reviews.
+
+## Install across Codex, Claude, Cursor, OpenClaw, Hermes and other agents
+
+**[Universal install and host compatibility guide](docs/portable-agent-skills.md)** — use the maintained
+`npx skills` installer for supported coding agents, or create a self-contained ZIP
+with SHA-256 receipt for a platform that offers manual skill upload. Do **not**
+bulk-install the mixed catalogue: first-party, curated and third-party imports
+carry different trust and execution boundaries.
+
+```bash
+npx skills add Shards-foundation/shards-skills --skill systematic-debugging -a codex -a claude-code -a cursor --copy -y
+npx skills list
+```
+
+For Android-only operators, the **Portable Agent Skills ZIP** GitHub Action
+provides a manual, no-local-Python export of seven reviewed instruction-only
+first-party skills. ZIP structural validity is not proof of host discovery,
+execution or measurable usefulness.
+
+## Get a useful result — no paid AI credits required
+
+This repository has **two distinct capabilities**: instructions for agents (the
+`skills/` catalogue) and **eleven curated workflows with executable entrypoints**
+under `plugins/shards-core/`. Finding an imported skill does not authorise
+running its scripts. The list of catalogue skills is not a count of tested agents.
+
+From a local checkout with Python 3.11+:
+
+```bash
+# 1. Discover a candidate for an actual task (does not run imported code).
+python scripts/search_skills.py --query "check repository health" --status curated --limit 3
+
+# 2. Run a useful read-only check on a Git repository you own.
+python plugins/shards-core/scripts/run.py repository-health --repo /path/to/your/project
+
+# 3. Measure whether natural-language tasks retrieve relevant skills.
+python scripts/agent_adoption_eval.py
+```
+
+For an Android-only operator with no local Python, the existing
+[Run Curated Shards Skill](docs/manual-skill-runs.md) GitHub Action runs reviewed
+read-only checks and provides JSON receipts. To see skill matches rather than
+run one, use [Search Shards Skill Catalogue](docs/skill-discovery.md).
+
+To use an **instruction-only** skill with an agent, provide its
+`skills/<name>/SKILL.md` and the project task. The agent must actually read it
+and produce task evidence; simply listing or selecting a skill is not
+proof of execution. [Agent adoption evidence](docs/agent-adoption.md) records
+the retrieval and host-verification boundaries. See the
+[first-party applied-task evidence](docs/first-party-skill-task-evidence.md)
+for a real repository defect, red-to-green tests, and explicit limits on
+what the original Shards skills have demonstrated.
+
+## Use Shards Security Skills now
+
+**No certification or special agent integration is required to start using the workflows.**
+For any ChatGPT or Claude session that can read this repository, give the agent the specific `SKILL.md` file and your owned project context. Example:
+
+> Read [shards-sec-vibecoding-gate](skills/shards-sec-vibecoding-gate/SKILL.md) and apply its workflow to my authorised web-app repository. Show actual findings, missing evidence and next changes. Don't claim tests ran unless you executed them.
+
+If your agent cannot open GitHub, paste or upload the individual `SKILL.md` file. A skill describes **how** to perform work; it is not executable code and does not require a privileged dispatcher entry.
+
+For hands-on local checks on a repository you own, run these commands in a terminal:
+
+```bash
+git clone https://github.com/Shards-foundation/shards-skills.git
+cd shards-skills
+
+# Select an assessment checklist appropriate for your app:
+python scripts/security_assurance.py plan --system "My application" --profiles web,ai
+
+# Inspect your OWN local code for selected risky patterns without running the app:
+python scripts/vibecode_guard.py --repo /path/to/your/app
+```
+
+The `plan` command returns controls to investigate, not results. The local guard uses
+**0 = no configured patterns found**, **1 = warnings found**, and **2 = blocked input**.
+A clean run is not an automatic security sign-off. For observed evidence and a
+reproducible assessment, follow [the evidence and assessment walkthrough](docs/security-assurance.md).
+
+**What is ready today:** 25 structured security workflows, 45 reference controls,
+an offline planning/evidence CLI and a bounded local preflight, all committed to
+`main`. **What is not claimed:** automatic full-stack scanning, independently
+validated performance on every agent host, regulatory certification, or a
+guarantee that an application has no vulnerabilities. Those are separate
+properties, not prerequisites to reading and applying the skills.
+
+## Shards Foundation first-party skills
+
+**Shards-authored workflows, not imported prompt packs.** Our first-party skills are intended to help humans and AI agents do verifiable work with less ambiguity. Each one has a defined trigger, ordered procedure, output requirements, evidence expectations and stop conditions. **Draft** means documented and under test; it is not production certification or an endorsement by NIST, OWASP or a regulator.
+
+**Start here if you are vibe-coding:** [Secure AI-built applications](skills/shards-sec-vibecoding-gate/SKILL.md) · [Security intake](skills/shards-sec-intake/SKILL.md) · [Identity and access](skills/shards-sec-identity-access/SKILL.md) · [API assurance](skills/shards-sec-web-api/SKILL.md) · [Privacy screening](skills/shards-sec-privacy-dpia/SKILL.md). Generate a read-only checklist with:
+
+```bash
+python scripts/security_assurance.py list
+python scripts/security_assurance.py plan --system "My application" --profiles web,ai
+```
+
+For beginners with their own Git checkout, the **read-only local preflight** flags a small set of dangerous coding patterns without running the application or printing secret values:
+
+```bash
+python scripts/vibecode_guard.py --repo .
+```
+
+A clean heuristic result is **not** a security audit. [Preflight limitations and workflow](docs/security-assurance.md).
+
+The offline [assurance CLI](scripts/security_assurance.py) draws from [45 versioned Shards controls](catalogue/shards-security-controls.json) spanning eight profiles. It does **not** automatically test a running app or certify security. See the [operator guide](docs/security-assurance.md) and [source/version register](docs/security-frameworks.md).
+
+### Shards Security & Governance Suite — 25 first-party workflows
+
+| Domain | Shards skill | What an agent produces |
+| --- | --- | --- |
+| Scope | [shards-sec-intake](skills/shards-sec-intake/SKILL.md) | Authorised boundary, asset owner and explicit stop conditions |
+| Vibe coding | [shards-sec-vibecoding-gate](skills/shards-sec-vibecoding-gate/SKILL.md) | Secure-build checklist, negative tests, fail-closed release recommendation |
+| Enterprise | [shards-sec-business-threat-model](skills/shards-sec-business-threat-model/SKILL.md) | Risk-ranked business threat model and control owners |
+| Identity | [shards-sec-identity-access](skills/shards-sec-identity-access/SKILL.md) | Role/access matrix and cross-tenant denial tests |
+| Keys | [shards-sec-secrets-keys](skills/shards-sec-secrets-keys/SKILL.md) | Secret lifecycle and redacted rotation evidence |
+| AppSec | [shards-sec-web-api](skills/shards-sec-web-api/SKILL.md) | API, session, webhook and multi-tenant assurance |
+| Cloud | [shards-sec-cloud-devsecops](skills/shards-sec-cloud-devsecops/SKILL.md) | Least-privilege cloud and CI review |
+| Supply chain | [shards-sec-supply-chain](skills/shards-sec-supply-chain/SKILL.md) | Dependency provenance and SBOM review |
+| Vulnerabilities | [shards-sec-vulnerability-management](skills/shards-sec-vulnerability-management/SKILL.md) | Exploitability-informed remediation and regression evidence |
+| Response | [shards-sec-incident-response](skills/shards-sec-incident-response/SKILL.md) | Evidence-preserving incident and recovery plan |
+| Detection | [shards-sec-detection-response](skills/shards-sec-detection-response/SKILL.md) | Event coverage, alert drill and responder ownership |
+| Human safety | [shards-sec-human-fraud](skills/shards-sec-human-fraud/SKILL.md) | Phishing, AI-impersonation and payment-fraud defence |
+| Privacy | [shards-sec-privacy-dpia](skills/shards-sec-privacy-dpia/SKILL.md) | Data-flow and DPIA screening record |
+| Governance | [shards-sec-governance-policy](skills/shards-sec-governance-policy/SKILL.md) | Policy lifecycle, approval and exception controls |
+| Jurisdictions | [shards-sec-jurisdiction-scope](skills/shards-sec-jurisdiction-scope/SKILL.md) | Jurisdiction/applicability research matrix for legal review |
+| Compliance | [shards-sec-compliance-evidence](skills/shards-sec-compliance-evidence/SKILL.md) | Control-to-evidence register with explicit gaps |
+| Vendors | [shards-sec-third-party-risk](skills/shards-sec-third-party-risk/SKILL.md) | Supplier assurance, exit and concentration risks |
+| Resilience | [shards-sec-resilience-recovery](skills/shards-sec-resilience-recovery/SKILL.md) | Business continuity and measured restore evidence |
+| Fintech | [shards-sec-fintech-payments](skills/shards-sec-fintech-payments/SKILL.md) | Funds-flow, transaction authorisation and reconciliation checks |
+| Crypto | [shards-sec-crypto-custody](skills/shards-sec-crypto-custody/SKILL.md) | Wallet custody, signing and recovery gates |
+| Blockchain | [shards-sec-defi-protocol](skills/shards-sec-defi-protocol/SKILL.md) | Smart contract, oracle, bridge and DeFi risk evidence |
+| Agents | [shards-sec-ai-agent-boundaries](skills/shards-sec-ai-agent-boundaries/SKILL.md) | Tool permissions, external enforcement and agent identity checks |
+| Jailbreaks | [shards-sec-prompt-injection](skills/shards-sec-prompt-injection/SKILL.md) | Prompt-injection and data-poisoning regression tests |
+| Ethical testing | [shards-sec-authorized-testing](skills/shards-sec-authorized-testing/SKILL.md) | Scoped defensive rules of engagement and findings |
+| Crypto compliance | [shards-sec-crypto-fincrime](skills/shards-sec-crypto-fincrime/SKILL.md) | FATF/VASP/AML applicability issues and review ownership |
+
+### Existing curated Shards Core skills — eleven runnable local workflows
+
+| Purpose | Curated skill |
+| --- | --- |
+| Repository health | `shards-repository-health` |
+| First-party and imported skill assessment | `shards-skill-audit` |
+| Release evidence gate | `shards-release-gate` |
+| Agent handoff | `shards-agent-handoff` |
+| Safe automated maintenance | `shards-automation-operator` |
+| Catalogue reconciliation | `shards-catalogue-sync` |
+| Reviewed dispatch and receipts | `shards-skill-dispatch` |
+| Local A2A-oriented checks | `shards-a2a-harness` |
+| Control/data channel separation | `shards-dual-channel` |
+| Bounded delegated sub-agent checks | `shards-subagents` |
+| Read-only concurrent swarm | `shards-parallel-swarm` |
+
+These live in `plugins/shards-core/skills/`, not `skills/shards-sec-*/`. They use the [governed dispatcher](docs/skill-dispatch.md); the new security suite is **not** automatically granted dispatcher execution. Agent prompts do not substitute for host permission enforcement.
+
+### Existing Shards-authored foundation skills
+
+[problem-framing](skills/problem-framing/SKILL.md) · [implementation-planning](skills/implementation-planning/SKILL.md) · [systematic-debugging](skills/systematic-debugging/SKILL.md) · [test-driven-development](skills/test-driven-development/SKILL.md) · [code-review](skills/code-review/SKILL.md) · [secure-code-review](skills/secure-code-review/SKILL.md) · [threat-modeling](skills/threat-modeling/SKILL.md) · [skill-supply-chain-audit](skills/skill-supply-chain-audit/SKILL.md) · [smart-contract-review](skills/smart-contract-review/SKILL.md) · [release-readiness](skills/release-readiness/SKILL.md) · [incident-runbook](skills/incident-runbook/SKILL.md) · [agent-system-design](skills/agent-system-design/SKILL.md) · [tool-contract-design](skills/tool-contract-design/SKILL.md) · [evidence-based-research](skills/evidence-based-research/SKILL.md) · [reproducible-data-analysis](skills/reproducible-data-analysis/SKILL.md) · [frontend-accessibility-review](skills/frontend-accessibility-review/SKILL.md) · [web-application-testing](skills/web-application-testing/SKILL.md) · [writing-skill-packages](skills/writing-skill-packages/SKILL.md).
+
+**Separate pending work:** the ten operating-loop skills (task contract, context recovery, tool selection, progress control, evidence verification, review resolution, learning capture, skill evaluation, controlled updates and host compatibility) are in [PR #16](https://github.com/Shards-foundation/shards-skills/pull/16), not yet merged into `main`. They are **not** represented as installed or available on the main branch. The security suite is already merged into `main`; the ten operating-loop skills remain a separate pending change.
+
+Third-party packages retain their own licences and their review-stage status. Discovery is not authorisation. For current counts, use `catalogue/catalogue.json`; any examples and totals on a branch describe that branch only.
 
 ## Goals
 
@@ -86,7 +249,7 @@ Original first-party content is licensed under MIT unless a file states otherwis
 
 ## Curated mega-library
 
-The bootstrap collection has been expanded into a curated catalogue of **304 skill packages** across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 14 upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
+The bootstrap collection has been expanded into a curated catalogue of **329 skill packages** across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 14 upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
 
 Imported packages are not silently treated as first-party. Each one is marked `review`, includes its immutable upstream commit and original path in frontmatter, and contains an `UPSTREAM.md` record. Package-level provenance is indexed in [`catalogue/imported-skills.json`](catalogue/imported-skills.json), with preserved source notices under [`third_party/`](third_party/).
 

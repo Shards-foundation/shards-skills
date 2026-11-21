@@ -172,19 +172,19 @@ class AuthorityPreflightTests(unittest.TestCase):
         o["evidence"][1]["revision"] = "b" * 40
         self.assertIn("CAPABILITY_EVIDENCE_MISSING_OR_STALE", module.validate(o)["blockers"][0]["reasons"])
 
-    def test_write_policy_requires_nontrivial_gate(self):
-        o = sample()
-        o["actions"][0]["actor"] = "integrator-agent"
-        o["actions"][0]["operation"] = "git.push"
+    def test_write_policy_requires_a_scoped_observation(self):
+        o = self.push_claim()
+        action = o["actions"][0]
+        action["policy"] = "NOT_APPLICABLE"
         with self.assertRaisesRegex(ValueError, "policy gate"):
             module.validate(o)
-        o["actions"][0]["policy"] = "UNKNOWN"
+        action["policy"] = "UNKNOWN"
         self.assertIn("POLICY_UNKNOWN", module.validate(o)["blockers"][0]["reasons"])
-        o["actions"][0]["policy"] = "VERIFIED"
-        self.assertIn("POLICY_EVIDENCE_MISSING_OR_STALE", module.validate(o)["blockers"][0]["reasons"])
-        o["evidence"].append({"id":"policy-1","kind":"policy","reference":"local:synthetic-policy","revision":"a"*40,"observed_by":"integrator-agent"})
-        o["actions"][0]["evidence_ids"].append("policy-1")
-        self.assertEqual(module.validate(o)["decision"], "HOLD")
+        action["policy"] = "VERIFIED"
+        o["evidence"][2]["subject_actor"] = "executor-agent"
+        result = module.validate(o)
+        self.assertEqual(result["decision"], "HOLD")
+        self.assertEqual(result["blockers"][0]["reasons"], ["POLICY_EVIDENCE_MISSING_OR_STALE"])
 
     def test_review_and_merge_roles_enforced(self):
         o = sample()
@@ -238,10 +238,12 @@ class AuthorityPreflightTests(unittest.TestCase):
             module.validate(o)
 
     def test_suspected_secrets_rejected(self):
-        o = sample()
-        o["extra"] = {"api_key": "no-real-value"}
-        with self.assertRaisesRegex(ValueError, "Potential sensitive"):
-            module.validate(o)
+        for field in ("api_key", "token", "refresh_token", "accessToken"):
+            with self.subTest(field=field):
+                o = sample()
+                o["extra"] = {field: "no-real-value"}
+                with self.assertRaisesRegex(ValueError, "Potential sensitive"):
+                    module.validate(o)
         o = sample()
         o["task"]["goal"] = "do stuff with ghp_" + "x" * 22
         with self.assertRaisesRegex(ValueError, "Potential sensitive"):
@@ -263,7 +265,7 @@ class AuthorityPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate actor/operation"):
             module.validate(o)
 
-    def test_cli_exit_codes_and_no_remote_side_effects(self):
+    def test_cli_exit_codes_and_output_contract(self):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d)/"authority.json"
             p.write_text(json.dumps(sample()), encoding="utf-8")

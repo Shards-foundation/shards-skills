@@ -166,6 +166,16 @@ class ReviewerRegressionTests(unittest.TestCase):
         self.assertEqual(report["status"], "INCOMPLETE_SCAN")
         self.assertEqual([item["path"] for item in report["skipped_paths"]], ["invalid.py"])
 
+    def test_python_with_utf8_bom_is_parsed_in_both_scan_modes(self):
+        with tempfile.TemporaryDirectory() as location:
+            root = Path(location)
+            (root / "source.py").write_text("print('hello')\n", encoding="utf-8-sig")
+            for triage in (True, False):
+                with self.subTest(triage=triage):
+                    report = guard.inspect(root, ["source.py"], triage=triage)
+                    self.assertEqual(report["status"], "CLEAR_HEURISTICS_ONLY")
+                    self.assertEqual(report["skipped_paths"], [])
+
     def test_tracked_certificate_extensions_require_review(self):
         with tempfile.TemporaryDirectory() as location:
             root = Path(location)

@@ -501,7 +501,7 @@ def inspect(root: Path, files: list[str], triage: bool = True) -> dict:
             skipped.append({"path": name, "reason": "Source file contains NUL bytes"})
             continue
         try:
-            body = blob.decode("utf-8")
+            body = blob.decode("utf-8-sig")
         except UnicodeDecodeError:
             skipped.append({"path": name, "reason": "Source file is not UTF-8"})
             continue

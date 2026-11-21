@@ -3,7 +3,7 @@
   "name": "Shards Skills",
   "version": "0.1.0",
   "status": "bootstrap",
-  "skill_count": 334,
+  "skill_count": 335,
   "categories": [
     "agents",
     "blockchain",
@@ -306,6 +306,7 @@
     "skills/shards-a2a-conditional-offer",
     "skills/shards-a2a-leakage-audit",
     "skills/shards-a2a-self-preservation",
+    "skills/shards-restore-recover",
     "skills/shards-sec-ai-agent-boundaries",
     "skills/shards-sec-authorized-testing",
     "skills/shards-sec-business-threat-model",
@@ -2661,6 +2662,14 @@
       "name": "shards-a2a-self-preservation",
       "path": "skills/shards-a2a-self-preservation",
       "description": "Preserve valid task evidence and continuity on agent resumption by re-fetching unchanged results instead of needlessly re-running work.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-restore-recover",
+      "path": "skills/shards-restore-recover",
+      "description": "Use when an AI agent or A2A task is interrupted, rate-limited, restarted, handed off, or loses context; reconcile durable work and resume from the smallest verified safe step without inventing state or repeating external effects.",
       "category": "agents",
       "status": "draft",
       "version": "0.1.0"

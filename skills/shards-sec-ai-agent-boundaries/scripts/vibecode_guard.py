@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""Read-only, heuristic checks for tracked local source. Never executes project code."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import stat
+import subprocess
+import sys
+from pathlib import Path
+from threading import Timer
+
+MAX_FILES = 3000
+MAX_INDEX_BYTES = 1_000_000
+MAX_FILE_BYTES = 256_000
+MAX_TOTAL_BYTES = 20_000_000
+MAX_FINDINGS = 200
+SOURCE_EXT = {".js", ".jsx", ".ts", ".tsx", ".py", ".sql", ".tf", ".yml", ".yaml", ".toml", ".json"}
+RULES = [
+    ("TLS-VERIFY-DISABLED", "high", re.compile(r"\bverify\s*=\s*False\b|rejectUnauthorized\s*:\s*false\b", re.I), "Review TLS certificate verification; this may permit interception"),
+    ("DYNAMIC-EVAL", "medium", re.compile(r"(?<![\w.])eval\s*\("), "Dynamic code evaluation requires a trusted input boundary"),
+    ("WEAK-YAML-LOADER", "high", re.compile(r"\byaml\.load\s*\([^\n]*\bLoader\s*=\s*yaml\.(?:Loader|UnsafeLoader)"), "Unsafe deserialisation of untrusted YAML may enable code execution"),
+    ("CI-WRITE-ALL", "high", re.compile(r"\bpermissions\s*:\s*write-all\b", re.I), "Broad CI permissions require least-privilege review"),
+    ("POTENTIAL-PUBLIC-CORS", "medium", re.compile(r"allow_origins\s*=\s*\[\s*['\"]\*['\"]\s*\]|(?:origin|Access-Control-Allow-Origin)\s*[:=,]\s*['\"]\*['\"]", re.I), "Wildcard CORS should be reviewed against authentication and credential use"),
+    ("DEPLOYMENT-DEBUG", "medium", re.compile(r"(?<![\w])DEBUG\s*=\s*True\b"), "Development debugging must not be exposed in production"),
+    ("PERMISSIVE-RLS", "medium", re.compile(r"\bUSING\s*\(\s*true\s*\)", re.I), "Permissive database row policy may expose tenant data"),
+]
+
+def relative_file(root: Path, raw: str) -> Path:
+    rel = Path(raw)
+    if not raw or rel.is_absolute() or ".." in rel.parts or raw.startswith("-") or any(ord(c) < 32 for c in raw):
+        raise ValueError("Unsafe tracked path")
+    cursor = root
+    for part in rel.parts:
+        cursor = cursor / part
+        if cursor.is_symlink():
+            raise ValueError("Symlinked tracked path blocked")
+    path = cursor.resolve()
+    if not path.is_relative_to(root.resolve()):
+        raise ValueError("Tracked path escapes repository")
+    return path
+
+def tracked(root: Path) -> list[str]:
+    root = root.resolve()
+    try:
+        # Disable inherited Git overrides, FS monitors and hooks. Track files
+        # only from the exact checkout root, not a nested path within a repo.
+        env = {key: os.environ[key] for key in ("PATH", "HOME", "SYSTEMROOT", "WINDIR", "TMPDIR", "LANG")
+               if key in os.environ}
+        env.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                    "GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0"})
+        top = subprocess.run(
+            ["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-c",
+             "core.hooksPath=" + os.devnull, "-C", str(root), "rev-parse", "--show-toplevel"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15, check=False, env=env,
+        )
+        top_path = Path(top.stdout.removesuffix(b"\n").decode("utf-8", errors="surrogateescape"))
+        if top.returncode or top_path.resolve() != root:
+            raise ValueError("Target must be exact Git repository top-level")
+        with subprocess.Popen(
+            ["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-c",
+             "core.hooksPath=" + os.devnull, "-C", str(root), "ls-files", "-z", "--stage"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env,
+        ) as proc:
+            # The deadline covers both a stalled pipe and process exit.
+            deadline = Timer(15, proc.kill)
+            deadline.start()
+            try:
+                raw = proc.stdout.read(MAX_INDEX_BYTES + 1)
+                if len(raw) > MAX_INDEX_BYTES:
+                    raise ValueError("Git tracked-file index exceeds safe budget")
+                if proc.wait():
+                    raise ValueError("Git index inspection failed or exceeded its deadline")
+            finally:
+                deadline.cancel()
+                deadline.join()
+                if proc.poll() is None:
+                    proc.kill()
+    except (OSError, subprocess.TimeoutExpired, UnicodeError) as exc:
+        raise ValueError("Cannot enumerate tracked files") from exc
+    names = []
+    for record in raw.split(b"\0"):
+        if not record:
+            continue
+        metadata, name = record.split(b"\t", 1)
+        mode, _, stage = metadata.split()
+        if stage != b"0":
+            raise ValueError("Unmerged entries in Git index")
+        if mode != b"160000":
+            names.append(name.decode("utf-8", errors="surrogateescape"))
+    return names
+
+def read_source(path: Path) -> bytes:
+    def open_regular(name, flags):
+        return os.open(name, flags | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+
+    def version(info):
+        return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+    before = path.lstat()
+    with open(path, "rb", opener=open_regular) as stream:
+        opened = os.fstat(stream.fileno())
+        if (not stat.S_ISREG(opened.st_mode) or version(before) != version(opened)
+                or path.resolve() != path):
+            raise OSError("Source path changed before inspection")
+        data = stream.read(MAX_FILE_BYTES + 1)
+        if (version(os.fstat(stream.fileno())) != version(opened)
+                or version(path.lstat()) != version(opened) or path.resolve() != path):
+            raise OSError("Source changed during inspection")
+        return data
+
+def inspect(root: Path, files: list[str]) -> dict:
+    root = root.resolve()
+    if not root.is_dir() or len(files) > MAX_FILES:
+        raise ValueError("Invalid repository or too many tracked paths")
+    findings = []
+    consumed = 0
+    seen = set()
+    skipped = []
+    for name in sorted(files):
+        if name in seen:
+            continue
+        seen.add(name)
+        try:
+            path = relative_file(root, name)
+        except (ValueError, OSError, UnicodeError):
+            # Preserve useful results for other files. Never follow a symlink.
+            safe_name = name.encode("unicode_escape").decode("ascii")
+            skipped.append({"path": safe_name, "reason": "Unsafe or symlinked tracked path"})
+            findings.append({"id": "SKIPPED-UNSAFE-PATH", "severity": "medium",
+                             "path": safe_name,
+                             "line": None,
+                             "advice": "Tracked path could not be inspected safely; review independently"})
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True, skipped=skipped)
+            continue
+        if not path.is_file():
+            skipped.append({"path": name, "reason": "Tracked path missing or not a regular file"})
+            continue
+        if path.name.startswith(".env") and path.name not in {".env.example", ".env.sample", ".env.template"}:
+            findings.append({"id": "TRACKED-ENV", "severity": "high", "path": name, "line": None,
+                "advice": "A tracked environment file may disclose credentials; inspect privately and rotate exposed values"})
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True, skipped=skipped)
+            continue
+        if path.suffix.lower() in {".pem", ".key", ".p12", ".pfx"}:
+            findings.append({"id": "TRACKED-KEY-MATERIAL", "severity": "high", "path": name, "line": None,
+                "advice": "Review whether tracked key or certificate material is private; never expose its contents"})
+            if len(findings) >= MAX_FINDINGS:
+                return report(findings, len(seen), consumed, truncated=True, skipped=skipped)
+            continue
+        if path.suffix.lower() not in SOURCE_EXT:
+            continue
+        try:
+            if path.stat().st_size > MAX_FILE_BYTES:
+                skipped.append({"path": name, "reason": "Source file exceeds inspection budget"})
+                continue
+            blob = read_source(path)
+        except OSError:
+            skipped.append({"path": name, "reason": "Source file disappeared or could not be read"})
+            continue
+        if len(blob) > MAX_FILE_BYTES:
+            skipped.append({"path": name, "reason": "Source file exceeds inspection budget"})
+            continue
+        consumed += len(blob)
+        if consumed > MAX_TOTAL_BYTES:
+            raise ValueError("Source scan byte budget exceeded")
+        if b"\0" in blob:
+            skipped.append({"path": name, "reason": "Source file contains NUL bytes"})
+            continue
+        try:
+            body = blob.decode("utf-8")
+        except UnicodeDecodeError:
+            skipped.append({"path": name, "reason": "Source file is not UTF-8"})
+            continue
+        for number, line in enumerate(body.splitlines(), 1):
+            for code, severity, pattern, advice in RULES:
+                if pattern.search(line):
+                    findings.append({"id": code, "severity": severity, "path": name, "line": number, "advice": advice})
+                    if len(findings) >= MAX_FINDINGS:
+                        return report(findings, len(seen), consumed, truncated=True, skipped=skipped)
+    return report(findings, len(seen), consumed, truncated=False, skipped=skipped)
+
+def report(findings: list[dict], inspected: int, byte_count: int, truncated: bool,
+           skipped: list[dict] | None = None) -> dict:
+    skipped = skipped or []
+    incomplete = bool(truncated or skipped)
+    status = ("INCOMPLETE_SCAN" if incomplete else
+              "WARNINGS_FOUND" if findings else "CLEAR_HEURISTICS_ONLY")
+    return {"schema_version": 1, "status": status,
+            "risk_boundary": "Heuristic tracked-source inspection only; not a vulnerability scan, safety proof or approval",
+            "inspected_paths": inspected, "inspected_source_bytes": byte_count,
+            "truncated": truncated, "incomplete": incomplete,
+            "skipped_paths": skipped, "findings": findings}
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repo", default=".")
+    parser.add_argument("--output")
+    args = parser.parse_args(argv)
+    try:
+        root = Path(args.repo)
+        if root.is_symlink() or not root.is_dir():
+            raise ValueError("Repository path must be a directory, not symlink")
+        result = inspect(root, tracked(root.resolve()))
+        content = json.dumps(result, indent=2) + "\n"
+        if args.output:
+            output = Path(args.output)
+            if output.is_symlink():
+                raise ValueError("Symlinked output rejected")
+            with output.open("x", encoding="utf-8") as stream:
+                stream.write(content)
+        print(content, end="")
+        return 2 if result["incomplete"] else (1 if result["findings"] else 0)
+    except (ValueError, OSError, UnicodeError) as exc:
+        print(json.dumps({"status": "BLOCKED", "reason": str(exc)}), file=sys.stderr)
+        return 2
+
+if __name__ == "__main__":
+    raise SystemExit(main())

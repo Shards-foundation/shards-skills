@@ -166,8 +166,9 @@ def test_seeded_defects_and_credential_under_tests(tmp_path):
 
 
 def test_private_key_block_under_tests_is_not_suppressed(tmp_path):
+    # The rule detects an opening marker. No key material is needed in the fixture.
     repo = make_repo(tmp_path / "r", {
-        "tests/fixtures/key.py": 'K = """-----BEGIN RSA PRIVATE KEY-----\nMIIE\n-----END RSA PRIVATE KEY-----"""\n',
+        "tests/fixtures/key.py": 'K = "-----BEGIN RSA PRIVATE KEY-----"\n',
     })
     code, payload, err = run_guard(repo)
     assert payload is not None, err
@@ -180,7 +181,7 @@ def test_private_key_block_under_tests_is_not_suppressed(tmp_path):
 def test_key_in_fixture_dir_but_referenced_by_production_stays_actionable(tmp_path):
     """A test-path certificate referenced from non-test source must never be suppressed."""
     repo = make_repo(tmp_path / "r", {
-        "tests/certs/valid/server/server.key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADAN\n-----END PRIVATE KEY-----\n",
+        "tests/certs/valid/server/server.key": "Placeholder for filename and reference checks\n",
         "tests/certs/valid/server/server.pem": "-----BEGIN CERTIFICATE-----\nMIID\n-----END CERTIFICATE-----\n",
         "src/client.py": 'KEY = "tests/certs/valid/server/server.key"\n',
     })

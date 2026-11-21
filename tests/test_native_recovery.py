@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import runpy
+import stat
 import subprocess
 import sys
 import tempfile
@@ -309,6 +310,27 @@ class ShardsNativeRecovery(unittest.TestCase):
                 warnings = MOD['write_checkpoint'](output, b'checkpoint')
             self.assertEqual(output.read_bytes(), b'checkpoint')
             self.assertIn('cleanup failed', warnings[0])
+
+    @unittest.skipUnless(os.link in os.supports_dir_fd, 'requires anchored output')
+    def test_sync_staged_file_before_link_and_destination_after_link(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp).resolve() / 'receipt.json'
+            events = []
+            real_link, real_fsync = os.link, os.fsync
+
+            def track_link(source, destination, **kwargs):
+                events.append('link')
+                return real_link(source, destination, **kwargs)
+
+            def track_sync(fd):
+                events.append('directory sync' if stat.S_ISDIR(os.fstat(fd).st_mode) else 'file sync')
+                return real_fsync(fd)
+
+            with patch.object(os, 'link', track_link), patch.object(os, 'fsync', track_sync), patch.object(
+                    os, 'supports_dir_fd', os.supports_dir_fd | {track_link}):
+                warnings = MOD['write_checkpoint'](output, b'checkpoint')
+            self.assertEqual(warnings, [])
+            self.assertEqual(events, ['file sync', 'link', 'directory sync'])
 
 if __name__=='__main__':
     unittest.main()

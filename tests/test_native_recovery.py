@@ -23,7 +23,7 @@ class ShardsNativeRecovery(unittest.TestCase):
         self.assertTrue(v['schema_valid'])
         self.assertFalse(v['external_evidence_verified'])
         with tempfile.TemporaryDirectory() as tmp:
-            out=Path(tmp)/'result.json'
+            out=Path(tmp).resolve()/'result.json'
             r=subprocess.run([sys.executable,str(VALIDATOR),'--input',str(SAMPLE),'--output',str(out)],capture_output=True,text=True)
             self.assertEqual(r.returncode,0,r.stderr)
             data=json.loads(out.read_text())
@@ -81,6 +81,32 @@ class ShardsNativeRecovery(unittest.TestCase):
         s = sample()
         s['next']['decision'] = []
         self.assert_cli_blocked(json.dumps(s))
+
+    def test_nonfinite_metadata_fails_closed(self):
+        record = sample()
+        record['numeric_metadata'] = float('inf')
+        with self.assertRaisesRegex(Invalid, 'nonfinite'):
+            validate(record)
+        self.assert_cli_blocked(json.dumps(record).replace('Infinity', '1e309'))
+
+    def test_credential_shaped_metadata_key_is_rejected(self):
+        record = sample()
+        record['extra_metadata'] = {'ghp_' + 'X' * 28: 'synthetic'}
+        with self.assertRaisesRegex(Invalid, 'invalid field name'):
+            validate(record)
+
+    def test_symlinked_output_directory_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            target = root / 'target'
+            target.mkdir()
+            link = root / 'alias'
+            link.symlink_to(target, target_is_directory=True)
+            result = subprocess.run([sys.executable, str(VALIDATOR), '--input', str(SAMPLE),
+                                     '--output', str(link / 'receipt.json')],
+                                    capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertEqual(list(target.iterdir()), [])
 
     def test_invalid_commit_rejected(self):
         s=sample(); s['targets'][0]['commit_sha']='not-a-commit'

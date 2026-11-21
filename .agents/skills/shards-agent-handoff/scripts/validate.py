@@ -8,8 +8,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
+import os
 import re
+import stat
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -72,7 +76,7 @@ def clean_content(x, where="$", depth=0):
         fail(where, "maximum nesting depth exceeded")
     if type(x) is dict:
         for k,v in x.items():
-            if type(k) is not str or SENSITIVE_FIELD.search(k):
+            if type(k) is not str or SENSITIVE_FIELD.search(k) or SECRET.search(k):
                 fail(where, "sensitive or invalid field name")
             clean_content(v, f"{where}.{k}", depth+1)
     elif type(x) is list:
@@ -80,13 +84,15 @@ def clean_content(x, where="$", depth=0):
             clean_content(v, f"{where}[{i}]", depth+1)
     elif type(x) is str and SECRET.search(x):
         fail(where, "potential credential pattern detected")
+    elif type(x) is float and not math.isfinite(x):
+        fail(where, "nonfinite number")
 
 def decode_without_duplicate_keys(raw: str):
     def no_dups(pairs):
         result={}
         for k,v in pairs:
             if k in result:
-                raise Invalid(f"duplicate JSON field: {k}")
+                raise Invalid("duplicate JSON field")
             result[k]=v
         return result
     try:
@@ -180,28 +186,56 @@ def validate(c):
         fail("next.decision", "closure conflicts with blockers, pending work or absent evidence")
     return {"schema_version":c["schema_version"],"task_id":c["task_id"],"claimed_evidence_count":len(records),"reported_only_count":reported,"independently_verified_claim_count":verified_claims,"unknown_target_revisions":unknown_revision,"decision_claim":nxt["decision"],"schema_valid":True,"external_evidence_verified":False,"authority_verified":False,"execution_authorised":False,"warning":"Schema validation only. Evidence labels and authority are claims; independently re-fetch sources before acting."}
 
+def read_checkpoint(path: Path) -> bytes:
+    def open_regular(name, flags):
+        return os.open(name, flags | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+
+    before = path.lstat()
+    if not stat.S_ISREG(before.st_mode) or before.st_size > MAX_FILE:
+        fail("input", "expected a bounded regular file")
+    with open(path, "rb", opener=open_regular) as stream:
+        if not os.path.samestat(before, os.fstat(stream.fileno())):
+            fail("input", "file changed before reading")
+        raw = stream.read(MAX_FILE + 1)
+    if len(raw) > MAX_FILE:
+        fail("input", "file exceeds size limit")
+    return raw
+
+
+def write_checkpoint(path: Path, data: dict) -> None:
+    path = path.absolute()
+    if path.resolve() != path or path.exists():
+        fail("output", "existing file or symlinked destination")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     prefix=".handoff-", delete=False) as stream:
+        temporary = Path(stream.name)
+        try:
+            json.dump(data, stream, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
+            stream.write("\n")
+            stream.close()
+            if path.resolve() != path:
+                fail("output", "destination changed during write")
+            os.link(temporary, path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+
 def main(argv=None):
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--input",type=Path,required=True)
     ap.add_argument("--output",type=Path,required=True)
     args=ap.parse_args(argv)
     try:
-        p=args.input
-        if not p.is_file() or p.stat().st_size>MAX_FILE:
-            fail("input","missing or too large")
-        raw=p.read_bytes(); c=decode_without_duplicate_keys(raw.decode("utf-8"))
+        raw = read_checkpoint(args.input)
+        c = decode_without_duplicate_keys(raw.decode("utf-8"))
         summary=validate(c)
         result={"validation":summary,"checkpoint":c,"checkpoint_sha256":hashlib.sha256(raw).hexdigest()}
-        dest=args.output
-        if dest.is_symlink() or dest.exists():
-            fail("output","already exists; never overwrite or follow symlink")
-        dest.parent.mkdir(parents=True,exist_ok=True)
-        with dest.open("x",encoding="utf-8") as f:
-            json.dump(result,f,indent=2,sort_keys=True,ensure_ascii=False)
-            f.write("\n")
+        dest = args.output
+        write_checkpoint(dest, result)
         print(json.dumps({"result":"SCHEMA_VALID","output":str(dest),**summary},sort_keys=True))
         return 0
-    except (Invalid,OSError,ValueError,UnicodeError,RecursionError,KeyError,TypeError) as e:
+    except (OSError, ValueError, RuntimeError, KeyError, TypeError) as e:
         print("BLOCKED: "+str(e),file=sys.stderr)
         return 2
 

@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "task": {
+    "id": "synthetic-a2a-read",
+    "goal": "Inspect a fictional repository at a pinned commit",
+    "repository": "example-org/example-repo",
+    "branch": "main",
+    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "roles": {
+    "delegator": "human-operator",
+    "coordinator": "coordinator-agent",
+    "executor": "executor-agent",
+    "integrator": "integrator-agent",
+    "reviewer": "reviewer-agent",
+    "merge_decider": "human-operator"
+  },
+  "actions": [
+    {
+      "actor": "executor-agent",
+      "operation": "repo.read",
+      "repository": "example-org/example-repo",
+      "branch": "main",
+      "permission": "GRANTED",
+      "access": "OBSERVED",
+      "policy": "NOT_APPLICABLE",
+      "access_issue": "NONE",
+      "evidence_ids": ["delegation-1", "access-1"]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "delegation-1",
+      "kind": "delegation",
+      "subject_actor": "executor-agent",
+      "operation": "repo.read",
+      "repository": "example-org/example-repo",
+      "branch": "main",
+      "reference": "local:fictional-task-brief",
+      "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "observed_by": "human-operator"
+    },
+    {
+      "id": "access-1",
+      "kind": "capability",
+      "subject_actor": "executor-agent",
+      "operation": "repo.read",
+      "repository": "example-org/example-repo",
+      "branch": "main",
+      "reference": "local:synthetic-read-check",
+      "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "observed_by": "executor-agent"
+    }
+  ]
+}

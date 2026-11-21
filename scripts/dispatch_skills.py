@@ -31,6 +31,7 @@ REGISTRY = {
     "shards-catalogue-sync": ("read-only", "scripts/catalogue_sync.py", "--check"),
     "shards-skill-dispatch": ("read-only", "scripts/verify_plugins.py", "--check"),
     "shards-a2a-harness": ("read-only", "scripts/shards_agent_harness.py", "a2a-check"),
+    "shards-a2a-authority-preflight": ("read-only", "plugins/shards-core/skills/shards-a2a-authority-preflight/scripts/validate.py", "validate"),
     "shards-dual-channel": ("read-only", "scripts/shards_agent_harness.py", "dual-channel-check"),
     "shards-subagents": ("read-only", "scripts/shards_agent_harness.py", "subagent-check"),
     "shards-parallel-swarm": ("read-only", "scripts/shards_agent_harness.py", "swarm-check"),
@@ -135,6 +136,10 @@ def _check_plan_integrity(plan: dict) -> None:
             raise ValueError("Handoff command shape is invalid")
         expected_args = ["--input", str(_state_file(args[1], must_exist=True)),
                          "--output", str(_state_file(args[3], must_exist=False))]
+    elif skill == "shards-a2a-authority-preflight":
+        if len(args) != 2 or args[0] != "--input":
+            raise ValueError("Authority preflight command shape is invalid")
+        expected_args = ["--input", str(_state_file(args[1], must_exist=True))]
     elif skill == "shards-automation-operator":
         if len(args) != 2 or args[0] != "--workflow" or args[1] not in (
                 "quick", "weekly", "verify"):
@@ -178,6 +183,10 @@ def describe(skill_id: str, *, target_skill: str | None = None,
             raise ValueError("Handoff requires --allow-local-write")
         cmd.extend(["--input", str(_state_file(input_file, must_exist=True)),
                     "--output", str(_state_file(output_file, must_exist=False))])
+    elif skill_id == "shards-a2a-authority-preflight":
+        if input_file is None:
+            raise ValueError("Authority preflight requires --input-file")
+        cmd.extend(["--input", str(_state_file(input_file, must_exist=True))])
     elif skill_id == "shards-automation-operator":
         if profile not in ("quick", "weekly", "verify"):
             raise ValueError("Only named maintenance profiles can run")
@@ -210,7 +219,7 @@ def run(plan: dict, *, executor=None) -> dict:
         stdout = SECRET.sub("[REDACTED]", proc.stdout)[-4000:]
         stderr = SECRET.sub("[REDACTED]", proc.stderr)[-2000:]
         status = "pass" if proc.returncode == 0 else "fail"
-        if plan["skill"] == "shards-release-gate" and proc.returncode == 1:
+        if plan["skill"] in ("shards-release-gate", "shards-a2a-authority-preflight") and proc.returncode == 1:
             try:
                 if json.loads(proc.stdout).get("decision") == "HOLD":
                     status = "hold"

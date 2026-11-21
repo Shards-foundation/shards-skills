@@ -198,7 +198,7 @@ def test_docs_only_reference_does_not_escalate_a_fixture(tmp_path):
     """Documentation prose is not production code; it must not force CONFIRMED."""
     repo = make_repo(tmp_path / "r", {
         "docs/advanced.rst": "Use tests/certs/valid/server/server.key with the bundle.\n",
-        "tests/certs/valid/server/server.key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADAN\n-----END PRIVATE KEY-----\n",
+        "tests/certs/valid/server/server.key": "Placeholder for documentation reference checks\n",
         "tests/certs/valid/server/server.pem": "-----BEGIN CERTIFICATE-----\nMIID\n-----END CERTIFICATE-----\n",
     })
     code, payload, err = run_guard(repo)

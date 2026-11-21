@@ -65,7 +65,7 @@ class VibeCodeGuardTests(unittest.TestCase):
         (self.root / "link.py").symlink_to(original)
         report = guard.inspect(self.root, ["link.py", "real.py"])
         self.assertEqual([x["id"] for x in report["findings"]],
-                         ["SKIPPED-UNSAFE-PATH", "DYNAMIC-EVAL"])
+                         ["SYMLINK-INTERNAL", "DYNAMIC-EVAL"])
 
     def test_unsafe_path_is_recorded_without_aborting(self):
         self.file("safe.py", "eval(input())")
@@ -228,7 +228,8 @@ class VibeCodeGuardTests(unittest.TestCase):
         (self.root / "link.py").symlink_to(original)
         r = guard.inspect(self.root, ["link.py", "real.py"])
         self.assertEqual(r["status"], "INCOMPLETE_SCAN")
-        self.assertEqual([f["id"] for f in r["findings"]], ["SKIPPED-UNSAFE-PATH", "DYNAMIC-EVAL"])
+        self.assertEqual([f["id"] for f in r["findings"]], ["SYMLINK-INTERNAL", "DYNAMIC-EVAL"])
+        self.assertEqual([entry["path"] for entry in r["skipped_paths"]], ["link.py"])
 
     def test_exit_codes_preserve_complete_warning_and_clean(self):
         self.file("warning.py", "request.get(url, verify=False)")

@@ -18,15 +18,15 @@ SKILL.md, scripts/, docs/, catalogue/ and evals/ are present. A PR's
 head commit is not evidence that it passed the main-branch release gate.
 If GitHub folder import omits resources, use a ZIP instead.
 
-**Trusted ZIP fallback:** open the repository's GitHub Actions workflow
-`Portable Manus skill package`, select a **successful push-to-main run**
-(not a pull-request run), and verify its commit SHA against the reviewed main
+**Trusted ZIP fallback:** an authorised operator can manually run
+`Portable Manus skill package` from `main` in GitHub Actions. Select the
+successful manual run and verify its commit SHA against the reviewed main
 revision. Download its `portable-manus-skill` artifact, extract the
 `shards-sec-ai-agent-boundaries.zip` from the artifact container, and compare
 the ZIP SHA-256 to the checksum printed in that same trusted run's build
 step. Then use Manus **Upload a skill** to install the ZIP. The checksum
 detects accidental/transport changes; it is not a cryptographic publisher
-signature. PR runs intentionally cannot publish installable ZIP artifacts.
+signature. Pull requests and pushes build and verify the ZIP without uploading it.
 
 Do not interpret an apparently successful import as proof that tools run.
 
@@ -40,7 +40,8 @@ The ZIP has exactly one top-level skill directory. MANIFEST.json contains the
 SHA-256 of SKILL.md and the seven bundled support files. It deliberately says
 host_traces_verified=false (no behavioral evaluation has been run by the builder).
 Build on a filesystem that supports hard links. The builder publishes the completed
-ZIP atomically and creates it with owner-only permissions on POSIX systems.
+ZIP atomically, refuses to overwrite an existing destination and creates the file
+with owner-only permissions on POSIX systems. Choose a new output path for a rebuild.
 
 ## Run offline after installation
 

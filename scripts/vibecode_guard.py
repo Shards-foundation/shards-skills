@@ -8,7 +8,7 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
+from threading import Timer
 from pathlib import Path
 
 MAX_FILES = 3000
@@ -50,30 +50,46 @@ def tracked(root: Path) -> list[str]:
                if key in os.environ}
         env.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
                     "GIT_OPTIONAL_LOCKS": "0", "GIT_TERMINAL_PROMPT": "0"})
-        base = ["git", "--no-optional-locks", "-c", "core.fsmonitor=false",
-                "-c", "core.hooksPath=" + os.devnull, "-C", str(root)]
-        top = subprocess.run(base + ["rev-parse", "--show-toplevel"],
-                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                             timeout=15, check=False, env=env)
+        top = subprocess.run(
+            ["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-c",
+             "core.hooksPath=" + os.devnull, "-C", str(root), "rev-parse", "--show-toplevel"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15, check=False, env=env,
+        )
         top_path = Path(top.stdout.removesuffix(b"\n").decode("utf-8", errors="surrogateescape"))
         if top.returncode or top_path.resolve() != root:
             raise ValueError("Target must be exact Git repository top-level")
-        # Don't retain an unbounded attacker-controlled index in RAM.
-        with tempfile.TemporaryFile() as output:
-            proc = subprocess.run(base + ["ls-files", "-z", "--cached"],
-                                  stdout=output, stderr=subprocess.DEVNULL,
-                                  timeout=15, check=False, env=env)
-            output.seek(0, 2)
-            if output.tell() > MAX_INDEX_BYTES:
-                raise ValueError("Git tracked-file index exceeds safe budget")
-            output.seek(0)
-            raw = output.read(MAX_INDEX_BYTES + 1)
+        with subprocess.Popen(
+            ["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-c",
+             "core.hooksPath=" + os.devnull, "-C", str(root), "ls-files", "-z", "--stage"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env,
+        ) as proc:
+            # The deadline covers both a stalled pipe and process exit.
+            deadline = Timer(15, proc.kill)
+            deadline.start()
+            try:
+                raw = proc.stdout.read(MAX_INDEX_BYTES + 1)
+                if len(raw) > MAX_INDEX_BYTES:
+                    raise ValueError("Git tracked-file index exceeds safe budget")
+                if proc.wait():
+                    raise ValueError("Git index inspection failed or exceeded its deadline")
+            finally:
+                deadline.cancel()
+                deadline.join()
+                if proc.poll() is None:
+                    proc.kill()
     except (OSError, subprocess.TimeoutExpired, UnicodeError) as exc:
         raise ValueError("Cannot enumerate tracked files") from exc
-    if proc.returncode:
-        raise ValueError("Target is not a readable Git repository")
-    names = raw.decode("utf-8", errors="surrogateescape").split("\0")
-    return [n for n in names if n]
+    names = []
+    for record in raw.split(b"\0"):
+        if not record:
+            continue
+        metadata, name = record.split(b"\t", 1)
+        mode, _, stage = metadata.split()
+        if stage != b"0":
+            raise ValueError("Unmerged entries in Git index")
+        if mode != b"160000":
+            names.append(name.decode("utf-8", errors="surrogateescape"))
+    return names
 
 def inspect(root: Path, files: list[str]) -> dict:
     root = root.resolve()

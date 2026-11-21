@@ -42,6 +42,7 @@ def verify(root: Path) -> dict[str, str]:
     root = root.resolve()  # canonicalise trusted system-directory aliases (e.g. macOS /var)
     skill = root / "skills" / NAME
     header = checked_file(skill / "SKILL.md")
+    # Accept Windows checkout line endings while hashing the actual bundled bytes.
     if not header.replace(b"\r\n", b"\n").startswith(b"---\nname: shards-sec-ai-agent-boundaries\n"):
         raise ValueError("Unexpected SKILL.md header")
     if b"../" in header:

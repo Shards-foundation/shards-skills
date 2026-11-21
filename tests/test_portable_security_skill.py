@@ -24,6 +24,22 @@ class PortableSkillTests(unittest.TestCase):
         self.assertEqual(len(hashes), 8)
         self.assertIn("scripts/security_assurance.py", hashes)
 
+    def test_verify_accepts_windows_checkout_line_endings(self):
+        with tempfile.TemporaryDirectory() as location:
+            work = Path(location).resolve()
+            self._stage(work)
+            path = work / "skills" / portable.NAME / "SKILL.md"
+            raw = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+            path.write_bytes(raw)
+            self.assertEqual(portable.verify(work)["SKILL.md"], hashlib.sha256(raw).hexdigest())
+
+    def test_workflow_upload_requires_manual_dispatch_from_main(self):
+        workflow = (ROOT / ".github/workflows/portable-manus-skill.yml").read_text(encoding="utf-8")
+        for step in workflow.split("\n      - name: ")[1:]:
+            if "uses: actions/upload-artifact@" in step:
+                self.assertIn("if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'", step)
+        self.assertEqual(workflow.count("uses: actions/upload-artifact@"), 1)
+
     def test_skill_references_are_self_contained(self):
         root = ROOT / "skills" / portable.NAME
         description = (root / "SKILL.md").read_text()
@@ -307,8 +323,15 @@ class PortableSkillTests(unittest.TestCase):
             (root / "huge.py").write_text("a" * (guard.MAX_FILE_BYTES + 1))
             (root / ".env").write_text("synthetic")
             subprocess.run(["git", "-C", str(root), "add", "--", "."], check=True, capture_output=True)
+            subprocess.run(["git", "-C", str(root), "update-index", "--add", "--cacheinfo",
+                            f"160000,{'a' * 40},submodule.js"], check=True, capture_output=True)
+            (root / "submodule.js").mkdir()
             with self.assertRaisesRegex(ValueError, "exact Git repository top-level"):
                 guard.tracked(root / "nested")
+            with patch.object(guard, "MAX_INDEX_BYTES", 8):
+                with self.assertRaisesRegex(ValueError, "index exceeds safe budget"):
+                    guard.tracked(root)
+            self.assertNotIn("submodule.js", guard.tracked(root))
             report = guard.inspect(root, guard.tracked(root))
             self.assertEqual(report["status"], "WARNINGS_FOUND")
             self.assertIn("SKIPPED-OVERSIZE-SOURCE", {x["id"] for x in report["findings"]})

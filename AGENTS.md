@@ -23,7 +23,7 @@ after selection. Search results never authorise execution of imported packages.
 - Repository inspection: plugin skill shards-repository-health.
 - Third-party or local skill assessment: shards-skill-audit.
 - Release decision: shards-release-gate.
-- Resume/handover: shards-agent-handoff.
+- Interrupted-task recovery and live-state reconciliation: shards-restore-recover. Checkpoint validation and writing: shards-agent-handoff.
 - Safe repository automation: shards-automation-operator.
 - Local A2A-oriented harness, dual-channel receipt separation, subagent delegation, and parallel swarms: shards-a2a-harness, shards-dual-channel, shards-subagents, shards-parallel-swarm. These perform read-only local checks, not remote A2A calls.
 - Curated skill plans and bounded invocation: shards-skill-dispatch. Inspect the exact command and trusted code hash before explicitly executing. Imported skills are audit targets only.

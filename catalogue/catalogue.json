@@ -3,7 +3,7 @@
   "name": "Shards Skills",
   "version": "0.1.0",
   "status": "bootstrap",
-  "skill_count": 344,
+  "skill_count": 345,
   "categories": [
     "agents",
     "blockchain",
@@ -311,6 +311,7 @@
     "skills/shards-host-compatibility",
     "skills/shards-learning-capture",
     "skills/shards-progress-control",
+    "skills/shards-restore-recover",
     "skills/shards-review-resolution",
     "skills/shards-sec-ai-agent-boundaries",
     "skills/shards-sec-authorized-testing",
@@ -2711,6 +2712,14 @@
       "name": "shards-progress-control",
       "path": "skills/shards-progress-control",
       "description": "Use during multi-step work to detect loops, scope creep and no-evidence retries while keeping the next action focused.",
+      "category": "agents",
+      "status": "draft",
+      "version": "0.1.0"
+    },
+    {
+      "name": "shards-restore-recover",
+      "path": "skills/shards-restore-recover",
+      "description": "Use when an AI agent or A2A task is interrupted, rate-limited, restarted, handed off, or loses context; reconcile durable work and resume from the smallest verified safe step without inventing state or repeating external effects.",
       "category": "agents",
       "status": "draft",
       "version": "0.1.0"

@@ -78,8 +78,10 @@ python scripts/security_assurance.py plan --system "My application" --profiles w
 python scripts/vibecode_guard.py --repo /path/to/your/app
 ```
 
-The `plan` command returns controls to investigate, not results. The local guard uses
-**0 = no configured patterns found**, **1 = warnings found**, and **2 = blocked input**.
+The `plan` command returns controls to investigate, not results. For a complete
+local scan, **0 = no configured patterns found** and **1 = warnings found**.
+**2 = blocked input or incomplete scan**. Review any reported findings, skipped
+paths and truncation before proceeding.
 A clean run is not an automatic security sign-off. For observed evidence and a
 reproducible assessment, follow [the evidence and assessment walkthrough](docs/security-assurance.md).
 
@@ -249,7 +251,7 @@ Original first-party content is licensed under MIT unless a file states otherwis
 
 ## Curated mega-library
 
-The bootstrap collection has been expanded into a curated catalogue of **329 skill packages** across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 14 upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
+The [skill catalogue](catalogue/catalogue.json) records the current package count across agents, engineering, security, research, science, design, data, blockchain and operations. The imported packages come from 14 upstream repositories selected from the larger source set documented in [`catalogue/upstreams.json`](catalogue/upstreams.json).
 
 Imported packages are not silently treated as first-party. Each one is marked `review`, includes its immutable upstream commit and original path in frontmatter, and contains an `UPSTREAM.md` record. Package-level provenance is indexed in [`catalogue/imported-skills.json`](catalogue/imported-skills.json), with preserved source notices under [`third_party/`](third_party/).
 

@@ -263,12 +263,26 @@ class AuthorityPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Potential sensitive"):
             module.validate(o)
         for locator in ("https://fixture-user:fixture-pass@example.invalid/receipt",
-                        "https://example.invalid/receipt?access_token=placeholder"):
+                        "https://example.invalid/receipt?access_token=placeholder",
+                        "https://example.invalid/receipt?client_secret=placeholder",
+                        "https://example.invalid/receipt?password=placeholder"):
             with self.subTest(locator=locator):
                 o = sample()
                 o["evidence"][0]["reference"] = locator
                 with self.assertRaisesRegex(ValueError, "Potential sensitive"):
                     module.validate(o)
+
+    def test_bearer_prose_and_large_plain_input_remain_valid(self):
+        record = sample()
+        record["task"]["goal"] = "Document procedures to rotate Bearer tokens"
+        record["extra"] = "a" * 250_000
+        result = subprocess.run([sys.executable, str(SCRIPT), "validate", "--input", "-"],
+                                input=json.dumps(record), capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["decision"], "CLAIMS_COMPLETE")
+        record["task"]["goal"] = "Bearer " + "A" * 32
+        with self.assertRaisesRegex(ValueError, "Potential sensitive"):
+            module.validate(record)
 
     def test_observed_access_with_missing_connector_is_invalid(self):
         o = sample()

@@ -36,6 +36,12 @@ a secondary runner remain outside the explicit JSON input digest.
 
 A release check may yield HOLD and a nonzero CLI exit code; this is an expected gate outcome.
 
+The authority preflight and execution contract validators include their structured
+result in `observation.report`. The diagnostic tails can be truncated. If the
+sanitised result exceeds 262,144 characters or cannot be read as a JSON object,
+the dispatcher records `observation.status` as `fail` with an explicit error and
+retains the child process exit code for diagnosis.
+
 For a validated checkpoint handoff, create sanitized JSON input in .shards/state/ then explicitly allow a local output:
 
     python scripts/dispatch_skills.py run --skill shards-agent-handoff --input-file .shards/state/input.json --output-file .shards/state/output.json --allow-local-write --execute --expect-plan-sha256 <reviewed-digest>

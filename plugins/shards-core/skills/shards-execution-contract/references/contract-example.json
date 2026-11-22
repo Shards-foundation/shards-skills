@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "task_id": "example-synthetic-task",
+  "intent": {
+    "reference": "local:example-only",
+    "goal": "Verify a fictional offline order-processing prototype",
+    "assumptions": [
+      "Illustrative data only"
+    ],
+    "ambiguities": [
+      {
+        "description": "No live systems involved",
+        "material": false,
+        "resolved": true
+      }
+    ]
+  },
+  "scope": {
+    "repository": "example-org/example-repository",
+    "branch": "feature/fictional",
+    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "constraints": {
+    "allow_paid": false,
+    "allow_production": false,
+    "allow_merge": false,
+    "allow_external_write": false
+  },
+  "executor": "builder-agent",
+  "steps": [
+    {
+      "id": "implement",
+      "owner": "builder-agent",
+      "effect": "local-write",
+      "status": "VERIFIED",
+      "evidence_ids": [
+        "test-1"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "tests",
+      "result": "PASS",
+      "evidence_ids": [
+        "test-1"
+      ]
+    }
+  ],
+  "reviews": [],
+  "evidence": [
+    {
+      "id": "test-1",
+      "kind": "self-reported-test",
+      "ref": "local:fictional-test-report",
+      "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "observed_by": "builder-agent"
+    }
+  ]
+}

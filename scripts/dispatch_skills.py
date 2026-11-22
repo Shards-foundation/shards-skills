@@ -32,6 +32,7 @@ REGISTRY = {
     "shards-agent-handoff": ("local-write", "plugins/shards-core/scripts/run.py", "handoff"),
     "shards-a2a-authority-preflight": (
         "read-only", "plugins/shards-core/skills/shards-a2a-authority-preflight/scripts/validate.py", "validate"),
+    "shards-execution-contract": ("read-only", "scripts/validate_execution_contract.py", "validate"),
     "shards-automation-operator": ("local-tests", "scripts/automate.py", "run"),
     "shards-catalogue-sync": ("read-only", "scripts/catalogue_sync.py", "--check"),
     "shards-skill-dispatch": ("read-only", "scripts/verify_plugins.py", "--check"),
@@ -46,7 +47,7 @@ HARNESS_SKILLS = frozenset({
     "shards-subagents", "shards-parallel-swarm",
 })
 
-STATE_VALIDATORS = frozenset({"shards-a2a-authority-preflight"})
+STATE_VALIDATORS = frozenset({"shards-a2a-authority-preflight", "shards-execution-contract"})
 MAX_VALIDATOR_REPORT_CHARS = 262_144
 
 LOCAL_IMPORTS = {
@@ -463,16 +464,25 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
         stderr = SECRET.sub("[REDACTED]", stderr_text)
         status = "pass" if proc.returncode == 0 else "fail"
         validator_report = None
+        validator_error = None
         if plan["skill"] in STATE_VALIDATORS:
             out = stdout or stderr
-            if 0 < len(out) <= MAX_VALIDATOR_REPORT_CHARS:
+            if len(out) > MAX_VALIDATOR_REPORT_CHARS:
+                validator_error = "Validator report exceeds the receipt size limit"
+            else:
                 try:
                     report = json.loads(out)
                     if isinstance(report, dict):
                         validator_report = report
                 except json.JSONDecodeError:
                     pass
-        if proc.returncode == 1 and (plan["skill"] == "shards-release-gate" or plan["skill"] in STATE_VALIDATORS):
+                if validator_report is None:
+                    validator_error = "Validator did not return a JSON object"
+            if validator_error is not None:
+                status = "fail"
+            elif proc.returncode == 1 and validator_report.get("decision") == "HOLD":
+                status = "hold"
+        elif proc.returncode == 1 and plan["skill"] == "shards-release-gate":
             try:
                 report = json.loads(stdout_text)
                 if isinstance(report, dict) and report.get("decision") == "HOLD":
@@ -483,6 +493,8 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
                     "stdout_tail": stdout[-4000:], "stderr_tail": stderr[-2000:]}
         if validator_report is not None:
             observed["report"] = validator_report
+        if validator_error is not None:
+            observed["error"] = validator_error
         if status == "pass" and "output_file" in plan:
             try:
                 report = json.loads(stdout_text)

@@ -16,20 +16,20 @@ import verify_plugins as integrity
 
 class SkillDispatchTests(unittest.TestCase):
     def test_registry_exact_curated_skill_names(self):
-        self.assertEqual(len(dispatcher.REGISTRY), 12)
+        self.assertEqual(len(dispatcher.REGISTRY), 13)
         self.assertEqual(set(dispatcher.REGISTRY), {
             "shards-repository-health", "shards-skill-audit",
             "shards-release-gate", "shards-agent-handoff",
             "shards-automation-operator", "shards-catalogue-sync",
             "shards-skill-dispatch", "shards-a2a-harness",
-            "shards-a2a-authority-preflight",
+            "shards-a2a-authority-preflight", "shards-execution-contract",
             "shards-dual-channel", "shards-subagents", "shards-parallel-swarm",
         })
 
     def test_structural_plugin_integrity(self):
         report = integrity.validate()
         self.assertEqual(report["status"], "PASS", report["errors"])
-        self.assertEqual(report["registered_skills"], 12)
+        self.assertEqual(report["registered_skills"], 13)
 
     def test_authority_preflight_is_read_only_and_plan_pinned(self):
         with self.assertRaisesRegex(ValueError, "requires --input-file"):
@@ -85,6 +85,43 @@ class SkillDispatchTests(unittest.TestCase):
         self.assertFalse(report["executed"])
         self.assertEqual(report["effect"], "read-only")
         self.assertEqual(len(report["script_sha256"]), 64)
+
+    def test_execution_contract_dispatch_requires_pinned_read_only_input(self):
+        skill = "shards-execution-contract"
+        with self.assertRaisesRegex(ValueError, "requires --input-file"):
+            dispatcher.describe(skill)
+        fixture = ROOT / "plugins/shards-core/skills/shards-execution-contract/references/contract-example.json"
+        data = fixture.read_bytes()
+        dispatcher.LOCAL_STATE.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=dispatcher.LOCAL_STATE) as directory:
+            sample = Path(directory) / "contract.json"
+            sample.write_bytes(data)
+            plan = dispatcher.describe(skill, input_file=str(sample))
+            self.assertEqual(plan["effect"], "read-only")
+            self.assertEqual(plan["command"][-2:], ["--input", "-"])
+            self.assertEqual(plan["input_sha256"], hashlib.sha256(data).hexdigest())
+            self.assertNotIn("output_file", plan)
+            with self.assertRaisesRegex(ValueError, "requires --expect-plan-sha256"):
+                dispatcher.run(plan)
+            result = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"])
+            self.assertEqual(result["observation"]["status"], "hold", result)
+            report = result["observation"]["report"]
+            self.assertFalse(report["execution_performed"])
+            self.assertFalse(report["approval_verified"])
+            oversized = json.dumps({"decision": "HOLD", "detail": "x" * dispatcher.MAX_VALIDATOR_REPORT_CHARS})
+            for exit_code in (0, 1):
+                def oversized_validator(argv, **kwargs):
+                    return subprocess.CompletedProcess(argv, exit_code, stdout=oversized, stderr="")
+                result = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"],
+                                        executor=oversized_validator)
+                observed = result["observation"]
+                self.assertEqual(observed["status"], "fail")
+                self.assertIn("exceeds the receipt size limit", observed["error"])
+                self.assertNotIn("report", observed)
+                self.assertEqual(len(observed["stdout_tail"]), 4000)
+            sample.write_bytes(data + b"\n")
+            with self.assertRaisesRegex(ValueError, "Reviewed input changed"):
+                dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"])
 
     def test_plan_digest_is_stable_and_covers_command(self):
         plan = dispatcher.describe("shards-repository-health")
@@ -250,7 +287,7 @@ class SkillDispatchTests(unittest.TestCase):
         listing = subprocess.run([sys.executable, script, "list"],
                                  capture_output=True, text=True, timeout=15)
         self.assertEqual(listing.returncode, 0, listing.stderr)
-        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 12)
+        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 13)
         plan = subprocess.run([sys.executable, script, "plan", "--skill", "shards-repository-health"],
                               capture_output=True, text=True, timeout=15)
         self.assertEqual(plan.returncode, 0, plan.stderr)

@@ -45,6 +45,11 @@ on:
       - 'scripts/verify_plugins.py'
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
+      - '.agents/skills/**'
+      - 'fixtures/valid-multi-target.json'
+      - 'evals/shards-native-recovery.json'
+      - 'scripts/security_lint.py'
+      - 'tests/test_native_recovery.py'
       - 'skills/rebelytics-observer-rebelytics-observer/**'
       - '.github/workflows/agent-core-plugin.yml'
   pull_request:
@@ -91,6 +96,11 @@ on:
       - 'scripts/verify_plugins.py'
       - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
+      - '.agents/skills/**'
+      - 'fixtures/valid-multi-target.json'
+      - 'evals/shards-native-recovery.json'
+      - 'scripts/security_lint.py'
+      - 'tests/test_native_recovery.py'
       - 'skills/rebelytics-observer-rebelytics-observer/**'
       - '.github/workflows/agent-core-plugin.yml'
   workflow_dispatch:

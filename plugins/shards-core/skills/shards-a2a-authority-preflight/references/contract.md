@@ -4,7 +4,7 @@ Use one task and only the actions the task actually requires. The JSON is a **sa
 
 ## Required shape
 
-Use a UTF-8 JSON document of at most 256 KiB with at most 32 nested containers. The CLI reads a local file or standard input (`--input -`) with the same limits. Each JSON field name must be unique within its object. Task, actor and evidence IDs start with a letter and can contain up to 63 additional letters, digits, periods, underscores or hyphens.
+Use a UTF-8 JSON document of at most 256 KiB with at most 32 nested containers. The CLI reads a local file or standard input (`--input -`) with the same limits. Each JSON field name must be unique within its object. Task, actor and evidence IDs use ASCII and match `[A-Za-z][A-Za-z0-9._-]{0,63}`.
 
 - `schema_version`: exactly integer `1`.
 - `task`: `id`, `goal`, `repository` (`owner/name`), `branch`, `head_sha` (full 40-character lowercase hex). An unknown repository or SHA cannot be represented as verified: resolve through read-only discovery or return HOLD manually without manufacturing values.

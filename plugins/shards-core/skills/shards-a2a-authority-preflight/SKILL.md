@@ -53,7 +53,7 @@ The direct validator exits **0** for complete claims, **1** for `HOLD` and **2**
 
 The handoff summary includes the objective, task owner, pinned revision, each action's scope permission, access and policy, and the smallest permissible next action. Take the owner and status claims from the task instructions and sanitised inventory.
 
-The JSON validator reports the task ID and target revision, each action's actor, effect, claim status and matched evidence IDs, named blockers and their escalation targets, and `CLAIMS_COMPLETE`, `HOLD` or `INVALID`. Retrieve the underlying evidence from the inventory before drawing conclusions about live access.
+The JSON validator reports the task ID and target revision, each action's actor, effect, claim status and matched evidence IDs, named blockers and their escalation targets, and `CLAIMS_COMPLETE`, `HOLD` or `INVALID`. Follow the matched IDs in the inventory to their original evidence sources. The destination host retrieves and verifies each observation before using it to assess live access.
 
 Always distinguish **operator assertion**, **tool-observed access**, **host-enforced permission**, and **independent reviewer evidence**. No assertion alone makes an action authorised. Do not put credential material, raw environment variables, private chat transcripts or customer data in the receipt.
 

@@ -180,11 +180,20 @@ class HostABTest(unittest.TestCase):
         baseline = run("baseline")
         trial = run("shards", selected_workflows=["code-review"])
         baseline["metrics"].update(duration_seconds=60, model_tokens=750)
-        trial["metrics"].update(duration_seconds=45)
+        trial["metrics"].update(duration_seconds=45.5)
         result = evaluation.compare(document(baseline, trial))["results"][0]
         self.assertEqual(result["selected_workflows"], ["code-review"])
-        self.assertEqual(result["metric_delta_shards_minus_baseline"]["duration_seconds"], -15)
+        self.assertEqual(result["metric_delta_shards_minus_baseline"]["duration_seconds"], -14.5)
         self.assertNotIn("model_tokens", result["metric_delta_shards_minus_baseline"])
+
+    def test_invalid_fractional_counts_and_nonfinite_durations(self):
+        for field, value in (("model_tokens", 3.5), ("duration_seconds", float("inf")),
+                             ("duration_seconds", float("nan"))):
+            with self.subTest(field=field, value=value):
+                trial = run("shards")
+                trial["metrics"][field] = value
+                with self.assertRaisesRegex(ValueError, "Metrics"):
+                    evaluation.compare(document(run("baseline"), trial))
 
     def test_shards_bundle_commit_is_reported_and_validated(self):
         receipt = document(run("baseline"), run("shards"))

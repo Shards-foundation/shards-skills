@@ -39,6 +39,40 @@ class RepositoryTests(unittest.TestCase):
    (path.parent/'UPSTREAM.md').write_text('Synthetic provenance.', encoding='utf-8')
    with self.assertRaisesRegex(ValueError, 'Third-party package'):
     validate_skills.catalogue_entry(path, root)
+ def test_historical_sources_keep_pinned_provenance_and_licences(self):
+  text=(ROOT/'third_party/SOURCES.md').read_text(encoding='utf-8')
+  sections=text.split('\n## ')[1:]
+  names=[]
+  urls=[]
+  for section in sections:
+   name, *lines=section.splitlines()
+   fields=dict(line[2:].split(': ',1) for line in lines if line.startswith('- ') and ': ' in line)
+   with self.subTest(source=name):
+    self.assertRegex(fields['Commit'], r'^`[0-9a-f]{40}`$')
+    self.assertTrue(fields['Declared license'].strip())
+    self.assertTrue(fields['Source'].startswith('https://'))
+    self.assertTrue(any(p.is_file() for p in (ROOT/'third_party/licenses'/name).iterdir()))
+   names.append(name)
+   urls.append(fields['Source'])
+  self.assertEqual(len(names),14)
+  self.assertEqual(len(urls),len(set(urls)))
+  self.assertEqual(set(names),{p.name for p in (ROOT/'third_party/licenses').iterdir() if p.is_dir()})
+ def test_catalogue_builder_never_writes_through_a_symlink(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory)
+   outside=root/'outside'
+   outside.mkdir()
+   checkout=root/'checkout'
+   checkout.mkdir()
+   target=outside/'catalogue.json'
+   target.write_text('Unchanged.', encoding='utf-8')
+   try:
+    (checkout/'catalogue').symlink_to(outside, target_is_directory=True)
+   except OSError as exc:
+    self.skipTest(str(exc))
+   with self.assertRaisesRegex(ValueError, 'Symlinked catalogue'):
+    build_catalogue.build_catalogue(checkout)
+   self.assertEqual(target.read_text(encoding='utf-8'),'Unchanged.')
  def test_eval_fixtures_reference_existing_skills(self):
   data=json.loads((ROOT/'evals/trigger-cases.json').read_text())
   existing={p.parent.name for p in (ROOT/'skills').glob('*/SKILL.md')}

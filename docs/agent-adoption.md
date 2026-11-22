@@ -46,7 +46,7 @@ Pin the skill and task revisions. Use fresh sessions on the same host and
 model, with equivalent tool permissions and the same synthetic task text.
 Keep the expected skill name out of the prompt. Use one condition with the
 skill available and one without it. Include a negative task and repeat trials
-to reduce the effect of run-to-run variance.
+to reduce the effect of run-to-run variance. On the negative task, check the host trace for abstention. Fail the case if the irrelevant or prohibited skill was selected or opened. Record an incomplete trace as unverified.
 
 Record stages A–E from a redacted trace or an access-controlled reference.
 An independent reviewer checks the acceptance criteria and compares supported

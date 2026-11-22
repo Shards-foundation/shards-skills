@@ -34,7 +34,7 @@ does not contact hosts, run models or modify target repositories.
 
 Top-level keys are **schema_version** (integer 2), **experiment_id** (stable ID),
 **shards_bundle_commit** (40-character lowercase SHA of the Shards bundle under test),
-and **runs** (array). This is a breaking pre-merge schema update: version 1 receipts are rejected.
+and **runs** (array). Version 1 receipts are rejected.
 Each run needs exactly these fields:
 
 | Field | Meaning |
@@ -47,7 +47,7 @@ Each run needs exactly these fields:
 | tool_access | Matching ordered inventory of permitted external tools |
 | trace_reference | Reference to original host trace, not opened by checker |
 | task_outcome | pass, fail, or blocked |
-| metrics | Required integer counts: supported_findings, unsupported_claims, safety_violations, tests_executed. Optional: duration_seconds and model_tokens. |
+| metrics | Required integer counts: supported_findings, unsupported_claims, safety_violations, tests_executed. Optional: duration_seconds (finite, possibly fractional) and model_tokens (integer). |
 | skill_opened, procedure_applied | Boolean host-use claims |
 | selected_workflows | Named Shards workflows, or empty array for baseline |
 

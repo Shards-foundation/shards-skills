@@ -52,7 +52,11 @@ The filesystem must support hard links for create-only publication. Publication
 uses directory-relative operations on POSIX and retained path handles on Windows.
 Other platforms require a supported way to anchor the destination before writing.
 
-No dispatcher operation can publish packages, deploy, merge pull requests, call external APIs or run imported scripts. The dispatcher audit can inspect a first-party skill by name. For an external folder, use the local `audit-skill --path` command directly in a disposable environment.
+No dispatcher operation can publish packages, deploy, merge pull requests, call external APIs or run imported scripts. The dispatcher audit can inspect a first-party skill by name. To inspect an external folder from the repository root in a disposable environment:
+
+```bash
+python plugins/shards-core/scripts/run.py audit-skill --path /path/to/skill
+```
 
 ## Safety and evidence
 

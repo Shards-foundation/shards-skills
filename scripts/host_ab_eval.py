@@ -78,10 +78,11 @@ def validate_run(run: dict, workflows: set[str] | None = None) -> None:
     metrics = run["metrics"]
     if (not isinstance(metrics, dict) or not METRICS <= metrics.keys()
             or not metrics.keys() <= (METRICS | OPTIONAL_METRICS)
-            or any(type(value) is not int or not 0 <= value <= (
+            or any(type(value) not in ((int, float) if key == "duration_seconds" else (int,))
+                   or not 0 <= value <= (
                 10_000_000 if key in OPTIONAL_METRICS else 100_000
             ) for key, value in metrics.items())):
-        raise ValueError("Metrics must be nonnegative integer reviewer counts")
+        raise ValueError("Metrics must be bounded nonnegative counts or elapsed seconds")
     if type(run["skill_opened"]) is not bool or type(run["procedure_applied"]) is not bool:
         raise ValueError("Invalid skill-use flags")
     skills = run["selected_workflows"]

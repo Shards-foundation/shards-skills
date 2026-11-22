@@ -33,7 +33,7 @@ reason and shortlist only the steps the task needs.
 | --- | --- | --- |
 | `catalogue` | First-party instructions under `skills/` | The dispatcher cannot execute these entries |
 | `curated` | Workflows in the Shards Core registry | Review a dispatcher plan and obtain host permission |
-| `native` | Candidate variants in `.agents/skills/` | Use an exact candidate ID or `--status candidate` to opt in |
+| `native` | Candidate variants in `.agents/skills/` | Use an exact candidate ID or `--status candidate` to include it in discovery. These skills are outside the dispatcher registry |
 
 Search reads catalogue JSON and bounded host descriptor headers. Exact lookup
 opens a single named local descriptor. Neither command installs skills, runs

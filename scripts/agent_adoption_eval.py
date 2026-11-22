@@ -11,7 +11,7 @@ import re
 import sys
 from pathlib import Path
 
-from search_skills import ROOT, catalogue_entries, curated_entries, discovery_entries, rank
+from search_skills import ROOT, discovery_entries, rank
 
 SHA = re.compile(r"^[0-9a-f]{40}$")
 

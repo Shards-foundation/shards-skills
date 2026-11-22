@@ -82,11 +82,16 @@ def discovery_phrases(values: object, label: str) -> list[str]:
     return values
 
 
+def catalogue_file(root: Path, name: str = "catalogue.json") -> Path:
+    path = root / "catalogue" / name
+    if path.parent.is_symlink() or path.is_symlink():
+        raise ValueError("Symlinked catalogue paths require manual review")
+    return path
+
+
 def enrich_catalogue(entries: list[dict], root: Path) -> list[dict]:
     """Apply the repository's optional, host-independent discovery profiles."""
-    source = root / "catalogue" / "discovery.json"
-    if source.is_symlink():
-        raise ValueError("Discovery profiles must be a regular local file")
+    source = catalogue_file(root, "discovery.json")
     if not source.exists():
         return entries
     if not source.is_file() or source.stat().st_size > 100_000:
@@ -153,9 +158,8 @@ def main():
             errors.append(f"{path}: {exc}")
     if len({entry["name"] for entry in entries}) != len(entries):
         errors.append("duplicate skill names found")
-    cat_path = ROOT / "catalogue" / "catalogue.json"
     try:
-        cat = json.loads(cat_path.read_text(encoding="utf-8"))
+        cat = json.loads(catalogue_file(ROOT).read_text(encoding="utf-8"))
         actual = [p.parent.relative_to(ROOT).as_posix() for p in files]
         if sorted(cat.get("skill_paths", [])) != sorted(actual): errors.append("catalogue/catalogue.json skill_paths do not match discovered skills")
         if cat.get("skill_count") != len(files): errors.append("catalogue/catalogue.json skill_count does not match discovered skills")

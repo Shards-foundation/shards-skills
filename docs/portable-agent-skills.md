@@ -10,7 +10,7 @@ describe the shared format and supported installer destinations.
 
 ## Install from a trusted checkout
 
-Use the existing Skills CLI with Node.js 22.20 or later. Run these commands in
+Use the existing Skills CLI with Node.js 22.20 or later. The first `npx` use needs network access to fetch the pinned CLI. With the CLI already installed locally, replace `npx skills@1.8.1` with its binary path for an offline install from the checkout. Run these commands in
 the destination project. The examples list available skills, copy one skill, and
 copy a small PR-review collection into a Codex project.
 

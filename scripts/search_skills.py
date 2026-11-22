@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from dispatch_skills import REGISTRY
-from validate_skills import catalogue_entry, discovery_phrases
+from validate_skills import catalogue_entry, catalogue_file, discovery_phrases
 
 ROOT = Path(__file__).resolve().parents[1]
 TOKENS = re.compile(r"[a-z0-9]+")
@@ -73,9 +73,12 @@ def normalized_words(value: str) -> set[str]:
 
 def catalogue_entries(root: Path = ROOT) -> list[dict]:
     """Read metadata only. Never import, execute, or parse imported skill code."""
-    source = Path(root) / "catalogue" / "catalogue.json"
-    if source.is_symlink() or source.parent.is_symlink() or not source.is_file() or source.stat().st_size > 5_000_000:
-        raise ValueError("Catalogue missing, symlinked or too large")
+    root = Path(root)
+    source = catalogue_file(root)
+    if (root / "skills").is_symlink():
+        raise ValueError("Symlinked skills root requires manual review")
+    if not source.is_file() or source.stat().st_size > 5_000_000:
+        raise ValueError("Catalogue missing or too large")
     data = json.loads(source.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or data.get("schema_version") != 1:
         raise ValueError("Unsupported catalogue schema")
@@ -99,7 +102,7 @@ def catalogue_entries(root: Path = ROOT) -> list[dict]:
                 not isinstance(status, str) or status not in VALID_STATUSES):
             raise ValueError("Malformed, duplicate or unsafe catalogue entry")
         seen.add(name)
-        marker = Path(root) / path / "UPSTREAM.md"
+        marker = root / path / "UPSTREAM.md"
         if marker.exists() or marker.is_symlink():
             raise ValueError("Catalogue contains external provenance: " + name)
         row = {"name": name, "path": path, "description": description,
@@ -183,6 +186,8 @@ def curated_entries(root: Path = ROOT) -> list[dict]:
 
 def native_entries(root: Path = ROOT) -> list[dict]:
     base = Path(root) / ".agents" / "skills"
+    if base.parent.is_symlink() or base.is_symlink():
+        raise ValueError("Symlinked native skills root requires manual review")
     return [host_entry(Path(root), path.parent.name, curated=False)
             for path in sorted(base.glob("shards-native-*/SKILL.md"))
             if NAME.fullmatch(path.parent.name)]

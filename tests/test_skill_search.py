@@ -90,6 +90,30 @@ class SkillSearchTests(unittest.TestCase):
         self.assertNotIn(name, {entry["name"] for entry in discovery.discover("context recovery")["results"]})
         self.assertEqual(discovery.discover(name, limit=1)["results"][0]["name"], name)
 
+    def test_discovery_rejects_symlinked_skill_roots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            outside = base / "outside"
+            outside.mkdir()
+            root = base / "root"
+            root.mkdir()
+            self._fixture(root, [self._entry("code-review")])
+            (root / ".agents").mkdir()
+            try:
+                (root / "skills").symlink_to(outside, target_is_directory=True)
+                (root / ".agents" / "skills").symlink_to(outside, target_is_directory=True)
+            except OSError as exc:
+                self.skipTest(str(exc))
+            with self.assertRaisesRegex(ValueError, "Symlinked skills root"):
+                discovery.catalogue_entries(root)
+            with self.assertRaisesRegex(ValueError, "Symlinked native"):
+                discovery.native_entries(root)
+
+    def test_skill_evaluation_retrieved_for_comparing_trials(self):
+        matches = discovery.discover("Compare a baseline and candidate to measure skill quality", limit=1)["results"]
+        self.assertEqual(matches[0]["name"], "shards-skill-evaluation")
+        self.assertIn("compare baseline and candidate", matches[0]["reason"]["intent_phrases"])
+
     def test_retrieve_one_descriptor_without_loading_an_index(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

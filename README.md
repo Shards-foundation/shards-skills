@@ -22,7 +22,7 @@ Open the selected `SKILL.md` and inspect the prerequisites, workflow, expected o
 | Research and analyse | [Evidence-based research](skills/evidence-based-research/SKILL.md), [scientific research](skills/scientific-research/SKILL.md), [reproducible data analysis](skills/reproducible-data-analysis/SKILL.md) |
 | Check local repository and agent workflows | [Shards Core](plugins/shards-core/README.md), [governed dispatcher](docs/skill-dispatch.md), [local agent harness](docs/agent-harness.md) |
 
-For the full inventory, see the [catalogue](catalogue/catalogue.json). The [discovery guide](docs/skill-discovery.md) also covers GitHub-hosted search.
+See the [60 catalogue entries](catalogue/catalogue.json) and the [discovery guide](docs/skill-discovery.md) for curated and native candidate lookup and GitHub-hosted search.
 
 ## Security and governance
 
@@ -75,9 +75,11 @@ python scripts/dispatch_skills.py plan --skill shards-repository-health
 The registry includes `shards-skill-dispatch`, `shards-a2a-harness`, and `shards-parallel-swarm`.
 Review the plan and host permissions before explicitly requesting execution. Use the [dispatcher guide](docs/skill-dispatch.md) for commands, digest requirements and boundaries. To examine an external skill from a separate local checkout, use the [static skill-audit workflow](plugins/shards-core/skills/shards-skill-audit/SKILL.md).
 
-## Verify that a skill was used
+## Verify skill use
 
-Record the skill ID, revision, host and task. Host discovery shows a skill is available. Invocation evidence should show which skill was selected, that its instructions were opened, and which steps were applied. Verify the task outcome independently. Compare equivalent runs with and without the skill before claiming benefits in correctness, time or token use. See the [adoption and evaluation guide](docs/agent-adoption.md).
+Record the skill ID, revision, host and task. Host discovery shows a skill is available. Use a host receipt or trace to establish which skill was selected, which descriptor was opened and which steps were applied. Verify the task outcome independently. Compare equivalent runs with and without the skill before claiming benefits in correctness, time or token use. See the [adoption and evaluation guide](docs/agent-adoption.md).
+
+### Local retrieval and integrity checks
 
 ```bash
 python scripts/agent_adoption_eval.py

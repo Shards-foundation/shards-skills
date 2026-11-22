@@ -871,7 +871,7 @@
       "license": "MIT",
       "signals": [
         "skill benchmark",
-        "with and without a skill",
+        "compare baseline and candidate",
         "matched baseline",
         "measure skill quality"
       ]

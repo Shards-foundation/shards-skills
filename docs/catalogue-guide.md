@@ -2,7 +2,7 @@
 
 `skills/<name>/SKILL.md` is the source for the first-party catalogue. Each
 descriptor declares a canonical name and task-oriented description. The
-generator also reads category, status, licence, version and declared compatibility when available.
+generator also reads category, status, `license`, version and declared `compatibility` when available.
 Add a matching entry to [the discovery profiles](../catalogue/discovery.json).
 Use a few concrete task phrases drawn from the skill's actual workflow.
 Add exclusions only for clear misroutes. The profiles live outside skill

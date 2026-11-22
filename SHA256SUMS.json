@@ -31,8 +31,8 @@
   },
   {
     "path": ".github/PULL_REQUEST_TEMPLATE.md",
-    "sha256": "f028f4a5498dee51a85207443dae2aa740b3a80aeb13577ec772e900f9e8802e",
-    "bytes": 424
+    "sha256": "8a5d51ed079d7cb23334401a7e243e8729fc65b39ade9e9331e8a73be8f1390b",
+    "bytes": 451
   },
   {
     "path": ".github/workflows/agent-adoption.yml",
@@ -96,8 +96,8 @@
   },
   {
     "path": "README.md",
-    "sha256": "d4dd1995bac142df6062bf133501d3591d724f1620faa9b8eb3c290b9a8ee73d",
-    "bytes": 8269
+    "sha256": "5bbcd5d97ee31d907efd8a088eb68051e033a94f7fe981feed421c6dad7a0e4e",
+    "bytes": 8323
   },
   {
     "path": "SECURITY.md",
@@ -116,13 +116,13 @@
   },
   {
     "path": "catalogue/catalogue.json",
-    "sha256": "a0a2e8c0b6884e4d7d262b5e9fb9afd8acf20fda65ebbc8df32872ccdf10e79d",
-    "bytes": 40527
+    "sha256": "f321d2ac4a9f52a8edc9100a6f55fc08b4e580e4a7da5a0e620a82df8f3f0698",
+    "bytes": 40533
   },
   {
     "path": "catalogue/discovery.json",
-    "sha256": "a08a911e52e4c9457a4e5344cba72baef784969b31cfc423479347f2e1ce5c4d",
-    "bytes": 12157
+    "sha256": "7641f4c343fc9c2b970e984463298db3e5e960daad9d1f6056da34bdbdf075e4",
+    "bytes": 12163
   },
   {
     "path": "catalogue/shards-security-controls.json",
@@ -141,8 +141,8 @@
   },
   {
     "path": "docs/agent-adoption.md",
-    "sha256": "1c8a6129524aab4da7b796ab2bb5af03bfbc805b2f2643104e235262e3984985",
-    "bytes": 4521
+    "sha256": "74717bfb755d247b000eebf0d9c64f53c826f4eda231ef2d5b5b6d2eba43b7c3",
+    "bytes": 4698
   },
   {
     "path": "docs/agent-harness.md",
@@ -166,8 +166,8 @@
   },
   {
     "path": "docs/catalogue-guide.md",
-    "sha256": "e98cadd38460321c54425dd10c34d17030b4fa9bc27e3878520a381232f5ae9d",
-    "bytes": 1504
+    "sha256": "28cf37c8906d773345497d013c162d84b6304a082658c08482ad6fbd50647069",
+    "bytes": 1508
   },
   {
     "path": "docs/compatibility.md",
@@ -181,8 +181,8 @@
   },
   {
     "path": "docs/host-ab-evaluation.md",
-    "sha256": "1aebdcbc32ac8cf8c3f004f58269168423c50aaa4b3ffe069574156ac8a6c0b6",
-    "bytes": 5339
+    "sha256": "eae2740121214c542ec95859b9852a956be9e8949a89bc41d92c1016998ae71b",
+    "bytes": 5335
   },
   {
     "path": "docs/manual-skill-runs.md",
@@ -196,8 +196,8 @@
   },
   {
     "path": "docs/portable-agent-skills.md",
-    "sha256": "1a33bbe056a563332b5ef4a3d24ae759eea05024478fe7f099ed6930f6297386",
-    "bytes": 8783
+    "sha256": "b914cc03f677be23a28b263576d3ad8997b0e071e59a21a3b3e87ab6b4130002",
+    "bytes": 8979
   },
   {
     "path": "docs/portable-manus-skill.md",
@@ -216,13 +216,13 @@
   },
   {
     "path": "docs/skill-discovery.md",
-    "sha256": "6fb953ee0d09a9ad13e7473e694950d5304b2f20a685448587ce2ed8bd53d7a7",
-    "bytes": 2977
+    "sha256": "470284e25b78c4b663945b35ab4ef894030fe04b8db76a0530660a5efef2970f",
+    "bytes": 3044
   },
   {
     "path": "docs/skill-dispatch.md",
-    "sha256": "913808e36be9b83db1b21765e20906896541e3cb9bc84fb2f692b27afafa4968",
-    "bytes": 5456
+    "sha256": "23571ca428c8c98f351746a6497b691e04f44f40116960ed61073242bf006c1e",
+    "bytes": 5524
   },
   {
     "path": "evals/README.md",
@@ -391,8 +391,8 @@
   },
   {
     "path": "scripts/agent_adoption_eval.py",
-    "sha256": "14ef3ba0e61f827d65a2b4be73baf2aee001f7f987c9249537eca61b5c3ff860",
-    "bytes": 7491
+    "sha256": "cbfe2295ade1c53afde30d4cd4b110d625286fd505b5e7f0ead141b06532ab77",
+    "bytes": 7455
   },
   {
     "path": "scripts/audit_portfolio.py",
@@ -406,8 +406,8 @@
   },
   {
     "path": "scripts/build_catalogue.py",
-    "sha256": "c1b462536e08ab949064be7f455a5279021840d46852872e232c7a5ea8617565",
-    "bytes": 1044
+    "sha256": "50ae35acfbe214c9c44f6ff7e1a645a4825773e8f36874829f014f08fb90cae8",
+    "bytes": 1150
   },
   {
     "path": "scripts/build_portable_security_skill.py",
@@ -416,8 +416,8 @@
   },
   {
     "path": "scripts/catalogue_sync.py",
-    "sha256": "16cf9d5eece5f2bee1d9025129b17fda3fd120c1030fcf1816a68831fbc94411",
-    "bytes": 4461
+    "sha256": "0a46326be29cb507192d9a0f432ec879fa4f551955070e4045f1cac991f6b872",
+    "bytes": 4415
   },
   {
     "path": "scripts/dispatch_skills.py",
@@ -426,8 +426,8 @@
   },
   {
     "path": "scripts/host_ab_eval.py",
-    "sha256": "23a66a79863c5660b6d50ccd289c6a566a7eaf5704240aff0a335cfa1d9172c0",
-    "bytes": 9082
+    "sha256": "41e732252a924c5a33ab20fe69cb0b27f2469374dc23ac1fd51b06571e9c44ef",
+    "bytes": 9163
   },
   {
     "path": "scripts/operating_ledger.py",
@@ -446,8 +446,8 @@
   },
   {
     "path": "scripts/search_skills.py",
-    "sha256": "09545572546c6c61060a50353e3d9d5e682dcdcaa947a422248283af5fabf47c",
-    "bytes": 15615
+    "sha256": "4be18cfb73c0400d6c0de890d86921c80f2b7f9b368fcc55d6edbc9d176b2af7",
+    "bytes": 15806
   },
   {
     "path": "scripts/security_assurance.py",
@@ -481,8 +481,8 @@
   },
   {
     "path": "scripts/validate_skills.py",
-    "sha256": "204dc9ef1c6f02d4145abaa6882074961f7e3af09d599209977a112c6fe2946e",
-    "bytes": 8956
+    "sha256": "e6411542e03c4f6f3914bf5a1b5878ec2f704faabdeb43163a93ddd05953b0e4",
+    "bytes": 9067
   },
   {
     "path": "scripts/verify_plugins.py",
@@ -851,8 +851,8 @@
   },
   {
     "path": "tests/test_agent_adoption_eval.py",
-    "sha256": "cc02070af82cc851499bbec13c3f426e1ee06ebd2b919b58b4de6d119ccc2012",
-    "bytes": 6644
+    "sha256": "435f39768ceabe6dc215ed858d324342cc7cf639f479cec2e12bcecde6c0988b",
+    "bytes": 6614
   },
   {
     "path": "tests/test_agent_harness.py",
@@ -881,8 +881,8 @@
   },
   {
     "path": "tests/test_host_ab_eval.py",
-    "sha256": "12ec2f422d39253786101c1ebec854004d84a58f71ccd7b41ad748c69e6a99ee",
-    "bytes": 10722
+    "sha256": "2c6e699bbdb0cd92e149e4f7fc51ef06b23dab75104c0b589e2027bcfa99bde7",
+    "bytes": 11235
   },
   {
     "path": "tests/test_manual_skill_actions.py",
@@ -921,8 +921,8 @@
   },
   {
     "path": "tests/test_repository.py",
-    "sha256": "a4f1d48c5c051466cac495e787f45f2580f2eb5e234db6d51dde4be9bcc6d2dc",
-    "bytes": 12779
+    "sha256": "9fcf5eae6aa4b90bede21213fc2703d47805813229be2fa8b5eed08aa7f0c919",
+    "bytes": 14317
   },
   {
     "path": "tests/test_security_assurance.py",
@@ -951,8 +951,8 @@
   },
   {
     "path": "tests/test_skill_search.py",
-    "sha256": "ab3ae98bd87bf4ea1d0e1499cca16a445b36bc19718cb64d6c3d44b8bf5ced28",
-    "bytes": 16359
+    "sha256": "6f2e664825dadcfc697f54586dba005256417597c1e82d5fabfbeed089c48c91",
+    "bytes": 17605
   },
   {
     "path": "tests/test_vibecode_guard.py",

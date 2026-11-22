@@ -8,14 +8,13 @@ import os
 import tempfile
 from pathlib import Path
 
-from validate_skills import catalogue_entry, enrich_catalogue
+from validate_skills import catalogue_entry, catalogue_file, enrich_catalogue
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
     root = root.resolve()
-    catalogue_path = root / "catalogue/catalogue.json"
-    existing = json.loads(catalogue_path.read_text(encoding="utf-8"))
+    existing = json.loads(catalogue_file(root).read_text(encoding="utf-8"))
     entries = []
     errors = []
     for path in sorted((root / "skills").glob("*/SKILL.md")):
@@ -58,7 +57,7 @@ def repair(root: Path = ROOT) -> dict:
     expected, report = inspect_catalogue(root)
     if report["errors"]:
         raise ValueError("Repair refused: invalid or inconsistent skill paths; fix errors first")
-    path = root.resolve() / "catalogue/catalogue.json"
+    path = catalogue_file(root.resolve())
     if report["would_change"]:
         data = json.dumps(expected, indent=2, ensure_ascii=False) + "\n"
         fd, temp = tempfile.mkstemp(prefix=".catalogue-", suffix=".tmp", dir=path.parent)

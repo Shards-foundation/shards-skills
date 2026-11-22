@@ -1,4 +1,5 @@
 """Unit and CLI tests for governed curated skill execution."""
+import hashlib
 import json
 import os
 import subprocess
@@ -15,19 +16,69 @@ import verify_plugins as integrity
 
 class SkillDispatchTests(unittest.TestCase):
     def test_registry_exact_curated_skill_names(self):
-        self.assertEqual(len(dispatcher.REGISTRY), 11)
+        self.assertEqual(len(dispatcher.REGISTRY), 12)
         self.assertEqual(set(dispatcher.REGISTRY), {
             "shards-repository-health", "shards-skill-audit",
             "shards-release-gate", "shards-agent-handoff",
             "shards-automation-operator", "shards-catalogue-sync",
             "shards-skill-dispatch", "shards-a2a-harness",
+            "shards-a2a-authority-preflight",
             "shards-dual-channel", "shards-subagents", "shards-parallel-swarm",
         })
 
     def test_structural_plugin_integrity(self):
         report = integrity.validate()
         self.assertEqual(report["status"], "PASS", report["errors"])
-        self.assertEqual(report["registered_skills"], 11)
+        self.assertEqual(report["registered_skills"], 12)
+
+    def test_authority_preflight_is_read_only_and_plan_pinned(self):
+        with self.assertRaisesRegex(ValueError, "requires --input-file"):
+            dispatcher.describe("shards-a2a-authority-preflight")
+        with self.assertRaises(ValueError):
+            dispatcher.describe("shards-a2a-authority-preflight",
+                                input_file="/tmp/untrusted-input.json")
+        fixture = ROOT / "plugins/shards-core/skills/shards-a2a-authority-preflight/references/example-readonly.json"
+        data = fixture.read_bytes()
+        dispatcher.LOCAL_STATE.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=dispatcher.LOCAL_STATE) as directory:
+            sample = Path(directory) / "authority.json"
+            sample.write_bytes(data)
+            plan = dispatcher.describe("shards-a2a-authority-preflight", input_file=str(sample))
+            self.assertEqual(plan["effect"], "read-only")
+            self.assertEqual(plan["command"][-3:], ["validate", "--input", "-"])
+            self.assertEqual(plan["input_sha256"], hashlib.sha256(data).hexdigest())
+            with self.assertRaisesRegex(ValueError, "requires --expect-plan-sha256"):
+                dispatcher.run(plan)
+            result = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"])
+            self.assertEqual(result["observation"]["status"], "pass", result)
+            self.assertEqual(result["observation"]["report"]["decision"], "CLAIMS_COMPLETE")
+
+            forged = dict(plan, command=plan["command"] + ["--unsafe"])
+            forged["plan_sha256"] = dispatcher._plan_fingerprint(forged)
+            with self.assertRaisesRegex(ValueError, "command differs"):
+                dispatcher.run(forged, expect_plan_sha256=forged["plan_sha256"],
+                               executor=lambda *args, **kwargs: self.fail("executed"))
+
+            changed = json.loads(data)
+            changed["actions"][0]["permission"] = "UNKNOWN"
+            sample.write_text(json.dumps(changed), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Reviewed input changed"):
+                dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"])
+            hold = dispatcher.describe("shards-a2a-authority-preflight", input_file=str(sample))
+            result = dispatcher.run(hold, expect_plan_sha256=hold["plan_sha256"])
+            self.assertEqual(result["observation"]["status"], "hold", result)
+
+            original = changed["actions"][0]
+            changed["actions"] = [dict(original, actor=actor, operation=operation, evidence_ids=[])
+                                  for actor in sorted(set(changed["roles"].values()))
+                                  for operation in ("repo.read", "git.fetch", "pr.read", "ci.read", "git.pull")]
+            sample.write_text(json.dumps(changed), encoding="utf-8")
+            full = dispatcher.describe("shards-a2a-authority-preflight", input_file=str(sample))
+            observed = dispatcher.run(full, expect_plan_sha256=full["plan_sha256"])["observation"]
+            self.assertEqual(observed["status"], "hold", observed)
+            self.assertEqual(len(observed["stdout_tail"]), 4000)
+            self.assertEqual(len(observed["report"]["operations"]), len(changed["actions"]))
+            self.assertEqual(len(observed["report"]["blockers"]), len(changed["actions"]))
 
     def test_plan_is_read_only(self):
         report = dispatcher.describe("shards-repository-health")
@@ -199,7 +250,7 @@ class SkillDispatchTests(unittest.TestCase):
         listing = subprocess.run([sys.executable, script, "list"],
                                  capture_output=True, text=True, timeout=15)
         self.assertEqual(listing.returncode, 0, listing.stderr)
-        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 11)
+        self.assertEqual(len(json.loads(listing.stdout)["skills"]), 12)
         plan = subprocess.run([sys.executable, script, "plan", "--skill", "shards-repository-health"],
                               capture_output=True, text=True, timeout=15)
         self.assertEqual(plan.returncode, 0, plan.stderr)

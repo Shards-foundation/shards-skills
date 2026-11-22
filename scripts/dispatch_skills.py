@@ -30,6 +30,8 @@ REGISTRY = {
     "shards-skill-audit": ("read-only", "plugins/shards-core/scripts/run.py", "audit-skill"),
     "shards-release-gate": ("read-only", "plugins/shards-core/scripts/run.py", "release-check"),
     "shards-agent-handoff": ("local-write", "plugins/shards-core/scripts/run.py", "handoff"),
+    "shards-a2a-authority-preflight": (
+        "read-only", "plugins/shards-core/skills/shards-a2a-authority-preflight/scripts/validate.py", "validate"),
     "shards-automation-operator": ("local-tests", "scripts/automate.py", "run"),
     "shards-catalogue-sync": ("read-only", "scripts/catalogue_sync.py", "--check"),
     "shards-skill-dispatch": ("read-only", "scripts/verify_plugins.py", "--check"),
@@ -43,6 +45,9 @@ HARNESS_SKILLS = frozenset({
     "shards-a2a-harness", "shards-dual-channel",
     "shards-subagents", "shards-parallel-swarm",
 })
+
+STATE_VALIDATORS = frozenset({"shards-a2a-authority-preflight"})
+MAX_VALIDATOR_REPORT_CHARS = 262_144
 
 LOCAL_IMPORTS = {
     "scripts/catalogue_sync.py": ("validate_skills",),
@@ -331,6 +336,8 @@ def _check_plan_integrity(plan: dict) -> tuple[bytes, dict[str, tuple[Path, byte
     elif skill == "shards-agent-handoff":
         _state_file(plan.get("output_file"), must_exist=False)
         expected_args = ["--input", "-"]
+    elif skill in STATE_VALIDATORS:
+        expected_args = ["--input", "-"]
     elif skill == "shards-automation-operator":
         if len(args) != 2 or args[0] != "--workflow" or args[1] not in (
                 "quick", "weekly", "verify"):
@@ -392,6 +399,10 @@ def describe(skill_id: str, *, target_skill: str | None = None,
         if not allow_local_write:
             raise ValueError("Handoff requires --allow-local-write")
         cmd.extend(["--input", "-"])
+    elif skill_id in STATE_VALIDATORS:
+        if input_file is None:
+            raise ValueError(f"{skill_id} requires --input-file")
+        cmd.extend(["--input", "-"])
     elif skill_id == "shards-automation-operator":
         if profile not in ("quick", "weekly", "verify"):
             raise ValueError("Only named maintenance profiles can run")
@@ -448,17 +459,30 @@ def run(plan: dict, *, expect_plan_sha256: str | None = None, executor=None) -> 
                         timeout=plan["timeout_seconds"], check=False, input=payload)
         stdout_text = proc.stdout.decode("utf-8", "replace") if isinstance(proc.stdout, bytes) else proc.stdout
         stderr_text = proc.stderr.decode("utf-8", "replace") if isinstance(proc.stderr, bytes) else proc.stderr
-        stdout = SECRET.sub("[REDACTED]", stdout_text)[-4000:]
-        stderr = SECRET.sub("[REDACTED]", stderr_text)[-2000:]
+        stdout = SECRET.sub("[REDACTED]", stdout_text)
+        stderr = SECRET.sub("[REDACTED]", stderr_text)
         status = "pass" if proc.returncode == 0 else "fail"
-        if plan["skill"] == "shards-release-gate" and proc.returncode == 1:
+        validator_report = None
+        if plan["skill"] in STATE_VALIDATORS:
+            out = stdout or stderr
+            if 0 < len(out) <= MAX_VALIDATOR_REPORT_CHARS:
+                try:
+                    report = json.loads(out)
+                    if isinstance(report, dict):
+                        validator_report = report
+                except json.JSONDecodeError:
+                    pass
+        if proc.returncode == 1 and (plan["skill"] == "shards-release-gate" or plan["skill"] in STATE_VALIDATORS):
             try:
-                if json.loads(proc.stdout).get("decision") == "HOLD":
+                report = json.loads(stdout_text)
+                if isinstance(report, dict) and report.get("decision") == "HOLD":
                     status = "hold"
             except json.JSONDecodeError:
                 pass
         observed = {"status": status, "exit_code": proc.returncode,
-                    "stdout_tail": stdout, "stderr_tail": stderr}
+                    "stdout_tail": stdout[-4000:], "stderr_tail": stderr[-2000:]}
+        if validator_report is not None:
+            observed["report"] = validator_report
         if status == "pass" and "output_file" in plan:
             try:
                 report = json.loads(stdout_text)

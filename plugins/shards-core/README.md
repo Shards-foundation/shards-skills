@@ -1,10 +1,10 @@
 # Shards Agent Core
 
-Curated, cross-host plugin package with four executable local Python workflows. This package is distinct from the original 293-skill catalogue and is NOT an MCP service, hosted agent, scheduler or durable memory.
+The Shards Core plugin offers 13 curated workflows from the full repository checkout. Four built-in workflows run through the plugin's Python entry point. The full checkout adds maintenance, dispatch, local harness and validation workflows. Each host needs separate installation and compatibility verification.
 
 Supported packaging entry points: plugin.json (portable Agent Plugins), .claude-plugin/plugin.json, .codex-plugin/plugin.json, .cursor-plugin/plugin.json. Host compatibility and installation must be verified separately; no automatic installation occurs.
 
-Python 3.11+ examples, issued from repository root:
+The four built-in workflows and their catalogue are available from the plugin runner. Python 3.11+ examples from the repository root:
 
     python plugins/shards-core/scripts/run.py catalogue
     python plugins/shards-core/scripts/run.py repository-health --repo .
@@ -30,7 +30,7 @@ This curated plugin now also provides shards-automation-operator and shards-cata
 See docs/automation.md for security boundaries and the scheduled workflow.
 
 ## Governed execution
-A seventh curated skill, shards-skill-dispatch, provides a policy-bounded entry point through scripts/dispatch_skills.py in the full repository checkout. Run plan before run --execute; no imported skill script is directly executable. See docs/skill-dispatch.md at repository root.
+The `shards-skill-dispatch` workflow provides a policy-bounded entry point through `scripts/dispatch_skills.py` in the full checkout. Review the plan before running with `--execute`. The dispatcher runs allowlisted first-party scripts. See `docs/skill-dispatch.md` at the repository root.
 
 
 ## Local multi-agent harness workflows

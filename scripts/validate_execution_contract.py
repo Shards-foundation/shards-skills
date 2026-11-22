@@ -16,8 +16,9 @@ CHECK_KINDS = {"test", "self-reported-test", "check"}
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SECRET = re.compile(
     r"(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|"
-    r"(?:AKIA|ASIA)[0-9A-Z]{16}|Bearer\s+\S+|-----BEGIN [A-Z ]*PRIVATE KEY-----|"
-    r"(?:[a-z][a-z0-9+.-]*:)?//[^\s/?#@]+@|[?&](?:access_token|token|api_key|x-amz-signature)=\S+)",
+    r"(?:AKIA|ASIA)[0-9A-Z]{16}|\bBearer\s+[A-Z0-9._~+/-]{16,}={0,2}|"
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----|//[^\s/?#@]+@|"
+    r"[?&](?:access_token|refresh_token|token|api_key|client_secret|password|x-amz-signature)=\S+)",
     re.I,
 )
 SENSITIVE_FIELD = re.compile(r"(?:password|private[_-]?key|api[_-]?key|token|secret|credential|authorization|cookie)", re.I)

@@ -108,6 +108,17 @@ class SkillDispatchTests(unittest.TestCase):
             report = result["observation"]["report"]
             self.assertFalse(report["execution_performed"])
             self.assertFalse(report["approval_verified"])
+            oversized = json.dumps({"decision": "HOLD", "detail": "x" * dispatcher.MAX_VALIDATOR_REPORT_CHARS})
+            for exit_code in (0, 1):
+                def oversized_validator(argv, **kwargs):
+                    return subprocess.CompletedProcess(argv, exit_code, stdout=oversized, stderr="")
+                result = dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"],
+                                        executor=oversized_validator)
+                observed = result["observation"]
+                self.assertEqual(observed["status"], "fail")
+                self.assertIn("exceeds the receipt size limit", observed["error"])
+                self.assertNotIn("report", observed)
+                self.assertEqual(len(observed["stdout_tail"]), 4000)
             sample.write_bytes(data + b"\n")
             with self.assertRaisesRegex(ValueError, "Reviewed input changed"):
                 dispatcher.run(plan, expect_plan_sha256=plan["plan_sha256"])

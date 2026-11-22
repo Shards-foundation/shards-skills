@@ -287,12 +287,17 @@ class ContractValidationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Sensitive field"):
                     validator.validate(record)
         for locator in ("https://fixture-user:fixture-pass@example.invalid/receipt",
-                        "https://example.invalid/receipt?access_token=placeholder"):
+                        "https://example.invalid/receipt?access_token=placeholder",
+                        "https://example.invalid/receipt?client_secret=placeholder",
+                        "https://example.invalid/receipt?password=placeholder"):
             with self.subTest(locator=locator):
                 record = self.approved()
                 record["evidence"][0]["ref"] = locator
                 with self.assertRaisesRegex(ValueError, "Credential-like"):
                     validator.validate(record)
+        record = self.approved()
+        record["intent"]["goal"] = "Document procedures to rotate Bearer tokens"
+        self.assertEqual(validator.validate(record)["decision"], "EVIDENCE_READY")
 
     def test_bad_schema_and_bool_fail_closed(self):
         for key, value in (("schema_version", 2), ("schema_version", True)):

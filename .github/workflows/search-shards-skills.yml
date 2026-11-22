@@ -23,7 +23,6 @@ on:
           - finance
           - operations
           - research
-          - science
           - security
           - curated
       status:

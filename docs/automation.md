@@ -50,7 +50,7 @@ Automation pass: each enabled, trusted maintenance subprocess finished with exit
 Catalogue PASS: metadata in sync. DRIFT: descriptive metadata differs but identity/count/paths are intact; observational and nonblocking. FAIL: structural errors or missing entries.
 Portfolio OBSERVED: inventory was collected, not security-certified. FAIL: missing or malformed skill instructions detected.
 
-The import catalogue includes third-party review-stage content. Enumerating its scripts is not executing them. Heuristic warning counts are a triage queue, not confirmed vulnerabilities. Host-specific plugin installation, live MCP tool use, service availability and production-readiness checks remain separate.
+The portfolio audit lists metadata and scripts without executing them. The same audit can inspect a separate checkout with `--root`. Heuristic warning counts are a triage queue, not confirmed vulnerabilities. Host-specific plugin installation, live MCP tool use, service availability and production-readiness checks remain separate.
 
 Never schedule automatic repair or trust promotion without independent provenance validation and narrow approval.
 

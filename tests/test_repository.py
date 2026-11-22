@@ -25,13 +25,20 @@ class RepositoryTests(unittest.TestCase):
   self.assertEqual(sorted(cat['skill_paths']),actual)
   self.assertEqual(cat['skill_count'],len(actual))
   self.assertEqual(len(cat['skills']),len(actual))
- def test_upstream_register_has_unique_urls(self):
-  data=json.loads((ROOT/'catalogue/upstreams.json').read_text())
-  urls=[s['url'] for s in data['sources']]
-  self.assertGreaterEqual(len(urls),15)
-  self.assertEqual(len(urls),len(set(urls)))
-  for source in data['sources']:
-   self.assertTrue(source.get('name'));self.assertTrue(source.get('role'));self.assertTrue(source.get('integration'))
+ def test_active_catalogue_excludes_packages_with_upstream_provenance(self):
+  self.assertEqual(list((ROOT/'skills').glob('*/UPSTREAM.md')), [])
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory)
+   path=root/'skills'/'synthetic-import'/'SKILL.md'
+   path.parent.mkdir(parents=True)
+   header='---\nname: synthetic-import\ndescription: A synthetic import for the catalogue guard.\n'
+   path.write_text(header+'upstream-commit: placeholder\n---\nbody', encoding='utf-8')
+   with self.assertRaisesRegex(ValueError, 'Third-party package'):
+    validate_skills.catalogue_entry(path, root)
+   path.write_text(header+'---\nbody', encoding='utf-8')
+   (path.parent/'UPSTREAM.md').write_text('Synthetic provenance.', encoding='utf-8')
+   with self.assertRaisesRegex(ValueError, 'Third-party package'):
+    validate_skills.catalogue_entry(path, root)
  def test_eval_fixtures_reference_existing_skills(self):
   data=json.loads((ROOT/'evals/trigger-cases.json').read_text())
   existing={p.parent.name for p in (ROOT/'skills').glob('*/SKILL.md')}
@@ -63,7 +70,7 @@ class RepositoryTests(unittest.TestCase):
    _,warnings=validate_skills.validate_one(p)
    self.assertTrue(warnings)
  def test_json_manifests_parse(self):
-  for rel in ('catalogue/catalogue.json','catalogue/upstreams.json','evals/trigger-cases.json','schemas/skill.schema.json'):
+  for rel in ('catalogue/catalogue.json','evals/trigger-cases.json','schemas/skill.schema.json'):
    with self.subTest(rel=rel): json.loads((ROOT/rel).read_text(encoding='utf-8'))
  def test_all_relative_links_resolve(self):
   for p in (ROOT/'skills').glob('*/SKILL.md'):

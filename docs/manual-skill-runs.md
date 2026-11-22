@@ -60,7 +60,7 @@ python -m unittest discover -s tests -p 'test_manual_skill_actions.py' -v
 ```
 
 Do not paste the placeholder digest as-is; use the `plan_sha256` of the
-reviewed plan. To audit an imported skill, use the local static audit
+reviewed plan. To audit a separate external package, use the local static audit
 entry point separately after checking provenance. This workflow deliberately
 does not allow arbitrary audit targets.
 

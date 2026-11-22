@@ -3,7 +3,7 @@
 Three layers are intentionally separate:
 
 1. Identity: AGENTS.md is the canonical repository operating contract. agent.md specifies the operator role and lifecycle.
-2. Skills: existing skills/ remains the historical first-party + imported catalogue. plugins/shards-core/skills/ contains an allowlisted, independently packaged executable core.
+2. Skills: `skills/` contains the first-party catalogue. plugins/shards-core/skills/ contains an allowlisted, independently packaged executable core.
 3. Plugin: plugins/shards-core/plugin.json and compatibility manifests package only curated skills. They do not spawn an MCP server or provide long-term memory.
 
 ## Install/discovery boundaries
@@ -20,4 +20,4 @@ Commands: catalogue, repository-health, audit-skill, release-check, handoff.
 All default operations are read-only except an explicit handoff output file. A release check is HOLD unless its approved test evidence is present. Running untrusted repository tests is opt-in.
 
 ## Coverage and readiness
-The existing 293 top-level packages were not converted wholesale. The curated plugin contains thirteen curated skill packages: four core executable workflows, three root-repository automation/dispatch workflows, four local agent-harness workflows and two local validators for A2A authority preflight and execution contracts. Both validators check claimed metadata without granting privileges. These are read-only local delegates, not network A2A servers. Imported packages stay review-stage, are not auto-executed, and are not auto-loaded into the curated plugin. Extend by adding new reviewed wrappers with tests and matching output contracts. Host compatibility must be demonstrated, not inferred from file extensions.
+The curated plugin contains thirteen curated skill packages: four core executable workflows, three root-repository automation/dispatch workflows, four local agent-harness workflows and two local validators for A2A authority preflight and execution contracts. Both validators check claimed metadata without granting privileges. These are read-only local delegates, not network A2A servers. Extend by adding new reviewed wrappers with tests and matching output contracts. Host compatibility must be demonstrated, not inferred from file extensions.

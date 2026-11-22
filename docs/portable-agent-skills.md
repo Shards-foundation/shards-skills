@@ -11,9 +11,7 @@ and [Vercel Skills installer/agent paths](https://github.com/vercel-labs/skills/
 ## The quickest supported installation
 
 Use the established `skills` installer (Node.js 22.20+, Git and network access).
-Select **one or a few Shards-authored packages**, not all 329 catalogue entries.
-The repository includes third-party imported/review-stage skills; listing a
-package never authorises execution of its scripts.
+Select one or a few skills from the first-party library. A listing establishes availability. Execution requires separate host permission.
 
 ```bash
 # List discoverable skills before trusting any of them.
@@ -37,8 +35,7 @@ and lock-file content hashes. Prefer pinning the source to a reviewed commit
 when distributing into regulated or production environments. Native clients
 must still be restarted/refreshed where their skill discovery requires it.
 
-**Important:** `npx skills add Shards-foundation/shards-skills --all` is intentionally **not** recommended for this
-repository; it can include unreviewed imported skill packages.
+Prefer an explicit selection matched to the task. Some skills need access to the full checkout.
 
 ## Target compatibility and boundaries
 

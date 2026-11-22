@@ -75,7 +75,7 @@ class SkillSearchTests(unittest.TestCase):
 
     def test_real_catalogue_has_separate_trust_classes(self):
         entries = discovery.catalogue_entries()
-        self.assertGreater(len(entries), 200)
+        self.assertEqual(len(entries), 60)
         self.assertTrue(all(entry["execution"] == "not-dispatchable" for entry in entries))
         curated = discovery.curated_entries()
         self.assertEqual(len(curated), len(discovery.REGISTRY))
@@ -193,7 +193,8 @@ class SkillSearchTests(unittest.TestCase):
         self.assertEqual(discovery.rank(entries, "Do not connect a broker or place orders."), [])
 
     def test_positive_broker_request_still_retrievable(self):
-        entries = discovery.catalogue_entries()
+        entries = [{**self._entry("trader-broker", "Connect a broker and place orders"),
+                    "execution": "not-dispatchable"}]
         results = discovery.rank(entries, "Connect a broker and place approved orders")
         self.assertIn("trader-broker", [item["name"] for item in results[:3]])
         match = next(item for item in results if item["name"] == "trader-broker")
@@ -234,7 +235,8 @@ class SkillSearchTests(unittest.TestCase):
                 )
 
     def test_negated_skill_does_not_resurface_under_category_filter(self):
-        entries = discovery.catalogue_entries()
+        entries = [{**self._entry("trader-broker", "Day-trading broker"),
+                    "category": "finance", "execution": "not-dispatchable"}]
         query = ("Import day-trading skill files into the catalogue; "
                  "do not connect a broker or place orders")
         results = discovery.rank(entries, query, category="finance")

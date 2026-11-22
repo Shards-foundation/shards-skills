@@ -38,6 +38,29 @@ def parse_frontmatter(text: str):
         meta[key] = value
     return meta, parts[2].lstrip("\n")
 
+
+def catalogue_entry(path: Path, root: Path) -> dict:
+    """Read one active descriptor and reject known import provenance."""
+    if path.is_symlink() or path.parent.is_symlink() or (root / "skills").is_symlink():
+        raise ValueError("Symlinked skill requires manual review")
+    meta, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
+    if ((path.parent / "UPSTREAM.md").exists() or (path.parent / "UPSTREAM.md").is_symlink()
+            or any(key == "upstream" or key.startswith("upstream-") for key in meta)):
+        raise ValueError("Third-party package is outside the active catalogue")
+    name = meta.get("name", "")
+    if not NAME_RE.fullmatch(name) or name != path.parent.name:
+        raise ValueError("Name does not match skill directory")
+    if not meta.get("description"):
+        raise ValueError("Missing skill description")
+    return {
+        "name": name,
+        "path": path.parent.relative_to(root).as_posix(),
+        "description": meta["description"],
+        "category": meta.get("category", "uncategorised"),
+        "status": meta.get("status", "draft"),
+        "version": meta.get("version", "0.0.0"),
+    }
+
 def validate_one(path: Path):
     errors, warnings = [], []
     try:
@@ -73,9 +96,9 @@ def main():
     for path in files:
         e, w = validate_one(path); errors += e; warnings += w
         try:
-            meta, _ = parse_frontmatter(path.read_text(encoding="utf-8")); names.append(meta.get("name", ""))
-        except Exception:
-            pass
+            names.append(catalogue_entry(path, ROOT)["name"])
+        except (OSError, UnicodeError, ValueError) as exc:
+            errors.append(f"{path}: {exc}")
     if len(names) != len(set(names)): errors.append("duplicate skill names found")
     cat_path = ROOT / "catalogue" / "catalogue.json"
     try:

@@ -10,11 +10,8 @@ patterns={
  "disable-security-controls":re.compile(r"(?i)(disable|turn off|bypass).{0,60}(verification|tls|certificate|security scan|approval gate)"),
 }
 issues=[]
-baseline=[]
-imported=[]
-for skill_root in (ROOT / 'skills', ROOT / '.agents' / 'skills'):
+for skill_root in (ROOT / 'skills', ROOT / '.agents' / 'skills', ROOT / 'plugins' / 'shards-core' / 'skills'):
     for folder in skill_root.iterdir() if skill_root.is_dir() else ():
-        findings = imported if skill_root == ROOT / 'skills' and (folder / 'UPSTREAM.md').exists() else baseline
         for path in folder.rglob('*'):
             if path.is_file() and path.suffix.lower() in {'.md', '.py', '.sh', '.js', '.ts', '.json', '.yml', '.yaml'}:
                 try:
@@ -24,10 +21,7 @@ for skill_root in (ROOT / 'skills', ROOT / '.agents' / 'skills'):
                 for label, pattern in patterns.items():
                     for match in pattern.finditer(data):
                         item = (path.relative_to(ROOT), label, data.count('\n', 0, match.start()) + 1)
-                        findings.append(item)
                         issues.append(item)
 for p,label,line in issues: print(f"REVIEW {p}:{line}: {label}")
-print(f"Security lint scanned skills; {len(issues)} finding(s) require contextual review ({len(imported)} imported, {len(baseline)} baseline).")
-# Imported packages are explicitly review-stage: findings are a queue, not a release blocker.
-# Baseline Shards-authored packages must remain clean.
-raise SystemExit(1 if baseline else 0)
+print(f"Security lint scanned active skills; {len(issues)} finding(s) require contextual review.")
+raise SystemExit(int(bool(issues)))

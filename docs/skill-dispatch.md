@@ -1,6 +1,6 @@
 # Governed local skill execution
 
-The imported and first-party catalogue under skills/ is not an executable allowlist. The curated plugin package under plugins/shards-core/skills/ has its own reviewed descriptors. scripts/dispatch_skills.py maps exact approved names to exact first-party Python entry points.
+The first-party catalogue under `skills/` contains instruction workflows. The curated plugin package under plugins/shards-core/skills/ has its own reviewed descriptors. scripts/dispatch_skills.py maps exact approved names to exact first-party Python entry points.
 
 ## Commands from the repository root
 
@@ -52,7 +52,7 @@ The filesystem must support hard links for create-only publication. Publication
 uses directory-relative operations on POSIX and retained path handles on Windows.
 Other platforms require a supported way to anchor the destination before writing.
 
-No dispatcher operation can publish packages, deploy, merge pull requests, call external APIs or run imported scripts. The catalogue audit may inspect any existing skill by NAME but does not execute it.
+No dispatcher operation can publish packages, deploy, merge pull requests, call external APIs or run imported scripts. The dispatcher audit can inspect a first-party skill by name. For an external folder, use the local `audit-skill --path` command directly in a disposable environment.
 
 ## Safety and evidence
 
@@ -60,7 +60,7 @@ The dispatcher checks curated descriptors and trusted executable paths before co
 
 The plan command is read-only. The run command additionally requires --execute. Handoff additionally requires --allow-local-write, and input/output paths must be under .shards/state/*.json. The underlying handoff validator provides another validation layer. CLI flags and plan hashes are integrity checks, **not** identity-bound approvals, a process sandbox, cryptographic permits or a production policy-enforcement boundary. A caller able to recompute and supply its own digest is not independently authorised. Plan validation is not an atomic filesystem snapshot and cannot eliminate a malicious local race after validation. The trusted host must independently enforce authorization.
 
-Imported skills are inspection-only targets until individually reviewed and deliberately promoted to first-party execution mappings. A static scan is not proof of trust. Manifest validation does not establish actual compatibility with any particular AI host.
+Inspect external skills with the static audit in an isolated checkout. A static scan is not proof of trust. Manifest validation does not establish actual compatibility with any particular AI host.
 
 ## Verification commands
 

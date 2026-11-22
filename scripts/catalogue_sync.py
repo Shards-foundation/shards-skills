@@ -8,7 +8,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from validate_skills import parse_frontmatter
+from validate_skills import catalogue_entry
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -19,21 +19,8 @@ def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
     entries = []
     errors = []
     for path in sorted((root / "skills").glob("*/SKILL.md")):
-        if path.is_symlink() or path.parent.is_symlink():
-            errors.append("Symlinked skill requires manual review: " + str(path.relative_to(root)))
-            continue
         try:
-            meta, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
-            if meta.get("name") != path.parent.name:
-                raise ValueError("Name does not match directory")
-            entries.append({
-                "name": meta["name"],
-                "path": str(path.parent.relative_to(root)),
-                "description": meta.get("description", ""),
-                "category": meta.get("category", "uncategorised"),
-                "status": meta.get("status", "draft"),
-                "version": meta.get("version", "0.0.0"),
-            })
+            entries.append(catalogue_entry(path, root))
         except (ValueError, KeyError, UnicodeError, OSError) as exc:
             errors.append(str(path.relative_to(root)) + ": " + str(exc))
     expected = dict(existing)
@@ -55,7 +42,6 @@ def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
         errors.append("Catalogue skill_paths differ from discovered SKILL.md files")
     if missing or extra:
         errors.append("Catalogue entries missing or stale")
-    # Legacy imported metadata may be stale; report but do not misclassify an existing checked-out skill.
     report = {
         "workflow": "catalogue-sync", "observed_skills": len(entries),
         "declared_skills": existing.get("skill_count"),

@@ -3,9 +3,6 @@ on:
   push:
     branches: [main]
     paths:
-      - 'skills/trader-*/**'
-      - 'third_party/day-trader-skill/**'
-      - 'docs/day-trader-skills.md'
       - 'skills/shards-*/**'
       - 'scripts/skill_improver.py'
       - 'scripts/operating_ledger.py'
@@ -50,13 +47,9 @@ on:
       - 'evals/shards-native-recovery.json'
       - 'scripts/security_lint.py'
       - 'tests/test_native_recovery.py'
-      - 'skills/rebelytics-observer-rebelytics-observer/**'
       - '.github/workflows/agent-core-plugin.yml'
   pull_request:
     paths:
-      - 'skills/trader-*/**'
-      - 'third_party/day-trader-skill/**'
-      - 'docs/day-trader-skills.md'
       - 'skills/shards-*/**'
       - 'scripts/skill_improver.py'
       - 'scripts/operating_ledger.py'
@@ -101,7 +94,6 @@ on:
       - 'evals/shards-native-recovery.json'
       - 'scripts/security_lint.py'
       - 'tests/test_native_recovery.py'
-      - 'skills/rebelytics-observer-rebelytics-observer/**'
       - '.github/workflows/agent-core-plugin.yml'
   workflow_dispatch:
 permissions:

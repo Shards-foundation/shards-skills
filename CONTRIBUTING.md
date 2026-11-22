@@ -2,10 +2,10 @@
 
 ## Before opening a PR
 
-1. Read the repository security model and third-party import policy.
+1. Read the repository security model and first-party catalogue guide.
 2. Run `python scripts/validate_skills.py` and `python -m unittest discover -s tests -v`.
 3. Add or update an eval case for changed behaviour.
-4. Include provenance and licence evidence for any imported material.
+4. Record authorship and check attribution obligations for referenced sources.
 5. Explain compatibility tested, limitations, and any commands or network access the skill may request.
 
 ## Review checklist

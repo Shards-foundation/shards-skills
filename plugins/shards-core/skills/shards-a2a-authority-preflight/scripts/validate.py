@@ -13,8 +13,9 @@ ID = re.compile(r"[A-Za-z][A-Za-z0-9._-]{0,63}\Z")
 REPO = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 SECRET = re.compile(
     r"(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|"
-    r"(?:AKIA|ASIA)[0-9A-Z]{16}|Bearer\s+\S+|-----BEGIN [A-Z ]*PRIVATE KEY-----|"
-    r"(?:[a-z][a-z0-9+.-]*:)?//[^\s/?#@]+@|[?&](?:access_token|token|api_key|x-amz-signature)=\S+)",
+    r"(?:AKIA|ASIA)[0-9A-Z]{16}|\bBearer\s+[A-Z0-9._~+/-]{16,}={0,2}|"
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----|//[^\s/?#@]+@|"
+    r"[?&](?:access_token|refresh_token|token|api_key|client_secret|password|x-amz-signature)=\S+)",
     re.I,
 )
 SENSITIVE = re.compile(r"(?:password|token|api[_-]?key|private[_-]?key|secret|credential|authorization|cookie)", re.I)

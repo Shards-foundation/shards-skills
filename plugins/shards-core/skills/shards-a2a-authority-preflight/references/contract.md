@@ -4,12 +4,12 @@ Use one task and only the actions the task actually requires. The JSON is a **sa
 
 ## Required shape
 
-Use a UTF-8 JSON document of at most 256 KiB with at most 32 nested containers. The CLI reads a local file or standard input (`--input -`) with the same limits. Each JSON field name must be unique within its object.
+Use a UTF-8 JSON document of at most 256 KiB with at most 32 nested containers. The CLI reads a local file or standard input (`--input -`) with the same limits. Each JSON field name must be unique within its object. Task, actor and evidence IDs start with a letter and can contain up to 63 additional letters, digits, periods, underscores or hyphens.
 
 - `schema_version`: exactly integer `1`.
 - `task`: `id`, `goal`, `repository` (`owner/name`), `branch`, `head_sha` (full 40-character lowercase hex). An unknown repository or SHA cannot be represented as verified: resolve through read-only discovery or return HOLD manually without manufacturing values.
 - `roles`: string IDs `delegator`, `coordinator`, `executor`, `integrator`, `reviewer`, `merge_decider`. Reviewer must differ from executor and integrator. Use consistent spelling for each actor. Case-only variants across roles are ambiguous and yield `INVALID`. Compatible roles may use exactly the same label. The host authenticates identities.
-- `actions`: 1–48 objects with `actor`, exact `operation`, `repository` and `branch` matching the task, `permission`, `access`, `policy`, `access_issue`, `evidence_ids`. Only actions in the validator's fixed operation list are accepted; unrecognised effects are not automatically downgraded to READ.
+- `actions`: 1–48 objects with `actor`, exact `operation`, `repository` and `branch` matching the task, `permission`, `access`, `policy`, `access_issue` and up to 12 unique `evidence_ids` per action. The validator accepts only actions in its fixed operation list.
 - `evidence`: up to 96 nonsecret source references with unique `id`, `kind` (`delegation`, `capability`, `policy`), `reference`, `revision` (must equal `task.head_sha`), and `observed_by`. To support an action, every kind also needs `subject_actor`, `operation`, `repository` and `branch` matching that action. `observed_by` identifies the reporting actor assigned to a task role and may differ from the subject. Each source reference must identify a single observation with consistent attribution and kind. For a combined report, use a stable per-record locator such as `local:observations#access-1`. Reusing one locator with conflicting metadata yields `HOLD` for an action citing it as support. The destination host retrieves and verifies the observation.
 
 Status vocabulary:

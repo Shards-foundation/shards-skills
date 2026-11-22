@@ -38,7 +38,7 @@ class ManualSearchActionTests(unittest.TestCase):
         from_file = choices(text, "category", "status")
         self.assertEqual(from_file, set(data["categories"]) | {"all", "curated"})
         self.assertEqual(choices(text, "status", "limit"),
-                         {"all", "draft", "review", "verified", "deprecated", "curated"})
+                         {"all", "draft", "review", "verified", "deprecated", "curated", "candidate"})
         self.assertEqual(choices(text, "limit"), {"5", "10", "20", "50"})
 
     def test_shell_inputs_are_environment_bound_and_quoted(self):

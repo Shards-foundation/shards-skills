@@ -1,0 +1,514 @@
+{
+  "schema_version": 1,
+  "skills": {
+    "agent-system-design": {
+      "signals": [
+        "multi agent architecture",
+        "orchestrate workers",
+        "tool using assistant",
+        "agent system design"
+      ]
+    },
+    "code-review": {
+      "signals": [
+        "pull request review",
+        "review a diff",
+        "review patch",
+        "regression risk",
+        "review changes before merging"
+      ]
+    },
+    "evidence-based-research": {
+      "signals": [
+        "compare official sources",
+        "current primary sources",
+        "decision brief",
+        "technical literature",
+        "conflicting sources"
+      ]
+    },
+    "frontend-accessibility-review": {
+      "signals": [
+        "accessibility audit",
+        "keyboard navigation",
+        "screen reader",
+        "responsive layout",
+        "web accessibility"
+      ]
+    },
+    "implementation-planning": {
+      "signals": [
+        "multi file change",
+        "implementation plan",
+        "sequence engineering work",
+        "verification plan"
+      ]
+    },
+    "incident-runbook": {
+      "signals": [
+        "production outage",
+        "api error rates",
+        "service degradation",
+        "incident coordination"
+      ]
+    },
+    "problem-framing": {
+      "signals": [
+        "ambiguous requirements",
+        "define acceptance criteria",
+        "clarify objective",
+        "problem statement"
+      ]
+    },
+    "release-readiness": {
+      "signals": [
+        "release gate",
+        "go no go",
+        "release evidence",
+        "handover readiness"
+      ]
+    },
+    "reproducible-data-analysis": {
+      "signals": [
+        "dataset analysis",
+        "reproduce data results",
+        "data quality",
+        "auditable notebook"
+      ]
+    },
+    "scientific-research": {
+      "signals": [
+        "scientific literature",
+        "research methodology",
+        "appraise studies",
+        "scientific uncertainty"
+      ]
+    },
+    "secure-code-review": {
+      "signals": [
+        "review code for vulnerabilities",
+        "authorization flaws",
+        "unsafe input",
+        "security code review"
+      ]
+    },
+    "shards-a2a-clear-demonstration": {
+      "signals": [
+        "demonstrate an agent capability",
+        "reproducible demonstration",
+        "positive and negative cases"
+      ]
+    },
+    "shards-a2a-closed-loop-circuit": {
+      "signals": [
+        "multi agent completion",
+        "agent workflow closure",
+        "accept intent through verification"
+      ]
+    },
+    "shards-a2a-conditional-offer": {
+      "signals": [
+        "cross agent proposal",
+        "conditional delegation",
+        "counter offer",
+        "reject agent offer"
+      ]
+    },
+    "shards-a2a-leakage-audit": {
+      "signals": [
+        "authority slippage",
+        "scope leakage",
+        "unverified agent evidence",
+        "audit agent claims"
+      ]
+    },
+    "shards-a2a-self-preservation": {
+      "signals": [
+        "reuse prior task evidence",
+        "avoid rerunning checks",
+        "resume from pinned evidence",
+        "agent continuity"
+      ]
+    },
+    "shards-context-recovery": {
+      "signals": [
+        "resume interrupted work",
+        "interrupted github pr",
+        "recover from checkpoint",
+        "restore prior session"
+      ],
+      "exclude": [
+        "brand new documentation task",
+        "no previous run"
+      ]
+    },
+    "shards-evidence-verification": {
+      "signals": [
+        "verify changes before merging",
+        "bind acceptance evidence",
+        "verify test results",
+        "independent verification",
+        "prove task completion"
+      ]
+    },
+    "shards-host-compatibility": {
+      "signals": [
+        "native skill discovery",
+        "test host compatibility",
+        "different agent hosts",
+        "compare codex and claude"
+      ]
+    },
+    "shards-learning-capture": {
+      "signals": [
+        "record a verified lesson",
+        "recurring failure",
+        "preserve operational learning"
+      ]
+    },
+    "shards-progress-control": {
+      "signals": [
+        "repeated attempts",
+        "agent loop",
+        "scope creep",
+        "unnecessary retries"
+      ]
+    },
+    "shards-restore-recover": {
+      "signals": [
+        "resume interrupted github",
+        "session usage limit",
+        "recover pushed branches",
+        "reconcile live state",
+        "continue from checkpoint"
+      ],
+      "exclude": [
+        "brand new documentation task",
+        "no previous run"
+      ]
+    },
+    "shards-review-resolution": {
+      "signals": [
+        "github pr repair",
+        "resolve review findings",
+        "address reviewer feedback",
+        "review threads",
+        "repair pull request"
+      ]
+    },
+    "shards-sec-ai-agent-boundaries": {
+      "signals": [
+        "mcp permissions",
+        "agent tool permissions",
+        "ai agent least privilege",
+        "agent scope enforcement"
+      ]
+    },
+    "shards-sec-authorized-testing": {
+      "signals": [
+        "rules of engagement",
+        "authorized testing scope",
+        "bug bounty scope",
+        "defensive test plan"
+      ]
+    },
+    "shards-sec-business-threat-model": {
+      "signals": [
+        "business threat model",
+        "enterprise risk",
+        "regulated architecture",
+        "asset and risk owner"
+      ]
+    },
+    "shards-sec-cloud-devsecops": {
+      "signals": [
+        "review ci pipeline",
+        "cloud permissions",
+        "infrastructure as code",
+        "container supply chain"
+      ]
+    },
+    "shards-sec-compliance-evidence": {
+      "signals": [
+        "audit evidence",
+        "soc evidence",
+        "customer due diligence",
+        "control evidence"
+      ]
+    },
+    "shards-sec-crypto-custody": {
+      "signals": [
+        "wallet key custody",
+        "multisig",
+        "token custody",
+        "on chain signing"
+      ]
+    },
+    "shards-sec-crypto-fincrime": {
+      "signals": [
+        "crypto aml",
+        "vasp",
+        "travel rule",
+        "exchange compliance"
+      ]
+    },
+    "shards-sec-defi-protocol": {
+      "signals": [
+        "defi protocol",
+        "oracle trust",
+        "bridge design",
+        "liquidity protocol"
+      ]
+    },
+    "shards-sec-detection-response": {
+      "signals": [
+        "soc alert",
+        "security telemetry",
+        "fraud detection",
+        "response drill"
+      ]
+    },
+    "shards-sec-fintech-payments": {
+      "signals": [
+        "payment authorization",
+        "funds flow",
+        "payment reconciliation",
+        "card processing"
+      ]
+    },
+    "shards-sec-governance-policy": {
+      "signals": [
+        "security policy",
+        "acceptable use",
+        "risk ownership",
+        "policy exception"
+      ]
+    },
+    "shards-sec-human-fraud": {
+      "signals": [
+        "impersonation defence",
+        "phishing defence",
+        "payment fraud",
+        "staff social engineering"
+      ]
+    },
+    "shards-sec-identity-access": {
+      "signals": [
+        "sso",
+        "access control",
+        "service accounts",
+        "identity and permissions",
+        "identity lifecycle"
+      ]
+    },
+    "shards-sec-incident-response": {
+      "signals": [
+        "security incident",
+        "credential compromise",
+        "incident containment",
+        "preserve incident evidence"
+      ]
+    },
+    "shards-sec-intake": {
+      "signals": [
+        "scope a security review",
+        "asset ownership",
+        "security intake",
+        "allowed security testing"
+      ]
+    },
+    "shards-sec-jurisdiction-scope": {
+      "signals": [
+        "cross border compliance",
+        "regulatory applicability",
+        "jurisdiction review",
+        "international privacy"
+      ]
+    },
+    "shards-sec-privacy-dpia": {
+      "signals": [
+        "privacy impact assessment",
+        "personal data",
+        "dpia",
+        "data retention",
+        "surveillance"
+      ]
+    },
+    "shards-sec-prompt-injection": {
+      "signals": [
+        "prompt injection",
+        "untrusted web content",
+        "rag security",
+        "instruction injection"
+      ]
+    },
+    "shards-sec-resilience-recovery": {
+      "signals": [
+        "disaster recovery",
+        "restore backup",
+        "recovery exercise",
+        "business continuity"
+      ]
+    },
+    "shards-sec-secrets-keys": {
+      "signals": [
+        "secret lifecycle",
+        "api key handling",
+        "rotate credentials",
+        "signing key storage"
+      ]
+    },
+    "shards-sec-supply-chain": {
+      "signals": [
+        "dependency provenance",
+        "software supply chain",
+        "sbom",
+        "build action provenance"
+      ]
+    },
+    "shards-sec-third-party-risk": {
+      "signals": [
+        "vendor onboarding",
+        "supplier assurance",
+        "outsourced provider",
+        "exit strategy"
+      ]
+    },
+    "shards-sec-vibecoding-gate": {
+      "signals": [
+        "vibecoding",
+        "ai generated application",
+        "secure build gate",
+        "beginner generated app"
+      ]
+    },
+    "shards-sec-vulnerability-management": {
+      "signals": [
+        "cve triage",
+        "scanner findings",
+        "vulnerability remediation",
+        "risk prioritization"
+      ]
+    },
+    "shards-sec-web-api": {
+      "signals": [
+        "web api security",
+        "webhooks",
+        "tenant isolation",
+        "graphql security",
+        "session security"
+      ]
+    },
+    "shards-skill-evaluation": {
+      "signals": [
+        "skill benchmark",
+        "with and without a skill",
+        "matched baseline",
+        "measure skill quality"
+      ]
+    },
+    "shards-skill-improver": {
+      "signals": [
+        "improve an existing skill",
+        "apply skill revision",
+        "skill rollback",
+        "verified evaluation receipt"
+      ]
+    },
+    "shards-task-contract": {
+      "signals": [
+        "stable acceptance criteria",
+        "task contract",
+        "operating ledger",
+        "pin task scope"
+      ]
+    },
+    "shards-tool-selection": {
+      "signals": [
+        "choose a tool",
+        "least privilege tool",
+        "reuse verified observations",
+        "limit tool costs"
+      ]
+    },
+    "skill-supply-chain-audit": {
+      "signals": [
+        "audit external skills",
+        "import skills",
+        "install third party skill",
+        "skill provenance",
+        "review skill before installing",
+        "third party skill",
+        "review third party skill before installing"
+      ],
+      "exclude": [
+        "write an original welcome message"
+      ]
+    },
+    "smart-contract-review": {
+      "signals": [
+        "solidity review",
+        "review a smart contract",
+        "reentrancy",
+        "contract invariants",
+        "smart contract upgrade"
+      ],
+      "exclude": [
+        "explain what a blockchain is"
+      ]
+    },
+    "systematic-debugging": {
+      "signals": [
+        "root cause",
+        "debug failing tests",
+        "isolate an error",
+        "investigate regression",
+        "unexpected behavior"
+      ]
+    },
+    "test-driven-development": {
+      "signals": [
+        "tests before implementation",
+        "regression fix",
+        "red green refactor",
+        "implement behavior with tests"
+      ],
+      "exclude": [
+        "explain the difference",
+        "no code changes"
+      ]
+    },
+    "threat-modeling": {
+      "signals": [
+        "design threat model",
+        "trust boundaries",
+        "attack surface mapping",
+        "new data flow"
+      ]
+    },
+    "tool-contract-design": {
+      "signals": [
+        "design mcp tool",
+        "tool input schema",
+        "tool action contract",
+        "api for an agent"
+      ]
+    },
+    "web-application-testing": {
+      "signals": [
+        "test browser workflow",
+        "form behavior",
+        "end to end web tests",
+        "functional browser tests"
+      ]
+    },
+    "writing-skill-packages": {
+      "signals": [
+        "write a skill package",
+        "skill frontmatter",
+        "portable skill authoring",
+        "skill packaging"
+      ]
+    }
+  }
+}

@@ -84,7 +84,15 @@
       "description": "Use when designing a multi-agent system, tool-using assistant, orchestrator, worker fleet or autonomous workflow.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "multi agent architecture",
+        "orchestrate workers",
+        "tool using assistant",
+        "agent system design"
+      ]
     },
     {
       "name": "code-review",
@@ -92,7 +100,16 @@
       "description": "Use when reviewing a diff, pull request, patch, or proposed implementation for correctness, security, maintainability and regression risk.",
       "category": "engineering",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "pull request review",
+        "review a diff",
+        "review patch",
+        "regression risk",
+        "review changes before merging"
+      ]
     },
     {
       "name": "evidence-based-research",
@@ -100,7 +117,16 @@
       "description": "Use when answering a complex factual question that needs source comparison, current evidence, traceable claims or a decision brief.",
       "category": "research",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "compare official sources",
+        "current primary sources",
+        "decision brief",
+        "technical literature",
+        "conflicting sources"
+      ]
     },
     {
       "name": "frontend-accessibility-review",
@@ -108,7 +134,16 @@
       "description": "Use when reviewing a web interface for usability, visual hierarchy, responsive behaviour and accessibility before shipping.",
       "category": "design",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "accessibility audit",
+        "keyboard navigation",
+        "screen reader",
+        "responsive layout",
+        "web accessibility"
+      ]
     },
     {
       "name": "implementation-planning",
@@ -116,7 +151,15 @@
       "description": "Use when a change spans multiple files, components or stages and needs a sequenced plan with explicit verification before execution.",
       "category": "engineering",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "multi file change",
+        "implementation plan",
+        "sequence engineering work",
+        "verification plan"
+      ]
     },
     {
       "name": "incident-runbook",
@@ -124,7 +167,15 @@
       "description": "Use when diagnosing a production incident, service degradation, agent failure or operational event requiring coordinated response.",
       "category": "operations",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "production outage",
+        "api error rates",
+        "service degradation",
+        "incident coordination"
+      ]
     },
     {
       "name": "problem-framing",
@@ -132,7 +183,15 @@
       "description": "Use when a request is ambiguous, multi-stage, high-impact, or likely to fail because the objective and acceptance criteria are underspecified.",
       "category": "engineering",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "ambiguous requirements",
+        "define acceptance criteria",
+        "clarify objective",
+        "problem statement"
+      ]
     },
     {
       "name": "release-readiness",
@@ -140,7 +199,15 @@
       "description": "Use before releasing a library, application, agent, API, or infrastructure change to determine whether evidence supports handover.",
       "category": "engineering",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "release gate",
+        "go no go",
+        "release evidence",
+        "handover readiness"
+      ]
     },
     {
       "name": "reproducible-data-analysis",
@@ -148,7 +215,15 @@
       "description": "Use when analysing a dataset and producing results that need to be reproducible, auditable and resistant to silent data-quality errors.",
       "category": "data",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "dataset analysis",
+        "reproduce data results",
+        "data quality",
+        "auditable notebook"
+      ]
     },
     {
       "name": "scientific-research",
@@ -156,7 +231,15 @@
       "description": "Use for scientific or technical research that requires reproducible methods, source-quality appraisal, uncertainty handling and separation of evidence from interpretation.",
       "category": "research",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "scientific literature",
+        "research methodology",
+        "appraise studies",
+        "scientific uncertainty"
+      ]
     },
     {
       "name": "secure-code-review",
@@ -164,7 +247,15 @@
       "description": "Use when reviewing code for vulnerabilities, unsafe input handling, authorisation errors, secrets exposure or insecure defaults.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "review code for vulnerabilities",
+        "authorization flaws",
+        "unsafe input",
+        "security code review"
+      ]
     },
     {
       "name": "shards-a2a-clear-demonstration",
@@ -172,7 +263,14 @@
       "description": "Turn an agent capability claim into a simple, reproducible, human-readable positive and negative demonstration with honest limitations.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable advisory workflow; real host execution and live effects require separately granted tools.",
+      "license": "MIT",
+      "signals": [
+        "demonstrate an agent capability",
+        "reproducible demonstration",
+        "positive and negative cases"
+      ]
     },
     {
       "name": "shards-a2a-closed-loop-circuit",
@@ -180,7 +278,14 @@
       "description": "Run a bounded multi-agent task from accepted intent through execution, verification, review and terminal closure without scope creep.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable advisory state-machine workflow; execution and approvals remain host-controlled.",
+      "license": "MIT",
+      "signals": [
+        "multi agent completion",
+        "agent workflow closure",
+        "accept intent through verification"
+      ]
     },
     {
       "name": "shards-a2a-conditional-offer",
@@ -188,7 +293,15 @@
       "description": "Evaluate, accept, reject or counter disposable cross-agent task proposals without treating an offer as permission to act.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable advisory workflow; agent host permissions and remote actions require independent verification.",
+      "license": "MIT",
+      "signals": [
+        "cross agent proposal",
+        "conditional delegation",
+        "counter offer",
+        "reject agent offer"
+      ]
     },
     {
       "name": "shards-a2a-leakage-audit",
@@ -196,7 +309,15 @@
       "description": "Detect scope leakage, authority slippage, silent failures and unverified claims as tasks and evidence cross agent boundaries.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable advisory workflow; inspect live evidence with authorised read-only tools where available.",
+      "license": "MIT",
+      "signals": [
+        "authority slippage",
+        "scope leakage",
+        "unverified agent evidence",
+        "audit agent claims"
+      ]
     },
     {
       "name": "shards-a2a-self-preservation",
@@ -204,7 +325,15 @@
       "description": "Preserve valid task evidence and continuity on agent resumption by re-fetching unchanged results instead of needlessly re-running work.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable advisory workflow; evidence freshness must be verified against the authoritative source.",
+      "license": "MIT",
+      "signals": [
+        "reuse prior task evidence",
+        "avoid rerunning checks",
+        "resume from pinned evidence",
+        "agent continuity"
+      ]
     },
     {
       "name": "shards-context-recovery",
@@ -212,7 +341,19 @@
       "description": "Use after interruptions, session changes or agent handovers to restore a task from durable records and revalidate changing facts.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable workflow; use reviewed host-specific adapters and a shared task ledger.",
+      "license": "MIT",
+      "signals": [
+        "resume interrupted work",
+        "interrupted github pr",
+        "recover from checkpoint",
+        "restore prior session"
+      ],
+      "exclude": [
+        "brand new documentation task",
+        "no previous run"
+      ]
     },
     {
       "name": "shards-evidence-verification",
@@ -220,7 +361,16 @@
       "description": "Use before reporting completion to tie each acceptance criterion to observable artifacts and distinguish deployment from local tests.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable workflow; use reviewed host-specific adapters and a shared task ledger.",
+      "license": "MIT",
+      "signals": [
+        "verify changes before merging",
+        "bind acceptance evidence",
+        "verify test results",
+        "independent verification",
+        "prove task completion"
+      ]
     },
     {
       "name": "shards-host-compatibility",
@@ -228,7 +378,15 @@
       "description": "Use when adapting shared Shards skills to Codex, Claude or another agent host without assuming uniform tools or permissions.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable workflow; use reviewed host-specific adapters and a shared task ledger.",
+      "license": "MIT",
+      "signals": [
+        "native skill discovery",
+        "test host compatibility",
+        "different agent hosts",
+        "compare codex and claude"
+      ]
     },
     {
       "name": "shards-learning-capture",
@@ -236,7 +394,14 @@
       "description": "Use after a repeated failure or measured improvement to preserve a compact, provenance-linked lesson for later agents.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable workflow; use reviewed host-specific adapters and a shared task ledger.",
+      "license": "MIT",
+      "signals": [
+        "record a verified lesson",
+        "recurring failure",
+        "preserve operational learning"
+      ]
     },
     {
       "name": "shards-progress-control",
@@ -244,7 +409,15 @@
       "description": "Use during multi-step work to detect loops, scope creep and no-evidence retries while keeping the next action focused.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable workflow; use reviewed host-specific adapters and a shared task ledger.",
+      "license": "MIT",
+      "signals": [
+        "repeated attempts",
+        "agent loop",
+        "scope creep",
+        "unnecessary retries"
+      ]
     },
     {
       "name": "shards-restore-recover",
@@ -252,7 +425,20 @@
       "description": "Use when an AI agent or A2A task is interrupted, rate-limited, restarted, handed off, or loses context; reconcile durable work and resume from the smallest verified safe step without inventing state or repeating external effects.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable advisory workflow; requires only existing host-authorised reads and optional approved checkpoint storage. Does not restore process memory or confer tool access.",
+      "license": "MIT",
+      "signals": [
+        "resume interrupted github",
+        "session usage limit",
+        "recover pushed branches",
+        "reconcile live state",
+        "continue from checkpoint"
+      ],
+      "exclude": [
+        "brand new documentation task",
+        "no previous run"
+      ]
     },
     {
       "name": "shards-review-resolution",
@@ -260,7 +446,16 @@
       "description": "Use to triage and resolve independent code-review findings without conflating comments, patches and verified fixes.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable workflow; use reviewed host-specific adapters and a shared task ledger.",
+      "license": "MIT",
+      "signals": [
+        "github pr repair",
+        "resolve review findings",
+        "address reviewer feedback",
+        "review threads",
+        "repair pull request"
+      ]
     },
     {
       "name": "shards-sec-ai-agent-boundaries",
@@ -268,7 +463,15 @@
       "description": "Shards Foundation workflow. Use when agents, MCP tools, computer use or autonomous workflows gain access to data or external actions.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "mcp permissions",
+        "agent tool permissions",
+        "ai agent least privilege",
+        "agent scope enforcement"
+      ]
     },
     {
       "name": "shards-sec-authorized-testing",
@@ -276,7 +479,15 @@
       "description": "Shards Foundation workflow. Use for legal penetration-test planning, bug-bounty scope reviews and defensive attacker-emulation exercises.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "rules of engagement",
+        "authorized testing scope",
+        "bug bounty scope",
+        "defensive test plan"
+      ]
     },
     {
       "name": "shards-sec-business-threat-model",
@@ -284,7 +495,15 @@
       "description": "Shards Foundation workflow. Use for an enterprise, startup or regulated product before architecture or significant feature changes.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "business threat model",
+        "enterprise risk",
+        "regulated architecture",
+        "asset and risk owner"
+      ]
     },
     {
       "name": "shards-sec-cloud-devsecops",
@@ -292,7 +511,15 @@
       "description": "Shards Foundation workflow. Use when deploying or modifying cloud infrastructure, containers, CI/CD pipelines or infrastructure-as-code.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "review ci pipeline",
+        "cloud permissions",
+        "infrastructure as code",
+        "container supply chain"
+      ]
     },
     {
       "name": "shards-sec-compliance-evidence",
@@ -300,7 +527,15 @@
       "description": "Shards Foundation workflow. Use when preparing audits, customer due diligence, ISO/SOC reviews or regulated control evidence.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "audit evidence",
+        "soc evidence",
+        "customer due diligence",
+        "control evidence"
+      ]
     },
     {
       "name": "shards-sec-crypto-custody",
@@ -308,7 +543,15 @@
       "description": "Shards Foundation workflow. Use for wallet apps, multisig treasuries, token custody, key rotation and high-value on-chain signing.",
       "category": "blockchain",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "wallet key custody",
+        "multisig",
+        "token custody",
+        "on chain signing"
+      ]
     },
     {
       "name": "shards-sec-crypto-fincrime",
@@ -316,7 +559,15 @@
       "description": "Shards Foundation workflow. Use for VASP, exchanges, on/off-ramps or crypto financial services needing AML/CFT risk review.",
       "category": "finance",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "crypto aml",
+        "vasp",
+        "travel rule",
+        "exchange compliance"
+      ]
     },
     {
       "name": "shards-sec-defi-protocol",
@@ -324,7 +575,15 @@
       "description": "Shards Foundation workflow. Use before deploying or upgrading contracts, bridges, oracles, DAOs or DeFi financial mechanisms.",
       "category": "blockchain",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "defi protocol",
+        "oracle trust",
+        "bridge design",
+        "liquidity protocol"
+      ]
     },
     {
       "name": "shards-sec-detection-response",
@@ -332,7 +591,15 @@
       "description": "Shards Foundation workflow. Use when designing security telemetry, fraud alerts or SOC detection for an app, API or cloud service.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "soc alert",
+        "security telemetry",
+        "fraud detection",
+        "response drill"
+      ]
     },
     {
       "name": "shards-sec-fintech-payments",
@@ -340,7 +607,15 @@
       "description": "Shards Foundation workflow. Use for wallets, banking APIs, card flows, payment platforms, money movement and settlement systems.",
       "category": "finance",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "payment authorization",
+        "funds flow",
+        "payment reconciliation",
+        "card processing"
+      ]
     },
     {
       "name": "shards-sec-governance-policy",
@@ -348,7 +623,15 @@
       "description": "Shards Foundation workflow. Use when formalising business security policies, acceptable use, exceptions or risk ownership.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "security policy",
+        "acceptable use",
+        "risk ownership",
+        "policy exception"
+      ]
     },
     {
       "name": "shards-sec-human-fraud",
@@ -356,7 +639,15 @@
       "description": "Shards Foundation workflow. Use to defend businesses, support staff and customers against impersonation, account takeover and payment redirection.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "impersonation defence",
+        "phishing defence",
+        "payment fraud",
+        "staff social engineering"
+      ]
     },
     {
       "name": "shards-sec-identity-access",
@@ -364,7 +655,16 @@
       "description": "Shards Foundation workflow. Use when adding login, permissions, SSO, service accounts or admin operations.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "sso",
+        "access control",
+        "service accounts",
+        "identity and permissions",
+        "identity lifecycle"
+      ]
     },
     {
       "name": "shards-sec-incident-response",
@@ -372,7 +672,15 @@
       "description": "Shards Foundation workflow. Use when credentials, customer data, funds, systems or agents may have been compromised.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "security incident",
+        "credential compromise",
+        "incident containment",
+        "preserve incident evidence"
+      ]
     },
     {
       "name": "shards-sec-intake",
@@ -380,7 +688,15 @@
       "description": "Shards Foundation workflow. Start any security review or security-related coding task; establish legal scope, ownership and boundaries.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "scope a security review",
+        "asset ownership",
+        "security intake",
+        "allowed security testing"
+      ]
     },
     {
       "name": "shards-sec-jurisdiction-scope",
@@ -388,7 +704,15 @@
       "description": "Shards Foundation workflow. Use for cross-border digital products, finance, AI services or crypto when laws and regulators may differ.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "cross border compliance",
+        "regulatory applicability",
+        "jurisdiction review",
+        "international privacy"
+      ]
     },
     {
       "name": "shards-sec-privacy-dpia",
@@ -396,7 +720,16 @@
       "description": "Shards Foundation workflow. Use before collecting personal data, deploying surveillance, profiling, analytics or AI decision systems.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "privacy impact assessment",
+        "personal data",
+        "dpia",
+        "data retention",
+        "surveillance"
+      ]
     },
     {
       "name": "shards-sec-prompt-injection",
@@ -404,7 +737,15 @@
       "description": "Shards Foundation workflow. Use when an LLM consumes untrusted pages, code, documents, plugins, agent messages or RAG results.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "prompt injection",
+        "untrusted web content",
+        "rag security",
+        "instruction injection"
+      ]
     },
     {
       "name": "shards-sec-resilience-recovery",
@@ -412,7 +753,15 @@
       "description": "Shards Foundation workflow. Use for payment, crypto, SaaS, AI or enterprise critical services needing recovery guarantees.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "disaster recovery",
+        "restore backup",
+        "recovery exercise",
+        "business continuity"
+      ]
     },
     {
       "name": "shards-sec-secrets-keys",
@@ -420,7 +769,15 @@
       "description": "Shards Foundation workflow. Use when handling API keys, wallet keys, signing credentials, database secrets or CI tokens.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "secret lifecycle",
+        "api key handling",
+        "rotate credentials",
+        "signing key storage"
+      ]
     },
     {
       "name": "shards-sec-supply-chain",
@@ -428,7 +785,15 @@
       "description": "Shards Foundation workflow. Use when importing packages, AI skills, container images, SDKs or build actions.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "dependency provenance",
+        "software supply chain",
+        "sbom",
+        "build action provenance"
+      ]
     },
     {
       "name": "shards-sec-third-party-risk",
@@ -436,7 +801,15 @@
       "description": "Shards Foundation workflow. Use before onboarding an API, SaaS vendor, AI model provider, payment processor or outsourced IT partner.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "vendor onboarding",
+        "supplier assurance",
+        "outsourced provider",
+        "exit strategy"
+      ]
     },
     {
       "name": "shards-sec-vibecoding-gate",
@@ -444,7 +817,15 @@
       "description": "Shards Foundation workflow. Use when an inexperienced developer or coding agent builds or ships a web app, AI feature or payment flow.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "vibecoding",
+        "ai generated application",
+        "secure build gate",
+        "beginner generated app"
+      ]
     },
     {
       "name": "shards-sec-vulnerability-management",
@@ -452,7 +833,15 @@
       "description": "Shards Foundation workflow. Use when receiving a CVE, scanner finding, bug bounty report or security issue.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "cve triage",
+        "scanner findings",
+        "vulnerability remediation",
+        "risk prioritization"
+      ]
     },
     {
       "name": "shards-sec-web-api",
@@ -460,7 +849,16 @@
       "description": "Shards Foundation workflow. Use for APIs, SaaS, websites, GraphQL, webhooks and multi-tenant services.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable SKILL.md; runtime and host-specific permissions require separate verification.",
+      "license": "MIT",
+      "signals": [
+        "web api security",
+        "webhooks",
+        "tenant isolation",
+        "graphql security",
+        "session security"
+      ]
     },
     {
       "name": "shards-skill-evaluation",
@@ -468,7 +866,15 @@
       "description": "Use when comparing agent skill versions with representative tasks and predefined metrics before accepting an improvement.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable workflow; use reviewed host-specific adapters and a shared task ledger.",
+      "license": "MIT",
+      "signals": [
+        "skill benchmark",
+        "with and without a skill",
+        "matched baseline",
+        "measure skill quality"
+      ]
     },
     {
       "name": "shards-skill-improver",
@@ -476,7 +882,15 @@
       "description": "Use to propose, evaluate and explicitly apply evidence-based revisions to first-party agent skills while preserving rollback and approval boundaries.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Python 3.11+ with full Shards Skills checkout; local CLI only.",
+      "license": "MIT",
+      "signals": [
+        "improve an existing skill",
+        "apply skill revision",
+        "skill rollback",
+        "verified evaluation receipt"
+      ]
     },
     {
       "name": "shards-task-contract",
@@ -484,7 +898,15 @@
       "description": "Use when starting or resuming work to pin the requested outcome, authorised scope and stable acceptance criteria before tools are used.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable workflow; use reviewed host-specific adapters and a shared task ledger.",
+      "license": "MIT",
+      "signals": [
+        "stable acceptance criteria",
+        "task contract",
+        "operating ledger",
+        "pin task scope"
+      ]
     },
     {
       "name": "shards-tool-selection",
@@ -492,7 +914,15 @@
       "description": "Use before expensive repository or external-tool operations to select the least costly permitted route and reuse validated observations.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Portable workflow; use reviewed host-specific adapters and a shared task ledger.",
+      "license": "MIT",
+      "signals": [
+        "choose a tool",
+        "least privilege tool",
+        "reuse verified observations",
+        "limit tool costs"
+      ]
     },
     {
       "name": "skill-supply-chain-audit",
@@ -500,7 +930,21 @@
       "description": "Use before adopting, copying, installing or executing a third-party agent skill, plugin, prompt package or tool bundle.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "audit external skills",
+        "import skills",
+        "install third party skill",
+        "skill provenance",
+        "review skill before installing",
+        "third party skill",
+        "review third party skill before installing"
+      ],
+      "exclude": [
+        "write an original welcome message"
+      ]
     },
     {
       "name": "smart-contract-review",
@@ -508,7 +952,19 @@
       "description": "Use when reviewing Solidity or other smart-contract code for security, economic correctness, upgradeability and operational risks.",
       "category": "blockchain",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "solidity review",
+        "review a smart contract",
+        "reentrancy",
+        "contract invariants",
+        "smart contract upgrade"
+      ],
+      "exclude": [
+        "explain what a blockchain is"
+      ]
     },
     {
       "name": "systematic-debugging",
@@ -516,7 +972,16 @@
       "description": "Use when a system fails, behaves inconsistently, or reports an error whose root cause is not yet established.",
       "category": "engineering",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "root cause",
+        "debug failing tests",
+        "isolate an error",
+        "investigate regression",
+        "unexpected behavior"
+      ]
     },
     {
       "name": "test-driven-development",
@@ -524,7 +989,19 @@
       "description": "Use when implementing a behaviour change or bug fix where automated tests can express the expected result.",
       "category": "engineering",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "tests before implementation",
+        "regression fix",
+        "red green refactor",
+        "implement behavior with tests"
+      ],
+      "exclude": [
+        "explain the difference",
+        "no code changes"
+      ]
     },
     {
       "name": "threat-modeling",
@@ -532,7 +1009,15 @@
       "description": "Use when designing a new service, agent, integration, data flow, smart contract or significant architectural change.",
       "category": "security",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "design threat model",
+        "trust boundaries",
+        "attack surface mapping",
+        "new data flow"
+      ]
     },
     {
       "name": "tool-contract-design",
@@ -540,7 +1025,15 @@
       "description": "Use when creating an agent tool, MCP tool, API action or automation interface that an LLM will call.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "design mcp tool",
+        "tool input schema",
+        "tool action contract",
+        "api for an agent"
+      ]
     },
     {
       "name": "web-application-testing",
@@ -548,7 +1041,15 @@
       "description": "Use when validating a web application or browser workflow across functional states, navigation, forms, accessibility and regressions.",
       "category": "engineering",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "test browser workflow",
+        "form behavior",
+        "end to end web tests",
+        "functional browser tests"
+      ]
     },
     {
       "name": "writing-skill-packages",
@@ -556,7 +1057,15 @@
       "description": "Use when authoring or improving an agent skill so it is discoverable, portable, testable and safe to maintain.",
       "category": "agents",
       "status": "draft",
-      "version": "0.1.0"
+      "version": "0.1.0",
+      "compatibility": "Agent Skills-compatible runtimes; tool availability varies by host.",
+      "license": "MIT",
+      "signals": [
+        "write a skill package",
+        "skill frontmatter",
+        "portable skill authoring",
+        "skill packaging"
+      ]
     }
   ]
 }

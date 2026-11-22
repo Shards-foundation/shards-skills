@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+DISCOVERY_PHRASE = re.compile(r"[a-z0-9]+(?:[ -][a-z0-9]+){0,9}")
 # Heuristic flags for human review. These are not proof of maliciousness or safety.
 RISK_PATTERNS = [
     ("credential-exfiltration", re.compile(r"(?i)(send|upload|post|exfiltrat\w*).{0,80}(token|secret|credential|private key|\.env)")),
@@ -18,11 +19,13 @@ RISK_PATTERNS = [
 def parse_frontmatter(text: str):
     if not text.startswith("---\n"):
         raise ValueError("frontmatter must start at line 1 with ---")
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        raise ValueError("frontmatter closing --- is missing")
+    lines = text.splitlines(keepends=True)
+    try:
+        end = next(i for i, line in enumerate(lines[1:], start=1) if line.rstrip("\r\n") == "---")
+    except StopIteration as exc:
+        raise ValueError("frontmatter closing --- is missing") from exc
     meta = {}
-    for line in parts[1].strip().splitlines():
+    for line in lines[1:end]:
         if not line.strip() or line.lstrip().startswith("#"):
             continue
         if line[:1].isspace() or ":" not in line:
@@ -36,23 +39,27 @@ def parse_frontmatter(text: str):
         if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
             value = value[1:-1]
         meta[key] = value
-    return meta, parts[2].lstrip("\n")
+    return meta, "".join(lines[end + 1:]).lstrip("\n")
 
 
 def catalogue_entry(path: Path, root: Path) -> dict:
     """Read one active descriptor and reject known import provenance."""
     if path.is_symlink() or path.parent.is_symlink() or (root / "skills").is_symlink():
         raise ValueError("Symlinked skill requires manual review")
+    if not path.is_file():
+        raise ValueError("Skill descriptor must be a regular file")
+    marker = path.parent / "UPSTREAM.md"
+    if marker.exists() or marker.is_symlink():
+        raise ValueError("Third-party package is outside the active catalogue")
     meta, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
-    if ((path.parent / "UPSTREAM.md").exists() or (path.parent / "UPSTREAM.md").is_symlink()
-            or any(key == "upstream" or key.startswith("upstream-") for key in meta)):
+    if any(key == "upstream" or key.startswith("upstream-") for key in meta):
         raise ValueError("Third-party package is outside the active catalogue")
     name = meta.get("name", "")
     if not NAME_RE.fullmatch(name) or name != path.parent.name:
         raise ValueError("Name does not match skill directory")
     if not meta.get("description"):
         raise ValueError("Missing skill description")
-    return {
+    entry = {
         "name": name,
         "path": path.parent.relative_to(root).as_posix(),
         "description": meta["description"],
@@ -60,6 +67,51 @@ def catalogue_entry(path: Path, root: Path) -> dict:
         "status": meta.get("status", "draft"),
         "version": meta.get("version", "0.0.0"),
     }
+    for key in ("compatibility", "license"):
+        if meta.get(key):
+            entry[key] = meta[key]
+    return entry
+
+
+def discovery_phrases(values: object, label: str) -> list[str]:
+    if (not isinstance(values, list) or len(values) > 8
+            or any(not isinstance(value, str) or len(value) > 80
+                   or not DISCOVERY_PHRASE.fullmatch(value) for value in values)
+            or len(set(values)) != len(values)):
+        raise ValueError(f"Invalid discovery phrases in {label}")
+    return values
+
+
+def enrich_catalogue(entries: list[dict], root: Path) -> list[dict]:
+    """Apply the repository's optional, host-independent discovery profiles."""
+    source = root / "catalogue" / "discovery.json"
+    if source.is_symlink():
+        raise ValueError("Discovery profiles must be a regular local file")
+    if not source.exists():
+        return entries
+    if not source.is_file() or source.stat().st_size > 100_000:
+        raise ValueError("Discovery profiles missing or too large")
+    document = json.loads(source.read_text(encoding="utf-8"))
+    if not isinstance(document, dict) or document.get("schema_version") != 1:
+        raise ValueError("Unsupported discovery profile schema")
+    profiles = document.get("skills")
+    names = {entry["name"] for entry in entries}
+    if not isinstance(profiles, dict) or set(profiles) != names:
+        raise ValueError("Discovery profiles must match active skill names")
+    enriched = []
+    for entry in entries:
+        name = entry["name"]
+        profile = profiles[name]
+        if not isinstance(profile, dict) or profile.keys() - {"signals", "exclude"}:
+            raise ValueError(f"Invalid discovery profile for {name}")
+        signals = discovery_phrases(profile.get("signals"), name)
+        if not signals:
+            raise ValueError(f"Missing discovery signals for {name}")
+        row = dict(entry, signals=signals)
+        if "exclude" in profile:
+            row["exclude"] = discovery_phrases(profile["exclude"], name)
+        enriched.append(row)
+    return enriched
 
 def validate_one(path: Path):
     errors, warnings = [], []
@@ -92,20 +144,25 @@ def main():
     if not SKILLS.exists():
         print("ERROR: skills/ directory does not exist", file=sys.stderr); return 2
     files = sorted(SKILLS.glob("*/SKILL.md"))
-    errors, warnings, names = [], [], []
+    errors, warnings, entries = [], [], []
     for path in files:
         e, w = validate_one(path); errors += e; warnings += w
         try:
-            names.append(catalogue_entry(path, ROOT)["name"])
+            entries.append(catalogue_entry(path, ROOT))
         except (OSError, UnicodeError, ValueError) as exc:
             errors.append(f"{path}: {exc}")
-    if len(names) != len(set(names)): errors.append("duplicate skill names found")
+    if len({entry["name"] for entry in entries}) != len(entries):
+        errors.append("duplicate skill names found")
     cat_path = ROOT / "catalogue" / "catalogue.json"
     try:
         cat = json.loads(cat_path.read_text(encoding="utf-8"))
-        actual = [str(p.parent.relative_to(ROOT)) for p in files]
+        actual = [p.parent.relative_to(ROOT).as_posix() for p in files]
         if sorted(cat.get("skill_paths", [])) != sorted(actual): errors.append("catalogue/catalogue.json skill_paths do not match discovered skills")
         if cat.get("skill_count") != len(files): errors.append("catalogue/catalogue.json skill_count does not match discovered skills")
+        if len(entries) == len(files):
+            enriched = enrich_catalogue(entries, ROOT)
+            if enriched != entries and cat.get("skills") != enriched:
+                errors.append("catalogue search metadata differs from descriptors or discovery profiles")
     except Exception as exc: errors.append(f"catalogue invalid: {exc}")
     for msg in warnings: print("WARN: " + msg)
     for msg in errors: print("ERROR: " + msg)

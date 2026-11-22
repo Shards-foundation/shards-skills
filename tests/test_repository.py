@@ -43,6 +43,14 @@ class RepositoryTests(unittest.TestCase):
   data=json.loads((ROOT/'evals/trigger-cases.json').read_text())
   existing={p.parent.name for p in (ROOT/'skills').glob('*/SKILL.md')}
   for case in data['cases']: self.assertIn(case['skill'],existing)
+ def test_every_active_skill_has_a_discovery_profile(self):
+  data=json.loads((ROOT/'catalogue/catalogue.json').read_text(encoding='utf-8'))
+  profiles=json.loads((ROOT/'catalogue/discovery.json').read_text(encoding='utf-8'))['skills']
+  self.assertEqual(len(data['skills']),60)
+  self.assertEqual({entry['name'] for entry in data['skills']},set(profiles))
+  for entry in data['skills']:
+   self.assertTrue(entry['signals'])
+   self.assertEqual(entry['signals'],profiles[entry['name']]['signals'])
  def test_validator_frontmatter_rejects_missing_delimiter(self):
   with self.assertRaises(ValueError): validate_skills.parse_frontmatter('name: bad\n')
  def test_validator_rejects_duplicate_metadata(self):

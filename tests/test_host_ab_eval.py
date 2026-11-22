@@ -176,6 +176,16 @@ class HostABTest(unittest.TestCase):
             evaluation.compare(document(run("baseline"),
                                         run("shards", selected_workflows=["shards-not-real"])))
 
+    def test_first_party_names_and_optional_comparable_costs(self):
+        baseline = run("baseline")
+        trial = run("shards", selected_workflows=["code-review"])
+        baseline["metrics"].update(duration_seconds=60, model_tokens=750)
+        trial["metrics"].update(duration_seconds=45)
+        result = evaluation.compare(document(baseline, trial))["results"][0]
+        self.assertEqual(result["selected_workflows"], ["code-review"])
+        self.assertEqual(result["metric_delta_shards_minus_baseline"]["duration_seconds"], -15)
+        self.assertNotIn("model_tokens", result["metric_delta_shards_minus_baseline"])
+
     def test_shards_bundle_commit_is_reported_and_validated(self):
         receipt = document(run("baseline"), run("shards"))
         result = evaluation.compare(receipt)

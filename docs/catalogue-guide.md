@@ -2,7 +2,13 @@
 
 `skills/<name>/SKILL.md` is the source for the first-party catalogue. Each
 descriptor declares a canonical name and task-oriented description. The
-generator also reads category, status and version when provided.
+generator also reads category, status, licence, version and declared compatibility when available.
+Add a matching entry to [the discovery profiles](../catalogue/discovery.json).
+Use a few concrete task phrases drawn from the skill's actual workflow.
+Add exclusions only for clear misroutes. The profiles live outside skill
+frontmatter so hosts continue to receive the existing metadata format.
+Keep detailed inputs, outputs, prerequisites and verification in the
+descriptor where the reader can inspect them after selection.
 
 Run `python scripts/build_catalogue.py` after changing catalogue metadata.
 `python scripts/catalogue_sync.py --check` compares the checked-in index with

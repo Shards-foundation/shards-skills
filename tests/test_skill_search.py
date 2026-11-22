@@ -82,6 +82,46 @@ class SkillSearchTests(unittest.TestCase):
         self.assertTrue(all(entry["execution"] == "dispatcher-plan-required"
                             for entry in curated))
 
+    def test_candidates_are_opt_in_and_never_dispatchable(self):
+        name = "shards-native-context-recovery"
+        candidates = discovery.discover("context recovery", status="candidate")["results"]
+        self.assertIn(name, {entry["name"] for entry in candidates})
+        self.assertTrue(all(entry["execution"] == "not-dispatchable" for entry in candidates))
+        self.assertNotIn(name, {entry["name"] for entry in discovery.discover("context recovery")["results"]})
+        self.assertEqual(discovery.discover(name, limit=1)["results"][0]["name"], name)
+
+    def test_retrieve_one_descriptor_without_loading_an_index(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "skills" / "fixture-skill" / "SKILL.md"
+            path.parent.mkdir(parents=True)
+            text = "---\nname: fixture-skill\ndescription: Use this example for a test.\n---\nBody"
+            path.write_text(text, encoding="utf-8")
+            result = discovery.retrieve("fixture-skill", root)
+            self.assertEqual(result["descriptor"], text)
+            self.assertEqual(result["execution"], "not-dispatchable")
+            with self.assertRaises(ValueError):
+                discovery.retrieve("../fixture-skill", root)
+            (path.parent / "UPSTREAM.md").write_text("External provenance.", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Third-party"):
+                discovery.retrieve("fixture-skill", root)
+
+    def test_rank_explains_specific_recovery_and_review_matches(self):
+        results = discovery.discover(
+            "Resume an interrupted GitHub PR repair operation and verify the changes before merging.",
+            limit=4,
+        )["results"]
+        by_name = {item["name"]: item for item in results}
+        self.assertIn("shards-context-recovery", by_name)
+        self.assertIn("shards-review-resolution", by_name)
+        self.assertIn("shards-evidence-verification", by_name)
+        self.assertIn("github pr repair", by_name["shards-review-resolution"]["reason"]["intent_phrases"])
+
+    def test_duplicate_stems_count_one_query_word(self):
+        item = {**self._entry("fixture-target", "Changes and change requests"),
+                "execution": "not-dispatchable"}
+        self.assertEqual(discovery.rank([item], "planning changes"), [])
+
     def test_cli_finds_curated_skill_without_running_it(self):
         proc = subprocess.run(
             [sys.executable, str(ROOT / "scripts/search_skills.py"),
@@ -89,8 +129,7 @@ class SkillSearchTests(unittest.TestCase):
             capture_output=True, text=True, timeout=15)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         result = json.loads(proc.stdout)
-        self.assertEqual(result["candidate_count"], len(discovery.catalogue_entries()) +
-                         len(discovery.REGISTRY))
+        self.assertEqual(result["candidate_count"], len(discovery.discovery_entries()))
         self.assertIn("shards-repository-health",
                       [item["name"] for item in result["results"]])
         self.assertIn("metadata-only", result["trust_boundary"])

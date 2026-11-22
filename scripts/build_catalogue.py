@@ -3,14 +3,14 @@
 import json
 from pathlib import Path
 
-from validate_skills import catalogue_entry
+from validate_skills import catalogue_entry, enrich_catalogue
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def build_catalogue(root=ROOT):
     root = Path(root)
-    entries = [catalogue_entry(path, root)
-               for path in sorted((root / "skills").glob("*/SKILL.md"))]
+    entries = enrich_catalogue([catalogue_entry(path, root)
+                                for path in sorted((root / "skills").glob("*/SKILL.md"))], root)
     cat = {"schema_version": 1, "name": "Shards Skills", "version": "0.1.0", "status": "active",
         "skill_count": len(entries), "categories": sorted({e["category"] for e in entries}),
         "skill_paths": [e["path"] for e in entries], "skills": entries}

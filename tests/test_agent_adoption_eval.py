@@ -33,8 +33,9 @@ class AgentAdoptionEvalTests(unittest.TestCase):
         cases = evaluator.load_cases(ROOT / "evals" / "trigger-cases.json")
         entries = evaluator.catalogue_entries() + evaluator.curated_entries()
         report = evaluator.retrieval_report(cases, entries)
-        self.assertEqual(report["positive_count"], 6)
-        self.assertGreaterEqual(report["recall_at_3"], 5 / 6)
+        self.assertEqual(report["positive_count"], 16)
+        self.assertEqual(report["recall_at_3"], 1.0)
+        self.assertEqual(report["negative_targets_in_top_3"], 0)
         self.assertEqual(report["recall_at_5"], 1.0)
         recover = [row for row in report["results"] if row["target_skill"] == "shards-restore-recover"
                    and row["expected_trigger"]]

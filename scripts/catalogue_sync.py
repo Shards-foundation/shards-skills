@@ -8,7 +8,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from validate_skills import catalogue_entry
+from validate_skills import catalogue_entry, enrich_catalogue
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,6 +23,8 @@ def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
             entries.append(catalogue_entry(path, root))
         except (ValueError, KeyError, UnicodeError, OSError) as exc:
             errors.append(str(path.relative_to(root)) + ": " + str(exc))
+    if not errors:
+        entries = enrich_catalogue(entries, root)
     expected = dict(existing)
     expected.update({
         "skill_count": len(entries),

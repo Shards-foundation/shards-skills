@@ -8,6 +8,7 @@ Run the metadata finder in a trusted checkout with Python 3.11 or later.
 
 ```bash
 python scripts/search_skills.py --query "Resume an interrupted GitHub PR repair and verify the changes before merging" --limit 5
+python scripts/search_skills.py --skill shards-review-resolution
 ```
 
 Open the selected `SKILL.md` and inspect the prerequisites, workflow, expected output and failure handling. The catalogue skills give agents instructions. Curated workflows have separately governed Python entry points.
@@ -58,8 +59,8 @@ For the full inventory, see the [catalogue](catalogue/catalogue.json). The [disc
 Use the existing Skills CLI from a trusted checkout or copy the selected skill directory to the host's documented project location. The examples install one skill and a small review collection in the current Codex project.
 
 ```bash
-npx skills add /path/to/shards-skills --skill systematic-debugging -a codex --copy -y
-npx skills add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
+npx skills@1.8.1 add /path/to/shards-skills --skill systematic-debugging -a codex --copy -y
+npx skills@1.8.1 add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
 ```
 
 Select only the skills needed for the task. Skills that reference repository-level tools need the full checkout available. For upload-based clients, the local ZIP exporter supports a smaller self-contained selection. See the [installation and compatibility guide](docs/portable-agent-skills.md).

@@ -36,13 +36,13 @@
   },
   {
     "path": ".github/workflows/agent-adoption.yml",
-    "sha256": "fa10b30330ba0dd0c9bad225e9ac71241d6edb35a542d1c8253ec6a1f1b217a2",
-    "bytes": 3904
+    "sha256": "992fcb0c957c61cd8659ad7e310712ec50a59d166a5fc977fa7fae7f6a5ef2b4",
+    "bytes": 4048
   },
   {
     "path": ".github/workflows/agent-core-plugin.yml",
-    "sha256": "ccb87e86939d1f6e964b0c812469be0578300db373019262f61134103b53fd60",
-    "bytes": 7153
+    "sha256": "04b724f3d1a01fddccc84255a9f7c40fdbc841196acbc6d1fdcd3bf6332a1fe1",
+    "bytes": 7495
   },
   {
     "path": ".github/workflows/portable-agent-skills.yml",
@@ -66,8 +66,8 @@
   },
   {
     "path": ".github/workflows/search-shards-skills.yml",
-    "sha256": "fb20624a46f390c1f04954b256ecc4dbf2fd3213f6e320c455a101c09f44f130",
-    "bytes": 4176
+    "sha256": "832d1c46421005e8ce212dbae99c36e58c6d00cb7c55058025ec4e31fd4d9e1e",
+    "bytes": 4529
   },
   {
     "path": ".gitignore",
@@ -96,8 +96,8 @@
   },
   {
     "path": "README.md",
-    "sha256": "35a74a4295e654b76b9eecef54fc6d7267856b243acbbe6ec5e285d318ea7b1e",
-    "bytes": 8192
+    "sha256": "d4dd1995bac142df6062bf133501d3591d724f1620faa9b8eb3c290b9a8ee73d",
+    "bytes": 8269
   },
   {
     "path": "SECURITY.md",
@@ -116,8 +116,13 @@
   },
   {
     "path": "catalogue/catalogue.json",
-    "sha256": "909b82624d2434e9abd879c41b2baab8f91f52c8e7d2976de0cb24aead2c0ff4",
-    "bytes": 22867
+    "sha256": "a0a2e8c0b6884e4d7d262b5e9fb9afd8acf20fda65ebbc8df32872ccdf10e79d",
+    "bytes": 40527
+  },
+  {
+    "path": "catalogue/discovery.json",
+    "sha256": "a08a911e52e4c9457a4e5344cba72baef784969b31cfc423479347f2e1ce5c4d",
+    "bytes": 12157
   },
   {
     "path": "catalogue/shards-security-controls.json",
@@ -136,8 +141,8 @@
   },
   {
     "path": "docs/agent-adoption.md",
-    "sha256": "bf13e7eb144114277d3cd55d7889acce03ee2e7712e56d0972ee485e2aeb6fc2",
-    "bytes": 3512
+    "sha256": "1c8a6129524aab4da7b796ab2bb5af03bfbc805b2f2643104e235262e3984985",
+    "bytes": 4521
   },
   {
     "path": "docs/agent-harness.md",
@@ -161,13 +166,13 @@
   },
   {
     "path": "docs/catalogue-guide.md",
-    "sha256": "3639127b8b2c1132c5df3fc5a016cead5960b10ea33ddecadc105ce7dde24b50",
-    "bytes": 1044
+    "sha256": "e98cadd38460321c54425dd10c34d17030b4fa9bc27e3878520a381232f5ae9d",
+    "bytes": 1504
   },
   {
     "path": "docs/compatibility.md",
-    "sha256": "874361b79b9112a109db5f4739287c1f8f4698406cbddaec7996c3d155864a5b",
-    "bytes": 1711
+    "sha256": "27a6108081c59c1bd80c4d3d828d6fca48f96deb4ba6e81275c2d167fc425adf",
+    "bytes": 1763
   },
   {
     "path": "docs/first-party-skill-task-evidence.md",
@@ -176,8 +181,8 @@
   },
   {
     "path": "docs/host-ab-evaluation.md",
-    "sha256": "79f9fc63ee830f8c7dffe4e2626519ea63ed9b6be044d75865e51b8b7b393a46",
-    "bytes": 5166
+    "sha256": "1aebdcbc32ac8cf8c3f004f58269168423c50aaa4b3ffe069574156ac8a6c0b6",
+    "bytes": 5339
   },
   {
     "path": "docs/manual-skill-runs.md",
@@ -191,8 +196,8 @@
   },
   {
     "path": "docs/portable-agent-skills.md",
-    "sha256": "5d0cbc333f8ba7517717d98fb42e54170e203030a258b3f620387f9a49e1042c",
-    "bytes": 8241
+    "sha256": "1a33bbe056a563332b5ef4a3d24ae759eea05024478fe7f099ed6930f6297386",
+    "bytes": 8783
   },
   {
     "path": "docs/portable-manus-skill.md",
@@ -211,8 +216,8 @@
   },
   {
     "path": "docs/skill-discovery.md",
-    "sha256": "9cb10bf6321bbded022d2ab6173426e2b5fc0dd5a09cedb59842fdb206cc74d9",
-    "bytes": 3712
+    "sha256": "6fb953ee0d09a9ad13e7473e694950d5304b2f20a685448587ce2ed8bd53d7a7",
+    "bytes": 2977
   },
   {
     "path": "docs/skill-dispatch.md",
@@ -241,8 +246,8 @@
   },
   {
     "path": "evals/trigger-cases.json",
-    "sha256": "7bfbdee3c98382f008fb852911608d437abd2d14b0211dbf405fcf7f140637f1",
-    "bytes": 1984
+    "sha256": "0d6b36b1735b112cd4a6b7b1161b98cbf1a30b99a03e0ef54beaaf52a7f6ad3c",
+    "bytes": 4619
   },
   {
     "path": "fixtures/valid-multi-target.json",
@@ -386,8 +391,8 @@
   },
   {
     "path": "scripts/agent_adoption_eval.py",
-    "sha256": "ac926f1d17679bc15616ba87b0af747641ac796b589bd868c50659e335a0cc9c",
-    "bytes": 7267
+    "sha256": "14ef3ba0e61f827d65a2b4be73baf2aee001f7f987c9249537eca61b5c3ff860",
+    "bytes": 7491
   },
   {
     "path": "scripts/audit_portfolio.py",
@@ -401,8 +406,8 @@
   },
   {
     "path": "scripts/build_catalogue.py",
-    "sha256": "2d1b5fd45946c8c7cd76c5c84e35d2a62b53625fc31efb4fe56459f8540a22e1",
-    "bytes": 985
+    "sha256": "c1b462536e08ab949064be7f455a5279021840d46852872e232c7a5ea8617565",
+    "bytes": 1044
   },
   {
     "path": "scripts/build_portable_security_skill.py",
@@ -411,8 +416,8 @@
   },
   {
     "path": "scripts/catalogue_sync.py",
-    "sha256": "f37f319d293abf6946593e10397b8ead60284a401708ff602fb3edb09c58bf22",
-    "bytes": 4374
+    "sha256": "16cf9d5eece5f2bee1d9025129b17fda3fd120c1030fcf1816a68831fbc94411",
+    "bytes": 4461
   },
   {
     "path": "scripts/dispatch_skills.py",
@@ -421,8 +426,8 @@
   },
   {
     "path": "scripts/host_ab_eval.py",
-    "sha256": "ec7794487ae576d670be7600e032ba2a8cf7138b708438d862fda872ab40088f",
-    "bytes": 8805
+    "sha256": "23a66a79863c5660b6d50ccd289c6a566a7eaf5704240aff0a335cfa1d9172c0",
+    "bytes": 9082
   },
   {
     "path": "scripts/operating_ledger.py",
@@ -441,8 +446,8 @@
   },
   {
     "path": "scripts/search_skills.py",
-    "sha256": "ae38e11878c00ca976b5dacd229a0b2dd426b239928edbd6edd8f7664a5d017a",
-    "bytes": 10242
+    "sha256": "09545572546c6c61060a50353e3d9d5e682dcdcaa947a422248283af5fabf47c",
+    "bytes": 15615
   },
   {
     "path": "scripts/security_assurance.py",
@@ -476,8 +481,8 @@
   },
   {
     "path": "scripts/validate_skills.py",
-    "sha256": "169fbc4e448574e0f7fbb217640a0b7d31120678b52d5b911f0a8432e2d18a26",
-    "bytes": 6218
+    "sha256": "204dc9ef1c6f02d4145abaa6882074961f7e3af09d599209977a112c6fe2946e",
+    "bytes": 8956
   },
   {
     "path": "scripts/verify_plugins.py",
@@ -846,8 +851,8 @@
   },
   {
     "path": "tests/test_agent_adoption_eval.py",
-    "sha256": "0a1c0985fd199b51699a520fcfa0bcab97db01abb4cda537bc3d6cfe74dc0e80",
-    "bytes": 6587
+    "sha256": "cc02070af82cc851499bbec13c3f426e1ee06ebd2b919b58b4de6d119ccc2012",
+    "bytes": 6644
   },
   {
     "path": "tests/test_agent_harness.py",
@@ -876,8 +881,8 @@
   },
   {
     "path": "tests/test_host_ab_eval.py",
-    "sha256": "2d24eb3889b3309e7fe6a7143a9bb6246bdc77f1cf2cf0d09de89d092de4e1d0",
-    "bytes": 10093
+    "sha256": "12ec2f422d39253786101c1ebec854004d84a58f71ccd7b41ad748c69e6a99ee",
+    "bytes": 10722
   },
   {
     "path": "tests/test_manual_skill_actions.py",
@@ -886,8 +891,8 @@
   },
   {
     "path": "tests/test_manual_skill_search_actions.py",
-    "sha256": "7c57000c3f6befdf285c06a59d8b3419eae6512cf96049b63aca391e1900be63",
-    "bytes": 3387
+    "sha256": "31d3997d0373cb06265b6281b67eec9009ffb71b9e422f160017e2a54fd45dcc",
+    "bytes": 3400
   },
   {
     "path": "tests/test_native_recovery.py",
@@ -916,8 +921,8 @@
   },
   {
     "path": "tests/test_repository.py",
-    "sha256": "67468be86ce6f1426e247498b77c04ad8018dc62f6c865923dacba13af680064",
-    "bytes": 12281
+    "sha256": "a4f1d48c5c051466cac495e787f45f2580f2eb5e234db6d51dde4be9bcc6d2dc",
+    "bytes": 12779
   },
   {
     "path": "tests/test_security_assurance.py",
@@ -946,8 +951,8 @@
   },
   {
     "path": "tests/test_skill_search.py",
-    "sha256": "0ff3d13aecb19863f79218b3adfa34e0ab5f4df329147bdb770bf4261fb1c4c4",
-    "bytes": 14037
+    "sha256": "ab3ae98bd87bf4ea1d0e1499cca16a445b36bc19718cb64d6c3d44b8bf5ced28",
+    "bytes": 16359
   },
   {
     "path": "tests/test_vibecode_guard.py",
@@ -971,8 +976,8 @@
   },
   {
     "path": "third_party/SOURCES.md",
-    "sha256": "ce61394d9df0a40d11dfcd116a8fcae7e797f564baeb097261145ccb87af8858",
-    "bytes": 3179
+    "sha256": "5aa949f1313c259f05d8503a933ef1bb4d84fa9c8c8aaa24b549d9a4c4c3c4c1",
+    "bytes": 3288
   },
   {
     "path": "third_party/licenses/addy-agent-skills/LICENSE",

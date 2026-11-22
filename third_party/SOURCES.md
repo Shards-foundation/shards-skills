@@ -103,4 +103,4 @@ These imports were retired from the active library. The [last mixed revision](ht
 - Imported packages: 11
 - Retrieved: 2026-11-12
 - Local status: review
-- File hashes and modifications: [manifest](day-trader-skill/manifest.json)
+- File hashes and modifications: [manifest](https://github.com/Shards-foundation/shards-skills/blob/4f6f2376a403eb5ccfacbacf2adc1c7daa7a47bf/third_party/day-trader-skill/manifest.json)

@@ -3,108 +3,52 @@ on:
   push:
     branches: [main]
     paths:
-      - 'skills/**'
-      - 'scripts/skill_improver.py'
-      - 'scripts/operating_ledger.py'
-      - 'tests/test_skill_improver.py'
-      - 'tests/test_operating_ledger.py'
-      - 'docs/operating-loop.md'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'fixtures/**'
+      - 'schemas/**'
+      - 'evals/**'
       - 'catalogue/catalogue.json'
       - 'catalogue/discovery.json'
-      - 'scripts/build_catalogue.py'
-      - 'scripts/catalogue_sync.py'
-      - 'scripts/validate_skills.py'
-      - 'tests/test_repository.py'
       - 'catalogue/shards-security-controls.json'
-      - 'scripts/security_assurance.py'
-      - 'scripts/vibecode_guard.py'
-      - 'tests/test_vibecode_guard.py'
-      - 'tests/test_vibecode_guard_calibration.py'
-      - 'tests/test_vibecode_guard_review.py'
-      - 'tests/test_vibecode_guard_adversarial.py'
-      - 'tests/test_security_assurance.py'
-      - 'tests/test_security_suite.py'
-      - 'tests/test_security_skill_eval.py'
-      - 'scripts/security_skill_eval.py'
-      - 'evals/shards-security-workflows.json'
+      - '.github/workflows/**'
+      - 'agent.md'
+      - 'pyproject.toml'
+      - 'skills/**'
+      - 'docs/operating-loop.md'
       - 'docs/security-assurance.md'
       - 'docs/security-frameworks.md'
       - 'README.md'
       - 'AGENTS.md'
       - 'plugins/shards-core/**'
-      - 'tests/test_plugin_runtime.py'
-      - 'tests/test_dispatch.py'
-      - 'tests/test_dispatch_inputs.py'
-      - 'scripts/dispatch_skills.py'
-      - 'scripts/shards_agent_harness.py'
-      - 'tests/test_agent_harness.py'
       - 'docs/agent-harness.md'
-      - 'scripts/search_skills.py'
-      - 'tests/test_skill_search.py'
-      - 'tests/test_manual_skill_search_actions.py'
-      - '.github/workflows/search-shards-skills.yml'
       - 'docs/skill-discovery.md'
-      - 'scripts/verify_plugins.py'
-      - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
       - '.agents/skills/**'
-      - 'fixtures/valid-multi-target.json'
-      - 'evals/shards-native-recovery.json'
-      - 'scripts/security_lint.py'
-      - 'tests/test_native_recovery.py'
-      - '.github/workflows/agent-core-plugin.yml'
   pull_request:
     paths:
-      - 'skills/**'
-      - 'scripts/skill_improver.py'
-      - 'scripts/operating_ledger.py'
-      - 'tests/test_skill_improver.py'
-      - 'tests/test_operating_ledger.py'
-      - 'docs/operating-loop.md'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'fixtures/**'
+      - 'schemas/**'
+      - 'evals/**'
       - 'catalogue/catalogue.json'
       - 'catalogue/discovery.json'
-      - 'scripts/build_catalogue.py'
-      - 'scripts/catalogue_sync.py'
-      - 'scripts/validate_skills.py'
-      - 'tests/test_repository.py'
       - 'catalogue/shards-security-controls.json'
-      - 'scripts/security_assurance.py'
-      - 'scripts/vibecode_guard.py'
-      - 'tests/test_vibecode_guard.py'
-      - 'tests/test_vibecode_guard_calibration.py'
-      - 'tests/test_vibecode_guard_review.py'
-      - 'tests/test_vibecode_guard_adversarial.py'
-      - 'tests/test_security_assurance.py'
-      - 'tests/test_security_suite.py'
-      - 'tests/test_security_skill_eval.py'
-      - 'scripts/security_skill_eval.py'
-      - 'evals/shards-security-workflows.json'
+      - '.github/workflows/**'
+      - 'agent.md'
+      - 'pyproject.toml'
+      - 'skills/**'
+      - 'docs/operating-loop.md'
       - 'docs/security-assurance.md'
       - 'docs/security-frameworks.md'
       - 'README.md'
       - 'AGENTS.md'
       - 'plugins/shards-core/**'
-      - 'tests/test_plugin_runtime.py'
-      - 'tests/test_dispatch.py'
-      - 'tests/test_dispatch_inputs.py'
-      - 'scripts/dispatch_skills.py'
-      - 'scripts/shards_agent_harness.py'
-      - 'tests/test_agent_harness.py'
       - 'docs/agent-harness.md'
-      - 'scripts/search_skills.py'
-      - 'tests/test_skill_search.py'
-      - 'tests/test_manual_skill_search_actions.py'
-      - '.github/workflows/search-shards-skills.yml'
       - 'docs/skill-discovery.md'
-      - 'scripts/verify_plugins.py'
-      - 'scripts/run_workflow.py'
       - '.agents/plugins/**'
       - '.agents/skills/**'
-      - 'fixtures/valid-multi-target.json'
-      - 'evals/shards-native-recovery.json'
-      - 'scripts/security_lint.py'
-      - 'tests/test_native_recovery.py'
-      - '.github/workflows/agent-core-plugin.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -113,8 +57,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.11'
       - name: Compile Python entry points
@@ -164,10 +110,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.11'
       - name: Verify dispatcher inputs and atomic checkpoint publication

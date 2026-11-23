@@ -14,6 +14,15 @@ on:
       - 'docs/manual-skill-runs.md'
       - 'scripts/dispatch_skills.py'
       - 'scripts/verify_plugins.py'
+      - 'scripts/validate_skills.py'
+      - 'scripts/security_lint.py'
+      - 'catalogue/**'
+      - 'skills/**'
+      - 'plugins/shards-core/**'
+      - '.agents/plugins/**'
+      - 'AGENTS.md'
+      - 'agent.md'
+      - 'pyproject.toml'
       - '.github/workflows/scheduled-skill-automation.yml'
   pull_request:
     paths:
@@ -27,6 +36,15 @@ on:
       - 'docs/manual-skill-runs.md'
       - 'scripts/dispatch_skills.py'
       - 'scripts/verify_plugins.py'
+      - 'scripts/validate_skills.py'
+      - 'scripts/security_lint.py'
+      - 'catalogue/**'
+      - 'skills/**'
+      - 'plugins/shards-core/**'
+      - '.agents/plugins/**'
+      - 'AGENTS.md'
+      - 'agent.md'
+      - 'pyproject.toml'
       - '.github/workflows/scheduled-skill-automation.yml'
   schedule:
     - cron: '17 5 * * 1'
@@ -41,29 +59,66 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Core gates still verify GitHub's PR merge checkout.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record checkout revision
+        id: revision
+        shell: bash
+        run: |
+          mkdir -p reports/automation
+          revision="$(git rev-parse --verify HEAD)"
+          echo "$revision" > reports/automation/revision.txt
+          echo "commit=$revision" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.11'
       - name: Compile automation scripts
         run: python -m py_compile scripts/automate.py scripts/catalogue_sync.py scripts/audit_portfolio.py scripts/dispatch_skills.py scripts/verify_plugins.py
       - name: Run automation regression suite
         run: python -m unittest discover -s tests -v
-      - name: Smoke test pinned remote read-only skill execution
+      - name: Smoke test plan-pinned catalogue dispatcher
+        shell: bash
         run: |
           PLAN_SHA=$(python scripts/dispatch_skills.py plan --skill shards-catalogue-sync | python -c 'import json,sys; print(json.load(sys.stdin)["plan_sha256"])')
           python scripts/dispatch_skills.py run --skill shards-catalogue-sync --execute --expect-plan-sha256 "$PLAN_SHA"
       - name: Execute bounded weekly workflow
-        run: python scripts/automate.py run --workflow weekly --output-dir reports/automation
+        shell: bash
+        run: |
+          python scripts/automate.py plan --workflow weekly > reports/automation/plan.json
+          python scripts/automate.py run --workflow weekly --output-dir reports/automation
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          folder = Path("reports/automation")
+          revision = (folder / "revision.txt").read_text(encoding="utf-8").strip()
+          plan = json.loads((folder / "plan.json").read_text(encoding="utf-8"))
+          receipt_path, = folder.glob("automation-*.json")
+          receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+          if (plan["executed"] is not False or receipt["executed"] is not True
+                  or receipt["status"] != "pass" or receipt["commit"] != revision
+                  or plan["commit"] != revision or receipt["failed_steps"]
+                  or receipt["pending_steps"]
+                  or receipt["completed"] != receipt["total"]
+                  or receipt["total"] != len(plan["steps"])):
+              raise SystemExit("Weekly receipt does not record a complete pass at the checkout revision")
+          observed = [(s["id"], s["command"], s["exit_code"]) for s in receipt["steps"]]
+          expected = [(s["id"], s["argv"], 0) for s in plan["steps"]]
+          if observed != expected:
+              raise SystemExit("Weekly receipt does not match the planned steps")
+          PY
       - name: Produce full portfolio JSON and Markdown
-        if: always()
+        if: ${{ !cancelled() && steps.revision.outcome == 'success' }}
         run: |
           python scripts/audit_portfolio.py --json-output reports/automation/portfolio.json --markdown-output reports/automation/portfolio.md
       - name: Upload report artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() && steps.revision.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: shards-skill-audit-report
+          name: shards-skill-audit-report-${{ steps.revision.outputs.commit }}-${{ github.run_attempt }}
           path: reports/automation/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14

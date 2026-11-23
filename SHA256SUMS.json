@@ -41,8 +41,8 @@
   },
   {
     "path": ".github/workflows/agent-core-plugin.yml",
-    "sha256": "04b724f3d1a01fddccc84255a9f7c40fdbc841196acbc6d1fdcd3bf6332a1fe1",
-    "bytes": 7495
+    "sha256": "3bb75ca3cbda04331c06c39034554840e2383dac6ec6706025dc74f90627533d",
+    "bytes": 5160
   },
   {
     "path": ".github/workflows/portable-agent-skills.yml",
@@ -61,8 +61,8 @@
   },
   {
     "path": ".github/workflows/scheduled-skill-automation.yml",
-    "sha256": "d3d8130da70d277dbf0232b542025ab89296c316ac8bd4f3a10e4e67dccf8ecf",
-    "bytes": 2596
+    "sha256": "58d0f7a97c959645439a42f0f6f07afadcf82afa8d886b1b5e5974a856f2104e",
+    "bytes": 5231
   },
   {
     "path": ".github/workflows/search-shards-skills.yml",
@@ -161,8 +161,8 @@
   },
   {
     "path": "docs/automation.md",
-    "sha256": "ab871d887a12bd29bbf12105a0ac86af53e37e76be45322e8b36b0a26fd464f4",
-    "bytes": 5146
+    "sha256": "9de88471a8df2f4973c4e27274de92e3903b9e1897ba813b0b0eb7c6042f4043",
+    "bytes": 7704
   },
   {
     "path": "docs/catalogue-guide.md",
@@ -401,8 +401,8 @@
   },
   {
     "path": "scripts/automate.py",
-    "sha256": "a9cfc1c013209ee50adc20ad50326e27b1aff717686d903f66d0dd91affe9f46",
-    "bytes": 6867
+    "sha256": "45551c49475038d1ad7d9d0808f9282122f5a238e97a081b623b8043a333c59e",
+    "bytes": 8554
   },
   {
     "path": "scripts/build_catalogue.py",
@@ -416,8 +416,8 @@
   },
   {
     "path": "scripts/catalogue_sync.py",
-    "sha256": "0a46326be29cb507192d9a0f432ec879fa4f551955070e4045f1cac991f6b872",
-    "bytes": 4415
+    "sha256": "c2fe0ee8a4b4b26f40f93c6d0c24d9c127ab8131a2b593c69ec6ade361e127bf",
+    "bytes": 5603
   },
   {
     "path": "scripts/dispatch_skills.py",
@@ -446,8 +446,8 @@
   },
   {
     "path": "scripts/search_skills.py",
-    "sha256": "4be18cfb73c0400d6c0de890d86921c80f2b7f9b368fcc55d6edbc9d176b2af7",
-    "bytes": 15806
+    "sha256": "5b3b95ca1698eacd1e0ee5fb403ade33745cb3cd4d808e4c322a6dda6ae924cd",
+    "bytes": 15410
   },
   {
     "path": "scripts/security_assurance.py",
@@ -481,8 +481,8 @@
   },
   {
     "path": "scripts/validate_skills.py",
-    "sha256": "e6411542e03c4f6f3914bf5a1b5878ec2f704faabdeb43163a93ddd05953b0e4",
-    "bytes": 9067
+    "sha256": "fa25ca3f0585620c13a1339b0c91acfaef543bd010a871e93d123fb2d5bc6876",
+    "bytes": 9917
   },
   {
     "path": "scripts/verify_plugins.py",
@@ -861,8 +861,8 @@
   },
   {
     "path": "tests/test_automation.py",
-    "sha256": "14205a3173d8634c7b4e489d021c85edd59d740a8bb999ba4c1b673d48b45a8f",
-    "bytes": 10371
+    "sha256": "21e2bfc1c6f9b1b45b0be84ece61222783fe8cba99920d29bcfc40ee4af9a481",
+    "bytes": 25672
   },
   {
     "path": "tests/test_dispatch.py",

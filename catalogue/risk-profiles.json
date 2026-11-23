@@ -45,11 +45,11 @@
     }
   },
   "path_escalations": {
-    "AGENTS.md": "agent-instructions",
+    "agents.md": "agent-instructions",
     "agent.md": "agent-instructions",
-    "CLAUDE.md": "agent-instructions",
-    "SKILL.md": "agent-instructions",
-    "CODEOWNERS": "policy-change",
+    "claude.md": "agent-instructions",
+    "skill.md": "agent-instructions",
+    "codeowners": "policy-change",
     ".github/workflows/*": "policy-change",
     "catalogue/risk-profiles.json": "policy-change",
     "scripts/classify_risk_profile.py": "policy-change",

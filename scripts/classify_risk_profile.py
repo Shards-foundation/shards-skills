@@ -100,7 +100,7 @@ def validate_policy(policy):
         for effect in identifiers(list(effects), level + ".effect_classes"):
             rule_id = effects[effect]
             if (not isinstance(rule_id, str) or not re.fullmatch(r"EF-[0-9]+", rule_id)
-                    or rule_id in seen_ids or effect in rules):
+                    or rule_id in seen_ids or effect in rules or effect == "git-push"):
                 raise ValueError(f"policy: resolve conflicting or malformed rule for {effect}.")
             seen_ids.add(rule_id)
             rules[effect] = (rank, rule_id)
@@ -113,8 +113,9 @@ def validate_policy(policy):
         raise ValueError("policy: supply path escalation rules.")
     for pattern, effect in paths.items():
         if (not isinstance(effect, str) or effect not in rules or not pattern
+                or not pattern.isascii() or pattern != pattern.lower()
                 or pattern.startswith("/") or any(p in ("", ".", "..") for p in pattern.split("/"))):
-            raise ValueError("policy: use relative path patterns and registered effects.")
+            raise ValueError("policy: use lowercase ASCII relative path patterns and registered effects.")
     return rules
 
 
@@ -128,6 +129,62 @@ def profile_rank(value, where):
     if value not in LEVELS:
         raise ValueError(f"{where}: use a registered profile ID.")
     return LEVELS.index(value)
+
+
+def observed_path(item, source):
+    known(item, source)
+    fields(item, ("path", "effects", "resolution"), source)
+    if item["resolution"] != "verified-direct":
+        raise Unknown(f"{source}.resolution: verify the Git path and all components are direct and unaliased.")
+    path = known(item["path"], source + ".path")
+    if not isinstance(path, str):
+        raise ValueError(f"{source}.path: supply a repository-relative string.")
+    for part in path.split("/"):
+        if (not re.fullmatch(r"[A-Za-z0-9_. -]+", part) or part.startswith(" ")
+                or part.endswith((" ", ".")) or part.lower() == ".git"
+                or re.fullmatch(r"con|prn|aux|nul|(?:com|lpt)[0-9]", part.split(".")[0].rstrip().lower())):
+            raise Unknown(f"{source}.path: resolve the alias or nonportable spelling against the Git tree.")
+    return path
+
+
+def check_path_collisions(paths):
+    # Sorting by components puts each portable directory and its descendants together.
+    entries = [path.split("/") for path in paths]
+    entries.sort(key=lambda parts: [part.lower() for part in parts])
+    for left, right in zip(entries, entries[1:]):
+        for a, b in zip(left, right):
+            if a.lower() != b.lower():
+                break
+            if a != b:
+                raise Unknown("observed_changed_paths: resolve the case-colliding component spellings.")
+        else:
+            raise Unknown("observed_changed_paths: resolve duplicate paths or a file/directory collision.")
+
+
+def push_observation(push, target):
+    source = "external_side_effects"
+    fields(push, ("operation", "repository", "ref", "default_ref", "revision", "protected",
+                  "update", "additional_effects"), source)
+    if push["operation"] != "git-push" or push["revision"] != target["revision"]:
+        raise Unknown(f"{source}: verify a single git-push of the observed target revision.")
+    repository = known(push["repository"], source + ".repository")
+    if repository != target["repository"]:
+        raise Unknown(f"{source}.repository: verify the same-repository destination or classify the external write separately.")
+    for key in ("ref", "default_ref"):
+        ref = known(push[key], source + "." + key)
+        if (not isinstance(ref, str) or not re.fullmatch(r"refs/heads/[A-Za-z0-9_][A-Za-z0-9_./-]*", ref)
+                or ".." in ref or any(part.startswith(".") or part.endswith((".", ".lock")) or not part
+                                      for part in ref.split("/"))):
+            raise Unknown(f"{source}.{key}: supply one unambiguous, fully qualified branch ref.")
+    protected = known(push["protected"], source + ".protected")
+    if type(protected) is not bool:
+        raise ValueError(f"{source}.protected: supply the observed boolean or null.")
+    if push["update"] not in ("create", "fast-forward", "force", "delete"):
+        raise Unknown(f"{source}.update: verify the ref update mode.")
+    routine = (not protected and push["ref"].lower() != push["default_ref"].lower()
+               and push["update"] in ("create", "fast-forward"))
+    permission = {key: push[key] for key in ("operation", "repository", "ref", "revision", "update")}
+    return permission, routine
 
 
 def classify(data, policy, rules, receipt):
@@ -171,26 +228,49 @@ def classify(data, policy, rules, receipt):
         for value in values:
             effect(value, source)
 
+    def optional_effect(value, source, neutral, choices):
+        known(value, source)
+        if value != neutral:
+            if value not in choices:
+                raise ValueError(f"{source}: use {', '.join((neutral, *choices))} or null.")
+            effect(value, source)
+
     effect(data["task_intent"], "task_intent")
-    effect_list(data["declared_execution_effects"], "declared_execution_effects")
+    declared = data["declared_execution_effects"]
+    external = data["external_side_effects"]
+    declares_push = isinstance(declared, list) and "git-push" in declared
+    if declares_push or isinstance(external, dict):
+        if not declares_push or not isinstance(external, dict):
+            raise Unknown("git-push: match the declared action to a host-observed external_side_effects object.")
+        if declared.count("git-push") != 1:
+            raise Unknown("declared_execution_effects: identify exactly one git-push for this observation.")
+        receipt["required_push_permission"], routine = push_observation(external, target)
+        additional = external["additional_effects"]
+        if additional != []:
+            effect_list(additional, "external_side_effects.additional_effects")
+        if not routine:
+            effect("external-write", "external_side_effects")
+        declared = [value for value in declared if value != "git-push"]
+    else:
+        optional_effect(external, "external_side_effects", "none", ("external-read", "external-write"))
+    effect_list(declared, "declared_execution_effects")
     paths = known(data["observed_changed_paths"], "observed_changed_paths")
     if not isinstance(paths, list):
         raise ValueError("observed_changed_paths: supply an array of path observations.")
-    if not paths and data["task_intent"] == "prose-only":
-        raise Unknown("observed_changed_paths: identify the prose change before classification.")
+    if not paths and (declares_push or data["task_intent"] == "prose-only"):
+        raise Unknown("observed_changed_paths: identify the changed content before classification.")
+    spellings = []
     for index, item in enumerate(paths):
         source = f"observed_changed_paths[{index}]"
-        fields(item, ("path", "effects"), source)
-        path = known(item["path"], source + ".path")
-        if (not isinstance(path, str) or not path.isprintable() or "\\" in path
-                or re.match(r"^[A-Za-z]:", path)
-                or any(p in ("", ".", "..") for p in path.split("/"))):
-            raise ValueError(f"{source}.path: use a normalized repository-relative path.")
+        path = observed_path(item, source)
+        spellings.append(path)
+        path = path.lower()
         effect_list(item["effects"], source + ".effects")
         for pattern, risk in policy["path_escalations"].items():
             candidate = path if "/" in pattern else path.rsplit("/", 1)[-1]
             if fnmatchcase(candidate, pattern):
                 floor("path." + pattern, source + ".path", rules[risk][0])
+    check_path_collisions(spellings)
 
     for field, risk in (("instruction_bearing_changes", "agent-instructions"),
                         ("authorization_or_policy_changes", "policy-change"),
@@ -201,15 +281,7 @@ def classify(data, policy, rules, receipt):
         if flag:
             effect(risk, field)
 
-    for field, neutral, choices in (
-        ("reversibility", "reversible", ("costly-rollback", "irreversible")),
-        ("external_side_effects", "none", ("external-read", "external-write")),
-    ):
-        value = known(data[field], field)
-        if value != neutral:
-            if value not in choices:
-                raise ValueError(f"{field}: use {', '.join((neutral, *choices))} or null.")
-            effect(value, field)
+    optional_effect(data["reversibility"], "reversibility", "reversible", ("costly-rollback", "irreversible"))
 
     constraints = known(data["repository_policy_constraints"], "repository_policy_constraints")
     fields(constraints, ("minimum_profile", "hold"), "repository_policy_constraints")
@@ -236,6 +308,7 @@ def classify(data, policy, rules, receipt):
 
 def decide(raw, registry):
     receipt = {"receipt_version": 1, "authority_granted": False, "profile": None,
+               "evidence_enforced": False, "required_push_permission": None,
                "required_evidence": [], "triggered_rules": [], "reasons": [],
                "policy_sha256": hashlib.sha256(registry).hexdigest() if len(registry) <= MAX_BYTES else None,
                "input_sha256": hashlib.sha256(raw).hexdigest() if len(raw) <= MAX_BYTES else None}
@@ -264,6 +337,7 @@ def main():
         result = decide(sys.stdin.buffer.read(MAX_BYTES + 1), registry)
     except (OSError, ValueError) as exc:
         result = {"receipt_version": 1, "decision": "INVALID", "profile": None,
+                  "evidence_enforced": False, "required_push_permission": None,
                   "authority_granted": False, "triggered_rules": [], "required_evidence": [],
                   "policy_sha256": None, "input_sha256": None, "reasons": [str(exc)]}
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))

@@ -6,7 +6,7 @@
 
 Shards Skills is an independently developed library of workflows for AI-assisted engineering, security, research and operations. It contains 60 catalogue skills, 13 curated Shards Core workflows, and four separate native host candidates.
 
-## Three ways to use this repository
+## Four ways to use this repository
 
 | Guide | Use it when |
 | --- | --- |
@@ -33,7 +33,7 @@ This index is a **navigation aid**, not an executable skill registry, tool permi
 
 ### 1. Get the library
 
-Use a trusted checkout. **Python 3.11+** is sufficient for searching and the local read-only demonstrations; **Node.js 22.20+** is only needed for the optional pinned Skills CLI installer.
+In commands below, replace `python` with `python3` (or `py -3.11` on Windows) wherever your environment provides Python 3.11+ under that executable. Use a trusted checkout. **Python 3.11+** is sufficient for searching and the local read-only demonstrations; **Node.js 22.20+** is only needed for the optional pinned Skills CLI installer.
 
 ```bash
 git clone https://github.com/Shards-foundation/shards-skills.git
@@ -59,11 +59,13 @@ The first command returns a **ranked JSON shortlist and match rationale**; the s
 In the **destination project** where you use Codex, point the pinned Skills CLI at your trusted Shards Skills checkout:
 
 ```bash
-npx skills@1.8.1 add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
-npx skills@1.8.1 list
+npm install --ignore-scripts --no-save skills@1.8.1
+# Inspect the downloaded package and its entry point before execution.
+npx --no-install skills add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
+npx --no-install skills list
 ```
 
-Replace `/path/to/shards-skills` with the real checkout path. The initial `npx` invocation downloads the specified installer version; inspect and trust the installer before using it. For Claude Code, OpenHands, Cursor, OpenCode and other clients, use the [host-by-host installation guide](docs/portable-agent-skills.md); an installer target is **not** proof of real agent invocation.
+Replace `/path/to/shards-skills` with the real checkout path. The `npm install --ignore-scripts` step downloads the pinned CLI without install lifecycle scripts; **review its contents and binary before** invoking the locally installed CLI with `npx --no-install`. Keep the full Shards Skills checkout accessible to the agent: copied descriptors can depend on repository-root files and evaluation fixtures. For Claude Code, OpenHands, Cursor, OpenCode and other clients, use the [host-by-host installation guide](docs/portable-agent-skills.md); an installer target is **not** proof of real agent invocation.
 
 ### 4. Give the agent a bounded test task
 
@@ -172,8 +174,9 @@ See the [60 catalogue entries](catalogue/catalogue.json) and the [discovery guid
 Use the existing Skills CLI from a trusted checkout or copy the selected skill directory to the host's documented project location. The examples install one skill and a small review collection in the current Codex project.
 
 ```bash
-npx skills@1.8.1 add /path/to/shards-skills --skill systematic-debugging -a codex --copy -y
-npx skills@1.8.1 add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
+# After inspecting and locally installing pinned skills@1.8.1 with lifecycle scripts disabled:
+npx --no-install skills add /path/to/shards-skills --skill systematic-debugging -a codex --copy -y
+npx --no-install skills add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
 ```
 
 Select only the skills needed for the task. Skills that reference repository-level tools need the full checkout available. For upload-based clients, the local ZIP exporter supports a smaller self-contained selection. See the [installation and compatibility guide](docs/portable-agent-skills.md).

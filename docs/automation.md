@@ -30,7 +30,9 @@ quick: catalogue integrity, structural metadata validation, curated plugin audit
 weekly: catalogue integrity, metadata validation, heuristic security lint, portfolio inventory.
 verify: catalogue integrity, metadata validation, security lint, curated plugin audit, full unit test suite.
 
-The controller uses a fixed Python argv allowlist (no shell invocation or arbitrary agent-generated command), bounded timeouts and subprocess exit codes. Before launching an allowlisted helper, it rejects missing scripts, direct symlinks and script paths that resolve outside the repository. Plans do not execute commands. Runs may be stopped on first failure with --fail-fast. Reports are saved only when an output directory is provided, with unique filenames and best-effort redaction of credential-shaped tokens and private-key blocks.
+The controller uses a fixed Python argv allowlist, launches children directly, and records their exit codes or timeouts. It rejects missing scripts, direct symlinks and script paths that resolve outside the checkout. Plans list the commands without launching maintenance steps. The run command authorises execution of the selected profile. With `--fail-fast`, the receipt lists the remaining step IDs in `pending_steps`. The `completed` count includes checks that reported an error before launch.
+
+The CLI includes the starting Git `commit` in plans and receipts when the checkout has a readable revision. A source archive without Git metadata records `null`. The revision identifies Git HEAD. Use a clean checkout when attributing results to tracked source. Plans list the commands for operator inspection. The checkout and interpreter must stay under the operator's control between planning and execution.
 
 ### Subprocess environment and threat boundary
 
@@ -38,16 +40,43 @@ Maintenance subprocesses receive a **minimal allowlisted environment**: path and
 
 This reduces accidental credential propagation and Python import injection; it is **not a sandbox**. Subprocesses can still access filesystem locations permitted to the current operating-system user, and tests execute first-party repository code. Only run maintenance against a trusted checkout in a least-privilege environment. Log redaction recognises known patterns but cannot guarantee removal of every possible secret. A local attacker able to modify the executable after path validation may still create a time-of-check/time-of-use race.
 
+## Report publication
+
+With `--output-dir`, the controller writes a complete receipt to a temporary file beside the final report and publishes it atomically without replacing an existing receipt. Choose a trusted output directory on a filesystem that supports hard links. An interruption before publication can leave a hidden temporary file, which can be removed after confirming the writer has stopped. A publication error exits 2 and prints a JSON result with `status: error`, the underlying `workflow_status` and `report_error`. A complete failed maintenance run exits 1 and can still publish its failure receipt. Successful runs exit 0.
+
+### Reproduce the weekly workflow offline
+
+Review the ordered commands in the planned profile, run them and exercise the failure path in a disposable checkout of the same revision.
+
+```bash
+evidence="$(mktemp -d)"
+python scripts/automate.py plan --workflow weekly > "$evidence/plan.json"
+python scripts/automate.py run --workflow weekly --output-dir "$evidence"
+python -m unittest discover -s tests -p test_automation.py -v
+
+git worktree add --detach "$evidence/fixture" HEAD
+printf '{\n' > "$evidence/fixture/catalogue/catalogue.json"
+if python "$evidence/fixture/scripts/automate.py" run --workflow weekly --fail-fast \
+    --output-dir "$evidence/failure"; then
+  echo "Unexpected success with malformed catalogue" >&2
+  exit 1
+else
+  test "$?" -eq 1
+fi
+```
+
+The success receipt should record all five planned commands with exit 0. The failure receipt should record `catalogue-check` with exit 2, a JSON parse diagnostic and four pending steps. The worktree contains deliberate fixture changes. Its receipt records the starting commit, and the command above identifies the local input change.
+
 ## Scheduling
 
 GitHub Actions scheduled-skill-automation.yml runs every Monday at 05:17 UTC and supports manual dispatch. Runs triggered by relevant PRs/pushes validate changes before merge. It has contents: read permission only; scheduled report artifacts are retained for 14 days. GitHub scheduling is best-effort and may run later than the configured cron time.
 
-The workflow generates portfolio.json and portfolio.md plus a dated automation JSON evidence file in the ignored reports/automation directory. It never commits, merges, publishes, deploys, trades, reads GitHub secrets or executes imported skill scripts.
+The automation workflow tests PRs at the exact source-head SHA. Core plugin gates also test GitHub's merge checkout. The scheduled workflow saves the revision, plan, dated automation receipt, and portfolio JSON and Markdown under `reports/automation`. It validates the saved receipt against the plan and checkout before reporting success. The artifact name includes the checkout SHA and run attempt. If an earlier step fails, the workflow still attempts to collect portfolio evidence and upload available files.
 
 ## Output status and limitations
 
-Automation pass: each enabled, trusted maintenance subprocess finished with exit code zero; failure/timeout is captured as a separate step.
-Catalogue PASS: metadata in sync. DRIFT: descriptive metadata differs but identity/count/paths are intact; observational and nonblocking. FAIL: structural errors or missing entries.
+Automation pass: each enabled, trusted maintenance subprocess finished with exit code zero. Failed, timed-out and unavailable steps have distinct statuses.
+Catalogue PASS: metadata in sync. DRIFT: descriptive metadata differs but identity/count/paths are intact. FAIL: inconsistent paths or counts. ERROR: invalid catalogue data, including duplicate entries, unsupported schema or unreadable JSON.
 Portfolio OBSERVED: inventory was collected, not security-certified. FAIL: missing or malformed skill instructions detected.
 
 The portfolio audit lists metadata and scripts without executing them. The same audit can inspect a separate checkout with `--root`. Heuristic warning counts are a triage queue, not confirmed vulnerabilities. Host-specific plugin installation, live MCP tool use, service availability and production-readiness checks remain separate.

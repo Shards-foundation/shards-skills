@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -51,6 +52,19 @@ def execution_environment(source=None) -> dict[str, str]:
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
+
+def source_revision() -> str | None:
+    try:
+        proc = subprocess.run(["git", "rev-parse", "--show-prefix", "--verify", "HEAD^{commit}"],
+                              cwd=ROOT, capture_output=True, encoding="utf-8", errors="replace",
+                              timeout=5, check=False, env=execution_environment())
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    # A source archive nested inside an unrelated checkout has no revision of its own.
+    match = re.fullmatch(r"\n([0-9a-f]{40}|[0-9a-f]{64})\n", proc.stdout)
+    return match[1] if proc.returncode == 0 and match else None
+
+
 def command_for(step: str) -> tuple[list[str], int]:
     if step not in STEPS:
         raise ValueError("Untrusted step: " + step)
@@ -65,9 +79,11 @@ def command_for(step: str) -> tuple[list[str], int]:
 def plan(workflow: str) -> dict:
     if workflow not in WORKFLOWS:
         raise ValueError("Unknown workflow")
-    return {"workflow": workflow, "mode": "plan", "steps": [
-        {"id": name, "argv": command_for(name)[0], "timeout_seconds": command_for(name)[1]}
-        for name in WORKFLOWS[workflow]], "executed": False}
+    steps = []
+    for name in WORKFLOWS[workflow]:
+        argv, limit = command_for(name)
+        steps.append({"id": name, "argv": argv, "timeout_seconds": limit})
+    return {"workflow": workflow, "mode": "plan", "steps": steps, "executed": False}
 
 def safe_tail(data: str) -> str:
     return CREDENTIAL.sub("[REDACTED]", PRIVATE_KEY_BLOCK.sub("[REDACTED]", data))[-2400:]
@@ -78,33 +94,38 @@ def run_workflow(workflow: str, *, execute: bool, fail_fast: bool = False,
         return plan(workflow)
     if workflow not in WORKFLOWS:
         raise ValueError("Unknown workflow")
+    steps = WORKFLOWS[workflow]
+    for name in steps:
+        if name not in STEPS:
+            raise ValueError("Untrusted step: " + name)
     if run_command is None:
         run_command = subprocess.run
     entries = []
-    for name in WORKFLOWS[workflow]:
-        argv, limit = command_for(name)
-        env = execution_environment()
-        started = now()
+    env = execution_environment()
+    for name in steps:
+        entry = {"id": name, "command": None, "exit_code": None, "started_at": now()}
         try:
-            proc = run_command(argv, cwd=str(ROOT), capture_output=True, text=True,
+            argv, limit = command_for(name)
+            entry["command"] = argv
+            proc = run_command(argv, cwd=str(ROOT), capture_output=True,
+                               encoding="utf-8", errors="replace",
                                timeout=limit, check=False, env=env)
-            entry = {"id": name, "status": "passed" if proc.returncode == 0 else "failed",
-                     "exit_code": proc.returncode, "command": argv, "started_at": started,
-                     "finished_at": now(), "stdout_tail": safe_tail(proc.stdout),
-                     "stderr_tail": safe_tail(proc.stderr)}
-        except subprocess.TimeoutExpired:
-            entry = {"id": name, "status": "timeout", "exit_code": None, "command": argv,
-                     "started_at": started, "finished_at": now(), "error": f"Timeout {limit}s"}
-        except OSError as error:
-            entry = {"id": name, "status": "error", "exit_code": None, "command": argv,
-                     "started_at": started, "finished_at": now(), "error": type(error).__name__}
+            entry.update(status="passed" if proc.returncode == 0 else "failed",
+                         exit_code=proc.returncode, stdout_tail=safe_tail(proc.stdout),
+                         stderr_tail=safe_tail(proc.stderr))
+        except subprocess.TimeoutExpired as error:
+            entry.update(status="timeout", error=f"Timeout {error.timeout}s")
+        except (ValueError, OSError) as error:
+            entry.update(status="error", error=safe_tail(str(error)))
+        entry["finished_at"] = now()
         entries.append(entry)
         if fail_fast and entry["status"] != "passed":
             break
     failures = [item["id"] for item in entries if item["status"] != "passed"]
     return {"workflow": workflow, "mode": "executed",
             "status": "pass" if not failures else "fail", "executed": True,
-            "completed": len(entries), "total": len(WORKFLOWS[workflow]),
+            "completed": len(entries), "total": len(steps),
+            "pending_steps": list(steps[len(entries):]),
             "failed_steps": failures, "steps": entries,
             "note": "No imported skill code, remote writes, deployments or publishing actions executed."}
 
@@ -112,9 +133,16 @@ def write_report(folder: Path, report: dict) -> Path:
     folder = folder.expanduser().resolve()
     folder.mkdir(parents=True, exist_ok=True)
     dest = folder / ("automation-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + ".json")
-    with dest.open("x", encoding="utf-8") as handle:
-        json.dump(report, handle, indent=2, sort_keys=True)
-        handle.write("\n")
+    fd, temporary = tempfile.mkstemp(prefix=".automation-", suffix=".tmp", dir=folder)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(report, handle, indent=2, sort_keys=True)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.link(temporary, dest)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
     return dest
 
 def main(argv=None) -> int:
@@ -133,11 +161,20 @@ def main(argv=None) -> int:
             report = {"workflows": {k: list(v) for k, v in WORKFLOWS.items()}}
         elif args.action == "plan":
             report = plan(args.workflow)
+            report["commit"] = source_revision()
         else:
+            revision = source_revision()
             report = run_workflow(args.workflow, execute=True, fail_fast=args.fail_fast)
+            report["commit"] = revision
             if args.output_dir:
-                report["report_path"] = str(write_report(args.output_dir, report))
+                try:
+                    report["report_path"] = str(write_report(args.output_dir, report))
+                except OSError as error:
+                    report.update(workflow_status=report["status"], status="error",
+                                  report_error=safe_tail(str(error)))
         print(json.dumps(report, indent=2, sort_keys=True))
+        if args.action == "run" and report["status"] == "error":
+            return 2
         return int(args.action == "run" and report["status"] != "pass")
     except (ValueError, OSError, UnicodeError) as exc:
         print(json.dumps({"status": "ERROR", "error": str(exc)}, sort_keys=True),

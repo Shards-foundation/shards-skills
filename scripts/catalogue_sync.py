@@ -15,6 +15,26 @@ ROOT = Path(__file__).resolve().parents[1]
 def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
     root = root.resolve()
     existing = json.loads(catalogue_file(root).read_text(encoding="utf-8"))
+    if (not isinstance(existing, dict) or type(existing.get("schema_version")) is not int
+            or existing["schema_version"] != 1):
+        raise ValueError("Unsupported catalogue schema, expected a JSON object with schema_version 1")
+    records = existing.get("skills")
+    paths = existing.get("skill_paths")
+    if not isinstance(paths, list) or any(not isinstance(path, str) for path in paths):
+        raise ValueError("Catalogue skill_paths must be a list of strings")
+    if type(existing.get("skill_count")) is not int:
+        raise ValueError("Catalogue skill_count must be an integer")
+    if not isinstance(records, list):
+        raise ValueError("Catalogue skills must be a list")
+    actual_by_path = {}
+    for index, item in enumerate(records):
+        path = item.get("path") if isinstance(item, dict) else None
+        if not isinstance(path, str) or not path:
+            raise ValueError(f"Catalogue skills entry {index} is missing a string path")
+        if path in actual_by_path:
+            raise ValueError(f"Duplicate catalogue skill path: {path}")
+        actual_by_path[path] = item
+
     entries = []
     errors = []
     for path in sorted((root / "skills").glob("*/SKILL.md")):
@@ -31,7 +51,6 @@ def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
         "categories": sorted({item["category"] for item in entries}),
         "skills": entries,
     })
-    actual_by_path = {item["path"]: item for item in existing.get("skills", []) if isinstance(item, dict) and "path" in item}
     expected_by_path = {item["path"]: item for item in entries}
     missing = sorted(set(expected_by_path) - set(actual_by_path))
     extra = sorted(set(actual_by_path) - set(expected_by_path))
@@ -39,7 +58,7 @@ def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
                    if expected_by_path[path] != actual_by_path[path])
     if existing.get("skill_count") != len(entries):
         errors.append("Catalogue count disagrees with skill directories")
-    if sorted(existing.get("skill_paths", [])) != sorted(expected["skill_paths"]):
+    if sorted(paths) != sorted(expected["skill_paths"]):
         errors.append("Catalogue skill_paths differ from discovered SKILL.md files")
     if missing or extra:
         errors.append("Catalogue entries missing or stale")

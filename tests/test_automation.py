@@ -2,6 +2,7 @@
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -82,6 +83,67 @@ class AutomationTests(unittest.TestCase):
         self.assertEqual(data["status"], "fail")
         self.assertEqual(len(calls), 1)
         self.assertEqual(data["completed"], 1)
+        self.assertEqual(data["pending_steps"], list(automate.WORKFLOWS["verify"][1:]))
+
+    def test_missing_later_step_preserves_previous_and_following_results(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for step in ("catalogue-check", "plugin-integrity", "plugin-audit"):
+                path = root / automate.STEPS[step][0][0]
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("print('finished')\n", encoding="utf-8")
+            with patch.object(automate, "ROOT", root):
+                result = automate.run_workflow("quick", execute=True)
+        self.assertEqual(result["status"], "fail")
+        self.assertEqual(result["failed_steps"], ["skill-metadata"])
+        self.assertEqual([s["status"] for s in result["steps"]],
+                         ["passed", "error", "passed", "passed"])
+        self.assertIn("scripts/validate_skills.py", result["steps"][1]["error"])
+
+    def test_unknown_later_step_prevents_any_launch(self):
+        with patch.dict(automate.WORKFLOWS, {"quick": ("catalogue-check", "unknown")}):
+            with patch.object(automate.subprocess, "run") as launch:
+                with self.assertRaisesRegex(ValueError, "Untrusted step"):
+                    automate.run_workflow("quick", execute=True)
+        launch.assert_not_called()
+
+    def test_invalid_utf8_preserves_nonzero_child_exit_and_redaction(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            target = root / automate.STEPS["catalogue-check"][0][0]
+            target.parent.mkdir()
+            token = "ghp_" + "a" * 30
+            target.write_text(
+                "import os, sys\n"
+                "if 'GITHUB_TOKEN' in os.environ:\n    sys.exit(9)\n"
+                f"sys.stderr.buffer.write({token.encode()!r} + bytes([255]))\n"
+                "sys.exit(3)\n", encoding="utf-8")
+            with (patch.object(automate, "ROOT", root),
+                  patch.dict(os.environ, {"GITHUB_TOKEN": token})):
+                result = automate.run_workflow("quick", execute=True, fail_fast=True)
+        self.assertEqual(result["status"], "fail")
+        self.assertEqual(result["steps"][0]["exit_code"], 3)
+        self.assertEqual(result["steps"][0]["stderr_tail"], "[REDACTED]\ufffd")
+
+    def test_real_subprocess_timeout_fails_workflow(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            target = root / "scripts/catalogue_sync.py"
+            target.parent.mkdir()
+            target.write_text("import time\ntime.sleep(10)\n", encoding="utf-8")
+            with (patch.object(automate, "ROOT", root),
+                  patch.dict(automate.STEPS, {"catalogue-check": (["scripts/catalogue_sync.py"], 0.1)})):
+                result = automate.run_workflow("quick", execute=True, fail_fast=True)
+        self.assertEqual(result["status"], "fail")
+        self.assertEqual(result["steps"][0]["status"], "timeout")
+        self.assertIsNone(result["steps"][0]["exit_code"])
+
+    def test_start_failure_is_recorded(self):
+        with patch.object(automate.sys, "executable", str(ROOT / "absent-python")):
+            result = automate.run_workflow("quick", execute=True, fail_fast=True)
+        self.assertEqual(result["status"], "fail")
+        self.assertEqual(result["steps"][0]["status"], "error")
+        self.assertIsNone(result["steps"][0]["exit_code"])
 
     def test_credential_redaction(self):
         secret = "ghp_" + "a" * 30
@@ -143,6 +205,73 @@ class AutomationTests(unittest.TestCase):
             first = automate.write_report(Path(temp), {"status": "pass"})
             self.assertTrue(first.is_file())
             self.assertEqual(json.loads(first.read_text())["status"], "pass")
+            second = automate.write_report(Path(temp), {"status": "fail"})
+            self.assertNotEqual(first, second)
+            self.assertEqual(json.loads(first.read_text())["status"], "pass")
+
+    def test_interrupted_report_never_publishes_partial_json(self):
+        def interrupt(report, stream, **kwargs):
+            stream.write('{"status":')
+            stream.flush()
+            self.assertEqual(list(directory.glob("automation-*.json")), [])
+            raise KeyboardInterrupt
+
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            with patch.object(automate.json, "dump", side_effect=interrupt):
+                with self.assertRaises(KeyboardInterrupt):
+                    automate.write_report(directory, {"status": "pass"})
+            self.assertEqual(list(directory.iterdir()), [])
+
+    def test_report_collision_does_not_replace_existing_receipt(self):
+        moment = automate.datetime.now(automate.timezone.utc)
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            with patch.object(automate, "datetime") as clock:
+                clock.now.return_value = moment
+                first = automate.write_report(directory, {"status": "pass"})
+                with self.assertRaises(FileExistsError):
+                    automate.write_report(directory, {"status": "fail"})
+            self.assertEqual(list(directory.iterdir()), [first])
+            self.assertEqual(json.loads(first.read_text(encoding="utf-8")), {"status": "pass"})
+
+    def test_report_write_failure_preserves_workflow_outcome(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "file-instead-of-directory"
+            output.touch()
+            proc = self.maintenance("run", "--workflow", "weekly", "--output-dir", str(output))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+            result = json.loads(proc.stdout)
+            self.assertEqual(result["status"], "error")
+            self.assertEqual(result["workflow_status"], "pass")
+            self.assertEqual(result["completed"], 5)
+            self.assertEqual(output.read_bytes(), b"")
+
+    def test_catalogue_check_rejects_duplicate_or_malformed_rows(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.make_catalogue(root)
+            self.fixture(root)
+            expected, _ = catalogue_sync.inspect_catalogue(root)
+            catalogue = root / "catalogue/catalogue.json"
+            entry = expected["skills"][0]
+            for update, diagnostic in (
+                    ({"skills": [entry, entry]}, "Duplicate catalogue skill path"),
+                    ({"skills": [entry, {}]}, "missing a string path"),
+                    ({"skills": [entry, {"path": []}]}, "missing a string path"),
+                    ({"skills": None}, "skills must be a list"),
+                    ({"schema_version": 2}, "Unsupported catalogue schema"),
+                    ({"skill_count": True}, "skill_count must be an integer"),
+                    ({"skill_paths": [1]}, "skill_paths must be a list of strings")):
+                with self.subTest(update=update):
+                    catalogue.write_text(json.dumps(dict(expected, **update)), encoding="utf-8")
+                    proc = subprocess.run(
+                        [sys.executable, str(ROOT / "scripts/catalogue_sync.py"),
+                         "--check", "--root", temp], capture_output=True, text=True, timeout=15)
+                    self.assertEqual(proc.returncode, 2, proc.stderr or proc.stdout)
+                    report = json.loads(proc.stdout)
+                    self.assertEqual(report["status"], "ERROR")
+                    self.assertIn(diagnostic, report["error"])
 
     def test_catalogue_drift_can_be_read_without_changes(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -206,11 +335,52 @@ class AutomationTests(unittest.TestCase):
             self.assertEqual(result["status"], "FAIL")
 
     def test_cli_plan(self):
-        proc = subprocess.run([sys.executable, str(ROOT / "scripts/automate.py"),
-                               "plan", "--workflow", "weekly"],
-                              capture_output=True, text=True, timeout=15)
+        proc = self.maintenance("plan", "--workflow", "weekly")
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertFalse(json.loads(proc.stdout)["executed"])
+
+    @staticmethod
+    def maintenance(*args, root=ROOT):
+        return subprocess.run([sys.executable, str(root / "scripts/automate.py"), *args],
+                              capture_output=True, text=True, timeout=30)
+
+    def test_weekly_plan_run_and_saved_receipt_agree(self):
+        plan = json.loads(self.maintenance("plan", "--workflow", "weekly").stdout)
+        revision = subprocess.run(["git", "rev-parse", "--verify", "HEAD"], cwd=ROOT,
+                                  capture_output=True, text=True, timeout=5)
+        with tempfile.TemporaryDirectory() as temp:
+            proc = self.maintenance("run", "--workflow", "weekly", "--output-dir", temp)
+            self.assertEqual(proc.returncode, 0, proc.stderr or proc.stdout)
+            result = json.loads(proc.stdout)
+            receipt = json.loads(Path(result.pop("report_path")).read_text(encoding="utf-8"))
+            self.assertEqual(receipt, result)
+        self.assertEqual(receipt["commit"], revision.stdout.strip() if revision.returncode == 0 else None)
+        self.assertEqual(receipt["commit"], plan["commit"])
+        self.assertEqual(receipt["status"], "pass")
+        self.assertEqual(receipt["completed"], receipt["total"])
+        self.assertEqual(receipt["pending_steps"], [])
+        self.assertEqual([(s["id"], s["command"], s["exit_code"]) for s in receipt["steps"]],
+                         [(s["id"], s["argv"], 0) for s in plan["steps"]])
+
+    def test_weekly_malformed_catalogue_writes_failure_receipt(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "scripts").mkdir()
+            for name in ("automate.py", "catalogue_sync.py", "validate_skills.py"):
+                shutil.copyfile(ROOT / "scripts" / name, root / "scripts" / name)
+            self.make_catalogue(root)
+            (root / "catalogue/catalogue.json").write_text("{", encoding="utf-8")
+            proc = self.maintenance("run", "--workflow", "weekly", "--fail-fast",
+                                    "--output-dir", temp, root=root)
+            self.assertEqual(proc.returncode, 1, proc.stderr)
+            result = json.loads(proc.stdout)
+            receipt = json.loads(Path(result.pop("report_path")).read_text(encoding="utf-8"))
+            self.assertEqual(receipt, result)
+            self.assertEqual(receipt["status"], "fail")
+            self.assertEqual(receipt["failed_steps"], ["catalogue-check"])
+            self.assertEqual(receipt["pending_steps"], list(automate.WORKFLOWS["weekly"][1:]))
+            self.assertEqual(receipt["steps"][0]["exit_code"], 2)
+            self.assertIn("Expecting property name", receipt["steps"][0]["stdout_tail"])
 
 if __name__ == "__main__":
     unittest.main()

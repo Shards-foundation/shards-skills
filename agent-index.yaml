@@ -199,7 +199,7 @@
         "local workflow"
       ],
       "primary_skill": "shards-repository-health",
-      "primary_path": "plugins/shards-core/README.md",
+      "primary_path": "plugins/shards-core/skills/shards-repository-health/SKILL.md",
       "helper_skills": [],
       "helper_paths": [],
       "guide": "docs/skill-dispatch.md",

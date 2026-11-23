@@ -30,11 +30,13 @@ Read the JSON score and `reason`; check the chosen descriptor, its `status`, inp
 Choose a host that supports Agent Skills and actually has access to the target repository. In the **destination project**, with Node.js 22.20+ and a trusted local Shards Skills checkout:
 
 ~~~bash
-npx skills@1.8.1 add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
-npx skills@1.8.1 list
+npm install --ignore-scripts --no-save skills@1.8.1
+# Inspect the package and local executable before invoking them.
+npx --no-install skills add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
+npx --no-install skills list
 ~~~
 
-Verify the host **discovers** the skills. Example agent request:
+The downloaded installer must be inspected before execution, and the full trusted checkout must remain visible to the host because selected descriptors reference repository-root resources. Where `python` is unavailable, substitute your Python 3.11+ executable (for example `python3` or Windows `py -3.11`). Verify the host **discovers** the skills. Example agent request:
 
 > Inspect PR #NUMBER on the exact current head SHA. Review changed code and risks; label every test as RUN, NOT RUN or BLOCKED. Return APPROVE, REQUEST CHANGES or BLOCKED, with evidence and unresolved items. Read-only review; do not modify, approve on GitHub, merge or deploy.
 
@@ -109,4 +111,4 @@ Record **which** commands really ran, their exit status, the checkout revision a
 
 ## Failure and reporting contract
 
-Return: `task_id` (if one exists), `repository`, `revision`, `selected_skill`, `permission_scope`, `commands_run`, `observed_results`, `evidence_refs`, `blockers` and `next_action`. Do not invent a receipt, deployment, independent approval or observed benefit. Use the [playbook](playbook.md#final-handoff) for a concise handoff.
+Return a consistent handoff record using the [playbook's exact field names](playbook.md#final-handoff): `task_id`, `repository`, `base_sha`, `head_sha`, `scope`, `selected_skills`, `actions_taken`, `checks`, `evidence`, `review_state`, `blockers`, `next_authorised_action`. Do not invent a receipt, deployment, independent approval or observed benefit. Use the [playbook](playbook.md#final-handoff) for a concise handoff.

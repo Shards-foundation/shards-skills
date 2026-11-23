@@ -69,7 +69,11 @@ class AgentIndexTests(unittest.TestCase):
 
     def test_route_ids_skill_paths_and_effects(self):
         routes = self.index["routes"]
-        self.assertGreaterEqual(len(routes), 5)
+        required = {
+            "review_pull_request", "debug_and_fix", "resume_or_handoff",
+            "security_scope", "curated_local_check", "measure_host_adoption",
+        }
+        self.assertTrue(required.issubset({route["id"] for route in routes}))
         ids = set()
         for route in routes:
             with self.subTest(route=route["id"]):
@@ -77,12 +81,24 @@ class AgentIndexTests(unittest.TestCase):
                 self.assertRegex(rid, r"^[a-z][a-z0-9_]*$")
                 self.assertNotIn(rid, ids)
                 ids.add(rid)
-                self.assertTrue(route["keywords"])
-                self.assertTrue(route["evidence"])
-                self.assertTrue(route["stop_on"])
+                for key in ("keywords", "evidence", "stop_on"):
+                    values = route[key]
+                    self.assertIsInstance(values, list, key)
+                    self.assertGreater(len(values), 0, key)
+                    self.assertTrue(all(isinstance(v, str) and v.strip() for v in values), key)
+                for key in ("helper_skills", "helper_paths"):
+                    values = route[key]
+                    self.assertIsInstance(values, list, key)
+                    self.assertTrue(all(isinstance(v, str) and v.strip() for v in values), key)
+                if "additional_permissions" in route:
+                    values = route["additional_permissions"]
+                    self.assertIsInstance(values, list)
+                    self.assertTrue(all(v in VALID_MODES for v in values))
                 self.assertIn(route["mode"], VALID_MODES)
                 # Routing metadata does not authorise external or sensitive work.
-                self.assertIn(route["mode"], {"read", "local_write"})
+                self.assertIn(route["mode"], {"read", "local_write", "local_execute"})
+                self.assertIsInstance(route["primary_skill"], str)
+                self.assertTrue(route["primary_skill"].strip())
                 self.assertEqual(
                     Path(route["primary_path"]).parent.name,
                     route["primary_skill"],
@@ -96,6 +112,11 @@ class AgentIndexTests(unittest.TestCase):
                 )
                 for name, path in zip(route["helper_skills"], route["helper_paths"]):
                     self.assertEqual(Path(path).parent.name, name)
+
+    def test_debug_route_requires_both_local_permissions(self):
+        route = next(r for r in self.index["routes"] if r["id"] == "debug_and_fix")
+        self.assertEqual(route["mode"], "local_execute")
+        self.assertIn("local_write", route["additional_permissions"])
 
     def test_metadata_is_advisory_not_auto_execution(self):
         self.assertTrue(self.index["discovery"]["results_are_instructions_not_invocations"])

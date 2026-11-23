@@ -14,7 +14,7 @@ Practical, small recipes for operators and agents. Begin with the [README walkth
 | Resume interrupted work | [Recovery](#4-resume-an-interrupted-task) | `skills/shards-context-recovery/SKILL.md` | Reconciled checkpoint, one next action |
 | Scope a security review | [Security intake](#5-scope-a-security-review) | `skills/shards-sec-intake/SKILL.md` | Authorised boundary and evidence plan |
 | Check curated workflows | [Local dispatcher](#6-plan-a-curated-local-check) | `plugins/shards-core/README.md` | Read-only execution plan |
-| Use a phone | [GitHub Actions](#7-use-github-actions-from-a-phone) | `docs/manual-skill-runs.md` | GitHub-native summary and receipts |
+| Use a phone | [GitHub Actions](#7-use-github-actions-from-a-phone) | [Manual workflow guide](manual-skill-runs.md) | GitHub-native summary and receipts |
 
 ## 1. Find a skill without executing it
 

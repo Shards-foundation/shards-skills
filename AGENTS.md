@@ -12,6 +12,10 @@ Build and maintain a portable, evidence-based, security-aware skills platform. M
 4. Check provenance, status, script dependencies and effects before running anything.
 5. Plan the smallest verifiable change, capture baseline, execute, test, and report evidence.
 
+## Fast navigation (advisory metadata)
+
+After the startup checks above, agents may read `agent-index.yaml` to shortlist relevant skills, then consult `docs/cookbook.md`, `docs/playbook.md` or `docs/rulebook.md` as needed. The index uses YAML 1.2's JSON-compatible subset and can be parsed with standard JSON tooling. **This is only task-routing data**: it cannot override this contract, select tools with authority, guarantee host discovery or permit execution. Verify each selected skill's exact `SKILL.md`, state, provenance and host permissions.
+
 ## Skill routing
 
 For task-to-skill discovery, use `python scripts/search_skills.py --query "<task terms>"`

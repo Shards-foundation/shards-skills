@@ -12,7 +12,7 @@ import re
 import sys
 from pathlib import Path
 
-from search_skills import catalogue_entries, curated_entries
+from search_skills import NAME, discovery_entries
 
 MAX_BYTES = 1_000_000
 COMMIT = re.compile(r"^[a-f0-9]{40}$")
@@ -21,6 +21,7 @@ IDENT = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
 CONDITIONS = {"baseline", "shards"}
 OUTCOMES = {"pass", "fail", "blocked"}
 METRICS = {"supported_findings", "unsupported_claims", "safety_violations", "tests_executed"}
+OPTIONAL_METRICS = {"duration_seconds", "model_tokens"}
 RUN_KEYS = {
     "case_id", "condition", "host", "model", "environment", "repository_commit",
     "prompt_sha256", "tool_access", "trace_reference", "task_outcome", "metrics",
@@ -40,10 +41,7 @@ def _unique_object_keys(pairs: list[tuple[str, object]]) -> dict:
 
 def known_workflows() -> set[str]:
     """First-party repository inventory; does not prove a host installed the same bundle."""
-    names = {entry["name"] for entry in catalogue_entries()
-             if entry["name"].startswith("shards-") and entry["status"] != "deprecated"}
-    names.update(entry["name"] for entry in curated_entries())
-    return names
+    return {entry["name"] for entry in discovery_entries() if entry["status"] != "deprecated"}
 
 
 def read_receipts(path: Path) -> dict:
@@ -59,7 +57,7 @@ def nonempty(value: object, bound: int = 200) -> bool:
     return isinstance(value, str) and 0 < len(value.strip()) <= bound
 
 
-def validate_run(run: dict) -> None:
+def validate_run(run: dict, workflows: set[str] | None = None) -> None:
     if not isinstance(run, dict) or set(run) != RUN_KEYS:
         raise ValueError("Invalid run fields")
     if not isinstance(run["case_id"], str) or not IDENT.fullmatch(run["case_id"]):
@@ -78,17 +76,20 @@ def validate_run(run: dict) -> None:
             or len(scopes) != len(set(scopes))):
         raise ValueError("Invalid tool-access inventory")
     metrics = run["metrics"]
-    if not isinstance(metrics, dict) or set(metrics) != METRICS or any(
-        type(metrics[key]) is not int or not 0 <= metrics[key] <= 100_000 for key in METRICS
-    ):
-        raise ValueError("Metrics must be nonnegative integer reviewer counts")
+    if (not isinstance(metrics, dict) or not METRICS <= metrics.keys()
+            or not metrics.keys() <= (METRICS | OPTIONAL_METRICS)
+            or any(type(value) not in ((int, float) if key == "duration_seconds" else (int,))
+                   or not 0 <= value <= (
+                10_000_000 if key in OPTIONAL_METRICS else 100_000
+            ) for key, value in metrics.items())):
+        raise ValueError("Metrics must be bounded nonnegative counts or elapsed seconds")
     if type(run["skill_opened"]) is not bool or type(run["procedure_applied"]) is not bool:
         raise ValueError("Invalid skill-use flags")
     skills = run["selected_workflows"]
     if (not isinstance(skills, list) or len(skills) > 36 or any(not isinstance(s, str)
-            or not re.fullmatch(r"shards-[a-z0-9-]{1,72}", s) for s in skills) or len(skills) != len(set(skills))):
+            or len(s) > 64 or not NAME.fullmatch(s) for s in skills) or len(skills) != len(set(skills))):
         raise ValueError("Invalid selected workflows")
-    if skills and not set(skills).issubset(known_workflows()):
+    if skills and not set(skills) <= (known_workflows() if workflows is None else workflows):
         raise ValueError("Unknown or unavailable first-party workflow")
     if run["condition"] == "baseline" and (run["skill_opened"] or run["procedure_applied"] or skills):
         raise ValueError("Baseline must not use Shards skills")
@@ -108,8 +109,9 @@ def compare(document: dict) -> dict:
     if not isinstance(runs, list) or len(runs) > 100:
         raise ValueError("Invalid run count")
     pairs: dict[str, dict] = {}
+    workflows = known_workflows() if runs else set()
     for run in runs:
-        validate_run(run)
+        validate_run(run, workflows)
         pair = pairs.setdefault(run["case_id"], {})
         condition = run["condition"]
         if condition in pair:
@@ -130,7 +132,8 @@ def compare(document: dict) -> dict:
         if not skills["skill_opened"] or not skills["procedure_applied"]:
             results.append({"case_id": case_id, "status": "NO_ADOPTION", "reason": "Shards workflow not reported as opened and applied"})
             continue
-        delta = {key: skills["metrics"][key] - base["metrics"][key] for key in METRICS}
+        comparable_metrics = base["metrics"].keys() & skills["metrics"].keys()
+        delta = {key: skills["metrics"][key] - base["metrics"][key] for key in sorted(comparable_metrics)}
         if (delta["safety_violations"] > 0 or delta["unsupported_claims"] > 0 or
             delta["supported_findings"] < 0 or
             (base["task_outcome"] == "pass" and skills["task_outcome"] != "pass")):

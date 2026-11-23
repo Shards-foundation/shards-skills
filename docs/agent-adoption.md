@@ -1,8 +1,21 @@
 # Shards Skills — agent adoption, not catalogue size
 
-## Objective
+## Evidence levels
 
-An agent should **independently choose** a relevant, safe skill when solving an actual task, read its instructions, apply its workflow, and produce an inspectable improvement. A search result is not adoption. A `SKILL.md` file is not execution. A passing repository test is not proof that Claude, Codex, Cursor, or ChatGPT has installed or used that skill.
+Record how far each host run actually got.
+
+| Stage | Evidence |
+| --- | --- |
+| A. Discovered | The host's native listing contains the ID and path |
+| B. Selected | The host trace identifies the skill chosen for the task |
+| C. Instructions loaded | The trace shows the exact descriptor or bundle revision being opened |
+| D. Procedure applied | Actions and artifacts show the relevant workflow steps |
+| E. Outcome verified | An independent reviewer checks the artifact and the acceptance criteria |
+| F. Improvement measured | Matched runs with and without the skill show a repeatable difference |
+
+Existing [historical task evidence](first-party-skill-task-evidence.md) and
+[external pilot feedback](host-ab-evaluation.md#first-external-host-pilot-14-november-2026)
+record observations and self-reports. They motivate tests at later stages.
 
 ## Repeatable checks
 
@@ -13,13 +26,36 @@ python scripts/agent_adoption_eval.py > /tmp/shards-retrieval.json
 python -m unittest discover -s tests -p 'test_agent_adoption_eval.py' -v
 ```
 
-The first command replays `evals/trigger-cases.json` against the current catalogue search ranking. It reports positive-case recall@1/3/5 and each target rank. Negative cases are **not** counted as passed: lexical retrieval cannot decide whether an agent should invoke a skill. The source commit must be recorded independently when sharing results.
+The first command replays `evals/trigger-cases.json` against the metadata
+finder. The 23 synthetic cases cover engineering, security, recovery, review
+resolution and research. The report gives positive-case recall at ranks 1, 3
+and 5, and how often a negative target still appears in the first three.
+
+On this fixture set, the original mixed catalogue ranked 9 of 16 positive
+targets first and 12 in the first three. With the same old ranker and the 60
+original skills plus 13 curated workflows, these counts were 11 and 15.
+The new ranking returned all 16 first and none of the seven negative targets
+in its first three. The baseline is pinned to
+[the pre-migration revision](https://github.com/Shards-foundation/shards-skills/tree/4f6f2376a403eb5ccfacbacf2adc1c7daa7a47bf).
+These cases guided the ranking changes. Reserve unseen tasks for broader
+validation. Retrieval scores measure shortlist quality on these fixtures.
 
 ## Real host acceptance protocol
 
-Test each target host separately, on a pinned Shards Skills revision. Use a fresh workspace/session without mentioning the expected skill name to the agent. Give the host repository access and the same actual task, with permission to inspect skills but not to perform unapproved external writes. Preserve the entire host tool trace, the selected skill path and revision, commands actually invoked, outputs, and task-level pass/fail evidence.
+Pin the skill and task revisions. Use fresh sessions on the same host and
+model, with equivalent tool permissions and the same synthetic task text.
+Keep the expected skill name out of the prompt. Use one condition with the
+skill available and one without it. Include a negative task and repeat trials
+to reduce the effect of run-to-run variance. On the negative task, check the host trace for abstention. Fail the case if the irrelevant or prohibited skill was selected or opened. Record an incomplete trace as unverified.
 
-For every positive case, require: skill discovered without prompting, `SKILL.md` opened, relevant procedure followed, task-level outcome observed, and linked original trace. For every negative case, require that the agent did not invoke the prohibited/irrelevant skill. Include a no-skill baseline for each task: compare actual defects fixed, tests, elapsed effort, unsupported claims and security regressions. Do not substitute a model-generated confidence rating for the measured delta.
+Record stages A–E from a redacted trace or an access-controlled reference.
+An independent reviewer checks the acceptance criteria and compares supported
+findings, task correctness, permission violations and actual test outcomes.
+Record time and model tokens when measured comparably. Use the
+[paired checker](host-ab-evaluation.md) to flag mismatched conditions and
+compare the reported metrics. Keep raw prompts, credentials and proprietary
+content out of fixtures and reports. Collect evidence only with operator
+authorisation.
 
 A tool-trace summary may be checked with:
 
@@ -51,6 +87,6 @@ This validator labels results **self-reported**. It does not dereference logs, a
 
 ## Release gates
 
-Promote a skill for a specific agent host only when its own positive and negative trigger cases pass, original tool traces support actual use, permissions remain bounded, and results are better than or at least no worse than a no-skill baseline. Keep unsupported hosts and imported packages in review. Improve or retire skills with persistent false triggers, execution failures, irrelevant output, or zero measured benefit. Re-run cases after changing metadata, ranking, source code, or host integration.
+Promote a skill for a specific agent host only when its own positive and negative trigger cases pass, original tool traces support actual use, permissions remain bounded, and results are better than or at least no worse than a no-skill baseline. Keep untested host behaviours marked unverified. Improve or retire skills with persistent false triggers, execution failures, irrelevant output, or zero measured benefit. Re-run cases after changing metadata, ranking, source code, or host integration.
 
 This gate complements the local dispatcher and the independent security checks. It does not authorize imports, deployments, trading, spending or publication.

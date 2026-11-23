@@ -1,6 +1,6 @@
 # Shards operating loop: ten skills, one durable contract
 
-The operating skills live under `skills/shards-*/SKILL.md`. They are reusable procedures and do not confer permissions. Unlike the historical catalogue, these nine new workflows use a common append-only task ledger. The skill improver has separate plan and backup files; operators must explicitly record its receipts in the ledger. The ledger is local and portable, not a remote multi-agent database.
+The operating skills live under `skills/shards-*/SKILL.md`. They are reusable procedures and do not confer permissions. Nine of these workflows use a common append-only task ledger. The skill improver has separate plan and backup files; operators must explicitly record its receipts in the ledger. The ledger is local and portable, not a remote multi-agent database.
 
 ## Execution order
 

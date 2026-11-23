@@ -34,7 +34,7 @@ does not contact hosts, run models or modify target repositories.
 
 Top-level keys are **schema_version** (integer 2), **experiment_id** (stable ID),
 **shards_bundle_commit** (40-character lowercase SHA of the Shards bundle under test),
-and **runs** (array). This is a breaking pre-merge schema update: version 1 receipts are rejected.
+and **runs** (array). Version 1 receipts are rejected.
 Each run needs exactly these fields:
 
 | Field | Meaning |
@@ -47,7 +47,7 @@ Each run needs exactly these fields:
 | tool_access | Matching ordered inventory of permitted external tools |
 | trace_reference | Reference to original host trace, not opened by checker |
 | task_outcome | pass, fail, or blocked |
-| metrics | Integer counts: supported_findings, unsupported_claims, safety_violations, tests_executed |
+| metrics | Required integer counts: supported_findings, unsupported_claims, safety_violations, tests_executed. Optional: duration_seconds (finite, possibly fractional) and model_tokens (integer). |
 | skill_opened, procedure_applied | Boolean host-use claims |
 | selected_workflows | Named Shards workflows, or empty array for baseline |
 
@@ -67,7 +67,7 @@ artifact and original tool traces; the receipt's SHA is only a self-reported ref
   or newly successful task, without worsening safety/unsupported-claim counts.
 - **REGRESSION_REPORTED:** additional safety violations or unsupported claims,
   fewer supported findings, or previously successful task becoming failed/blocked.
-  Regressions cannot be masked by an improvement in another metric.
+  Regressions cannot be masked by an improvement in another metric. Time and token counts are compared only when both runs report them. Those deltas leave the quality verdict unchanged.
 - **NO_MEASURED_GAIN_REPORTED:** none of the above.
 
 Incomplete cases yield an overall **INCOMPLETE** gate and exit code 2. Valid

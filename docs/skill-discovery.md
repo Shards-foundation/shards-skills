@@ -1,76 +1,59 @@
-# Metadata-only skill discovery
+# First-party skill discovery
 
-The catalogue contains hundreds of heterogeneous skills, including imported
-review-stage packages. Finding one does **not** grant permission to execute it.
-
-## CLI
-
-From the repository root:
+Use the metadata finder to get a shortlist, then open the selected descriptor.
+The finder runs locally with Python 3.11+ and uses the standard library.
 
 ```bash
-python scripts/search_skills.py --query "test driven development"
-python scripts/search_skills.py --query "release gate" --status curated --limit 5
-python scripts/search_skills.py --query "web research" --category research
+python scripts/search_skills.py --query "Resume an interrupted GitHub PR repair and verify changes before merging" --limit 5
+python scripts/search_skills.py --query "repository health" --status curated --limit 3
+python scripts/search_skills.py --query "context recovery" --status candidate
+python scripts/search_skills.py --skill shards-review-resolution
 ```
 
-The command emits JSON with candidate count, match count, ranked results,
-descriptions, categories, status, relative descriptor paths, and the
-execution boundary. Exit code 0 means a valid search, even with zero matches.
-Invalid metadata, unsupported catalogue schema, traversal paths, duplicate
-names, invalid query terms or limit values fail with exit code 2. Catalogue
-status values must be recognised strings; malformed JSON types (including
-arrays and objects) are rejected as metadata errors, not Python tracebacks.
+`--query` returns JSON with a score and a matching rationale. `--skill` reads
+one exact descriptor and returns its path and Markdown as JSON. A successful
+search can return zero matches. Invalid inputs or malformed metadata exit 2.
 
-## Matching and trust
+## How ranking works
 
-Matching is deterministic: token and exact-phrase overlap over catalogue name,
-description and category. This is a lexical search, not an LLM judgement,
-semantic retrieval service, skill certification or task-level evaluation.
-Ranks are relevant candidates, not guarantees of suitability.
+Exact identifiers and specific multi-word task signals rank ahead of descriptions
+with incidental shared terms. The finder gives uncommon terms more weight,
+uses category as a small supporting signal, and counts each query word once
+even when several inflections match. Each result reports the matched name
+terms, description terms, discovery signals and category contribution.
 
-- `source=catalogue`, `execution=not-dispatchable`: a skill is listed only.
-  Imported scripts are never executed or loaded for search.
-- `source=curated`, `execution=dispatcher-plan-required`: a first-party
-  skill is present in the explicit dispatcher registry. Review the
-  `SKILL.md` and use `scripts/dispatch_skills.py plan` before any approved
-  execution. The trusted host must independently authorise tool access.
-- A metadata `status=verified` is not proof of platform compatibility or
-  operational readiness. Recheck source revision and provenance before use.
+Simple negative clauses and explicit per-skill exclusions suppress obvious
+mismatches. Negation handling follows punctuation and common conjunctions.
+Unusual syntax, synonyms absent from metadata and overlapping tasks still
+need human or agent judgement. For example, an interrupted PR repair can also
+rank authority preflight because both mention PR or merge work. Inspect the
+reason and shortlist only the steps the task needs.
 
-Curated descriptors are parsed from their opening, bounded YAML frontmatter only.
-A missing closing delimiter, duplicate name/description field, mismatched name,
-or oversized header fails closed; text in the Markdown body cannot impersonate
-search metadata. This is a narrow metadata boundary, not a full YAML parser.
+| Source | What it provides | Execution boundary |
+| --- | --- | --- |
+| `catalogue` | First-party instructions under `skills/` | The dispatcher cannot execute these entries |
+| `curated` | Workflows in the Shards Core registry | Review a dispatcher plan and obtain host permission |
+| `native` | Candidate variants in `.agents/skills/` | Use an exact candidate ID or `--status candidate` to include it in discovery. These skills are outside the dispatcher registry |
 
-The finder requires Python 3.11+, the full checkout and no third-party
-dependencies. It reads a bounded JSON catalogue plus curated first-party
-descriptors, makes no network calls and does not invoke a shell or subprocess.
+Search reads catalogue JSON and bounded host descriptor headers. Exact lookup
+opens a single named local descriptor. Neither command installs skills, runs
+skill code or reaches the network. A review status describes local evidence.
+Verify host discovery, applicability and permissions separately.
 
-## Verification
+## GitHub-hosted search
+
+In **Actions → Search Shards Skill Catalogue**, select **Run workflow**, enter
+ordinary task terms, and optionally choose category, status and result limit.
+The summary links to the exact-revision descriptors. GitHub retains the JSON
+results artifact for seven days. Use the separate [curated workflow action](manual-skill-runs.md)
+for approved repository checks.
+
+## Check retrieval
 
 ```bash
+python scripts/agent_adoption_eval.py
 python -m unittest discover -s tests -p 'test_skill_search.py' -v
-python scripts/search_skills.py --query "repository health" --status curated
-python scripts/validate_skills.py
 ```
 
-The Agent Core Plugin GitHub Actions workflow compiles and smoke-tests the
-finder and runs the repository unit test suite on matching pull requests.
-
-## Search directly from GitHub (no local Python)
-
-Repository collaborators can open **Actions → Search Shards Skill Catalogue**
-and select **Run workflow**. Enter ordinary task terms, choose optional
-category/status filters, and select a result limit. The run's summary links to
-matching checked-out `SKILL.md` descriptors at the exact commit. A JSON
-results artifact is retained for **7 days**.
-
-The workflow passes input as quoted, environment-bound CLI arguments rather
-than evaluating it as shell commands. It requests only `contents: read`
-permission and disables checkout credential persistence. Search results expose
-metadata from imported or review-stage skills; the workflow never executes
-those packages or automatically installs them. GitHub workflow permissions
-govern who can dispatch the action.
-
-For executable, first-party repository checks, use the separate
-[Run Curated Shards Skill](manual-skill-runs.md) manual workflow.
+See the [evaluation protocol](agent-adoption.md) for fixture results, limitations
+and the evidence needed to establish actual use.

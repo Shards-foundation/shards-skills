@@ -42,21 +42,6 @@
       "prompt": "Production API error rates just spiked after deployment; establish incident status and safe diagnosis."
     },
     {
-      "skill": "trader-scanner",
-      "should_trigger": true,
-      "prompt": "Find chart setups with an opening-range breakout scan."
-    },
-    {
-      "skill": "trader-timemachine",
-      "should_trigger": true,
-      "prompt": "Replay a planned trade using historical bars and Monte Carlo simulation."
-    },
-    {
-      "skill": "trader-broker",
-      "should_trigger": false,
-      "prompt": "Import the day-trading skill files into the catalogue; do not connect a broker or place orders."
-    },
-    {
       "skill": "shards-restore-recover",
       "should_trigger": true,
       "prompt": "Our Codex engineering session was interrupted by a usage limit after some fixes were pushed; recover verified branches and continue from the first unfinished safe step without rerunning the completed work."
@@ -65,6 +50,71 @@
       "skill": "shards-restore-recover",
       "should_trigger": false,
       "prompt": "Start a brand-new documentation task; no earlier run or checkpoint exists."
+    },
+    {
+      "skill": "code-review",
+      "should_trigger": true,
+      "prompt": "Review this pull request diff for regression risk, correctness and missing coverage."
+    },
+    {
+      "skill": "systematic-debugging",
+      "should_trigger": true,
+      "prompt": "A Python test now fails only on the second run. Isolate the root cause and record a repeatable diagnosis."
+    },
+    {
+      "skill": "secure-code-review",
+      "should_trigger": true,
+      "prompt": "Review code for vulnerabilities in the input validation and authorization checks of a new API endpoint."
+    },
+    {
+      "skill": "shards-sec-prompt-injection",
+      "should_trigger": true,
+      "prompt": "The assistant ingests untrusted web content. Define regression checks for prompt injection and unauthorized tool requests."
+    },
+    {
+      "skill": "shards-context-recovery",
+      "should_trigger": true,
+      "prompt": "Resume an interrupted GitHub PR repair operation and verify the changes before merging."
+    },
+    {
+      "skill": "shards-review-resolution",
+      "should_trigger": true,
+      "prompt": "Address reviewer feedback on a pull request and resolve review threads after fixing the findings and checking the new revision."
+    },
+    {
+      "skill": "shards-evidence-verification",
+      "should_trigger": true,
+      "prompt": "Bind acceptance evidence to the current revision and verify test results before closing the task."
+    },
+    {
+      "skill": "evidence-based-research",
+      "should_trigger": true,
+      "prompt": "Compare official sources about a disputed technical recommendation and write a decision brief with attributable evidence."
+    },
+    {
+      "skill": "scientific-research",
+      "should_trigger": true,
+      "prompt": "Appraise studies on a disputed technical hypothesis, including scientific uncertainty and research methodology."
+    },
+    {
+      "skill": "reproducible-data-analysis",
+      "should_trigger": true,
+      "prompt": "Reproduce data results from a dataset and verify the output against documented data quality criteria."
+    },
+    {
+      "skill": "shards-review-resolution",
+      "should_trigger": false,
+      "prompt": "Write a new implementation plan for a feature that has no pull request or reviewer feedback."
+    },
+    {
+      "skill": "shards-sec-prompt-injection",
+      "should_trigger": false,
+      "prompt": "Format these known Markdown headings consistently without opening any web content."
+    },
+    {
+      "skill": "scientific-research",
+      "should_trigger": false,
+      "prompt": "List the files that changed in the last repository commit."
     }
   ]
 }

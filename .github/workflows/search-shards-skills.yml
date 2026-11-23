@@ -23,7 +23,6 @@ on:
           - finance
           - operations
           - research
-          - science
           - security
           - curated
       status:
@@ -38,6 +37,7 @@ on:
           - verified
           - deprecated
           - curated
+          - candidate
       limit:
         description: "Maximum matching results"
         type: choice
@@ -111,6 +111,12 @@ jobs:
                   url = (f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/"
                          f"blob/{os.environ['GITHUB_SHA']}/{path}/SKILL.md")
                   lines.append(f"- [`{name}`]({url}) — {status} · {source} · score {score}")
+                  reason = item["reason"]
+                  matches = reason["intent_phrases"] or sorted(
+                      set(reason["name_terms"] + reason["description_terms"] + reason["signal_terms"])
+                  )
+                  if matches:
+                      lines.append("  - Matched " + ", ".join(matches))
               if not result["results"]:
                   lines.append("No matching metadata. Try a shorter search term or broader filter.")
               lines.extend(["", "Discovery does not authorise execution. Catalogue skills are not on the curated execution allowlist."])

@@ -75,12 +75,76 @@ class SkillSearchTests(unittest.TestCase):
 
     def test_real_catalogue_has_separate_trust_classes(self):
         entries = discovery.catalogue_entries()
-        self.assertGreater(len(entries), 200)
+        self.assertEqual(len(entries), 60)
         self.assertTrue(all(entry["execution"] == "not-dispatchable" for entry in entries))
         curated = discovery.curated_entries()
         self.assertEqual(len(curated), len(discovery.REGISTRY))
         self.assertTrue(all(entry["execution"] == "dispatcher-plan-required"
                             for entry in curated))
+
+    def test_candidates_are_opt_in_and_never_dispatchable(self):
+        name = "shards-native-context-recovery"
+        candidates = discovery.discover("context recovery", status="candidate")["results"]
+        self.assertIn(name, {entry["name"] for entry in candidates})
+        self.assertTrue(all(entry["execution"] == "not-dispatchable" for entry in candidates))
+        self.assertNotIn(name, {entry["name"] for entry in discovery.discover("context recovery")["results"]})
+        self.assertEqual(discovery.discover(name, limit=1)["results"][0]["name"], name)
+
+    def test_discovery_rejects_symlinked_skill_roots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            outside = base / "outside"
+            outside.mkdir()
+            root = base / "root"
+            root.mkdir()
+            self._fixture(root, [self._entry("code-review")])
+            (root / ".agents").mkdir()
+            try:
+                (root / "skills").symlink_to(outside, target_is_directory=True)
+                (root / ".agents" / "skills").symlink_to(outside, target_is_directory=True)
+            except OSError as exc:
+                self.skipTest(str(exc))
+            with self.assertRaisesRegex(ValueError, "Symlinked skills root"):
+                discovery.catalogue_entries(root)
+            with self.assertRaisesRegex(ValueError, "Symlinked native"):
+                discovery.native_entries(root)
+
+    def test_skill_evaluation_retrieved_for_comparing_trials(self):
+        matches = discovery.discover("Compare a baseline and candidate to measure skill quality", limit=1)["results"]
+        self.assertEqual(matches[0]["name"], "shards-skill-evaluation")
+        self.assertIn("compare baseline and candidate", matches[0]["reason"]["intent_phrases"])
+
+    def test_retrieve_one_descriptor_without_loading_an_index(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "skills" / "fixture-skill" / "SKILL.md"
+            path.parent.mkdir(parents=True)
+            text = "---\nname: fixture-skill\ndescription: Use this example for a test.\n---\nBody"
+            path.write_text(text, encoding="utf-8")
+            result = discovery.retrieve("fixture-skill", root)
+            self.assertEqual(result["descriptor"], text)
+            self.assertEqual(result["execution"], "not-dispatchable")
+            with self.assertRaises(ValueError):
+                discovery.retrieve("../fixture-skill", root)
+            (path.parent / "UPSTREAM.md").write_text("External provenance.", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Third-party"):
+                discovery.retrieve("fixture-skill", root)
+
+    def test_rank_explains_specific_recovery_and_review_matches(self):
+        results = discovery.discover(
+            "Resume an interrupted GitHub PR repair operation and verify the changes before merging.",
+            limit=4,
+        )["results"]
+        by_name = {item["name"]: item for item in results}
+        self.assertIn("shards-context-recovery", by_name)
+        self.assertIn("shards-review-resolution", by_name)
+        self.assertIn("shards-evidence-verification", by_name)
+        self.assertIn("github pr repair", by_name["shards-review-resolution"]["reason"]["intent_phrases"])
+
+    def test_duplicate_stems_count_one_query_word(self):
+        item = {**self._entry("fixture-target", "Changes and change requests"),
+                "execution": "not-dispatchable"}
+        self.assertEqual(discovery.rank([item], "planning changes"), [])
 
     def test_cli_finds_curated_skill_without_running_it(self):
         proc = subprocess.run(
@@ -89,8 +153,7 @@ class SkillSearchTests(unittest.TestCase):
             capture_output=True, text=True, timeout=15)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         result = json.loads(proc.stdout)
-        self.assertEqual(result["candidate_count"], len(discovery.catalogue_entries()) +
-                         len(discovery.REGISTRY))
+        self.assertEqual(result["candidate_count"], len(discovery.discovery_entries()))
         self.assertIn("shards-repository-health",
                       [item["name"] for item in result["results"]])
         self.assertIn("metadata-only", result["trust_boundary"])
@@ -193,7 +256,8 @@ class SkillSearchTests(unittest.TestCase):
         self.assertEqual(discovery.rank(entries, "Do not connect a broker or place orders."), [])
 
     def test_positive_broker_request_still_retrievable(self):
-        entries = discovery.catalogue_entries()
+        entries = [{**self._entry("trader-broker", "Connect a broker and place orders"),
+                    "execution": "not-dispatchable"}]
         results = discovery.rank(entries, "Connect a broker and place approved orders")
         self.assertIn("trader-broker", [item["name"] for item in results[:3]])
         match = next(item for item in results if item["name"] == "trader-broker")
@@ -234,7 +298,8 @@ class SkillSearchTests(unittest.TestCase):
                 )
 
     def test_negated_skill_does_not_resurface_under_category_filter(self):
-        entries = discovery.catalogue_entries()
+        entries = [{**self._entry("trader-broker", "Day-trading broker"),
+                    "category": "finance", "execution": "not-dispatchable"}]
         query = ("Import day-trading skill files into the catalogue; "
                  "do not connect a broker or place orders")
         results = discovery.rank(entries, query, category="finance")

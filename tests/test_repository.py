@@ -25,17 +25,75 @@ class RepositoryTests(unittest.TestCase):
   self.assertEqual(sorted(cat['skill_paths']),actual)
   self.assertEqual(cat['skill_count'],len(actual))
   self.assertEqual(len(cat['skills']),len(actual))
- def test_upstream_register_has_unique_urls(self):
-  data=json.loads((ROOT/'catalogue/upstreams.json').read_text())
-  urls=[s['url'] for s in data['sources']]
-  self.assertGreaterEqual(len(urls),15)
+ def test_active_catalogue_excludes_packages_with_upstream_provenance(self):
+  self.assertEqual(list((ROOT/'skills').glob('*/UPSTREAM.md')), [])
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory)
+   path=root/'skills'/'synthetic-import'/'SKILL.md'
+   path.parent.mkdir(parents=True)
+   header='---\nname: synthetic-import\ndescription: A synthetic import for the catalogue guard.\n'
+   path.write_text(header+'upstream-commit: placeholder\n---\nbody', encoding='utf-8')
+   with self.assertRaisesRegex(ValueError, 'Third-party package'):
+    validate_skills.catalogue_entry(path, root)
+   path.write_text(header+'---\nbody', encoding='utf-8')
+   (path.parent/'UPSTREAM.md').write_text('Synthetic provenance.', encoding='utf-8')
+   with self.assertRaisesRegex(ValueError, 'Third-party package'):
+    validate_skills.catalogue_entry(path, root)
+ def test_historical_sources_keep_pinned_provenance_and_licences(self):
+  text=(ROOT/'third_party/SOURCES.md').read_text(encoding='utf-8')
+  sections=text.split('\n## ')[1:]
+  names=[]
+  urls=[]
+  for section in sections:
+   name, *lines=section.splitlines()
+   pairs=[line[2:].split(': ',1) for line in lines if line.startswith('- ') and ': ' in line]
+   with self.subTest(source=name):
+    self.assertEqual(len(pairs),len({key for key,_ in pairs}))
+    fields=dict(pairs)
+    self.assertRegex(fields['Commit'], r'^`[0-9a-f]{40}`$')
+    self.assertTrue(fields['Declared license'].strip())
+    self.assertTrue(fields['Source'].startswith('https://'))
+    self.assertTrue(any(p.is_file() and p.stat().st_size > 0
+                        for p in (ROOT/'third_party/licenses'/name).iterdir()))
+   names.append(name)
+   urls.append(fields['Source'])
+  self.assertEqual(len(names),14)
   self.assertEqual(len(urls),len(set(urls)))
-  for source in data['sources']:
-   self.assertTrue(source.get('name'));self.assertTrue(source.get('role'));self.assertTrue(source.get('integration'))
+  self.assertEqual(set(names),{p.name for p in (ROOT/'third_party/licenses').iterdir() if p.is_dir()})
+ def test_catalogue_builder_never_writes_through_a_symlink(self):
+  for linked_directory in (True, False):
+   with self.subTest(linked_directory=linked_directory), tempfile.TemporaryDirectory() as directory:
+    root=Path(directory)
+    outside=root/'outside'
+    outside.mkdir()
+    checkout=root/'checkout'
+    checkout.mkdir()
+    target=outside/'catalogue.json'
+    target.write_text('Unchanged.', encoding='utf-8')
+    catalogue=checkout/'catalogue'
+    try:
+     if linked_directory:
+      catalogue.symlink_to(outside, target_is_directory=True)
+     else:
+      catalogue.mkdir()
+      (catalogue/'catalogue.json').symlink_to(target)
+    except OSError as exc:
+     self.skipTest(str(exc))
+    with self.assertRaisesRegex(ValueError, 'Symlinked catalogue'):
+     build_catalogue.build_catalogue(checkout)
+    self.assertEqual(target.read_text(encoding='utf-8'),'Unchanged.')
  def test_eval_fixtures_reference_existing_skills(self):
   data=json.loads((ROOT/'evals/trigger-cases.json').read_text())
   existing={p.parent.name for p in (ROOT/'skills').glob('*/SKILL.md')}
   for case in data['cases']: self.assertIn(case['skill'],existing)
+ def test_every_active_skill_has_a_discovery_profile(self):
+  data=json.loads((ROOT/'catalogue/catalogue.json').read_text(encoding='utf-8'))
+  profiles=json.loads((ROOT/'catalogue/discovery.json').read_text(encoding='utf-8'))['skills']
+  self.assertEqual(len(data['skills']),60)
+  self.assertEqual({entry['name'] for entry in data['skills']},set(profiles))
+  for entry in data['skills']:
+   self.assertTrue(entry['signals'])
+   self.assertEqual(entry['signals'],profiles[entry['name']]['signals'])
  def test_validator_frontmatter_rejects_missing_delimiter(self):
   with self.assertRaises(ValueError): validate_skills.parse_frontmatter('name: bad\n')
  def test_validator_rejects_duplicate_metadata(self):
@@ -63,7 +121,7 @@ class RepositoryTests(unittest.TestCase):
    _,warnings=validate_skills.validate_one(p)
    self.assertTrue(warnings)
  def test_json_manifests_parse(self):
-  for rel in ('catalogue/catalogue.json','catalogue/upstreams.json','evals/trigger-cases.json','schemas/skill.schema.json'):
+  for rel in ('catalogue/catalogue.json','evals/trigger-cases.json','schemas/skill.schema.json'):
    with self.subTest(rel=rel): json.loads((ROOT/rel).read_text(encoding='utf-8'))
  def test_all_relative_links_resolve(self):
   for p in (ROOT/'skills').glob('*/SKILL.md'):

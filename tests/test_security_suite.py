@@ -90,8 +90,8 @@ class SecuritySuiteTests(unittest.TestCase):
         for name in ("shards-repository-health", "shards-skill-dispatch",
                      "shards-parallel-swarm", "shards-a2a-harness"):
             self.assertIn(name, self.readme)
-        self.assertIn("PR #16", self.readme)
-        self.assertIn("not yet merged", self.readme)
+        self.assertIn("docs/security-assurance.md", self.readme)
+        self.assertIn("docs/skill-dispatch.md", self.readme)
 
     def test_emergency_containment_and_secrets_scope(self):
         incident = (ROOT / "skills/shards-sec-incident-response/SKILL.md").read_text()

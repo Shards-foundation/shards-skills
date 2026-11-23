@@ -205,7 +205,7 @@ class SkillDispatchTests(unittest.TestCase):
 
     def test_valid_read_only_audit_still_executes(self):
         plan = dispatcher.describe("shards-skill-audit",
-                                   target_skill="rebelytics-observer-rebelytics-observer")
+                                   target_skill="systematic-debugging")
         def fake(argv, **kwargs):
             return subprocess.CompletedProcess(argv, 0, stdout="{}", stderr="")
         receipt = dispatcher.run(plan, executor=fake)
@@ -230,10 +230,10 @@ class SkillDispatchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             dispatcher.describe("shards-skill-audit")
 
-    def test_imported_skill_can_be_audited_not_executed(self):
+    def test_retired_skill_cannot_be_selected_or_executed(self):
         target = "rebelytics-observer-rebelytics-observer"
-        report = dispatcher.describe("shards-skill-audit", target_skill=target)
-        self.assertIn(target, report["command"][-1])
+        with self.assertRaisesRegex(ValueError, "Target skill not found"):
+            dispatcher.describe("shards-skill-audit", target_skill=target)
         with self.assertRaises(ValueError):
             dispatcher.describe(target)
 

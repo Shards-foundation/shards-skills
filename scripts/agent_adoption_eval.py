@@ -11,7 +11,7 @@ import re
 import sys
 from pathlib import Path
 
-from search_skills import ROOT, catalogue_entries, curated_entries, rank
+from search_skills import ROOT, discovery_entries, rank
 
 SHA = re.compile(r"^[0-9a-f]{40}$")
 
@@ -39,6 +39,7 @@ def retrieval_report(cases: list[dict], entries: list[dict]) -> dict:
     results = []
     hits = {1: 0, 3: 0, 5: 0}
     positives = 0
+    false_retrievals = 0
     for idx, case in enumerate(cases):
         ordered = rank(entries, case["prompt"])
         names = [match["name"] for match in ordered]
@@ -47,6 +48,8 @@ def retrieval_report(cases: list[dict], entries: list[dict]) -> dict:
             positives += 1
             for k in hits:
                 hits[k] += int(position is not None and position <= k)
+        elif position is not None and position <= 3:
+            false_retrievals += 1
         results.append({"case_id": str(idx + 1), "target_skill": case["skill"],
                         "expected_trigger": case["should_trigger"],
                         "rank": position, "top_3": names[:3],
@@ -56,6 +59,8 @@ def retrieval_report(cases: list[dict], entries: list[dict]) -> dict:
             "recall_at_1": hits[1] / positives if positives else None,
             "recall_at_3": hits[3] / positives if positives else None,
             "recall_at_5": hits[5] / positives if positives else None,
+            "negative_count": len(cases) - positives,
+            "negative_targets_in_top_3": false_retrievals,
             "negative_trigger_assessed": False,
             "caution": "Ranking is not an agent invocation. Negative triggers require host traces.",
             "results": results}
@@ -135,7 +140,7 @@ def main(argv=None) -> int:
             receipts = json.loads(args.receipts.read_text(encoding="utf-8"))
             report = host_report(cases, receipts)
         else:
-            report = retrieval_report(cases, catalogue_entries() + curated_entries())
+            report = retrieval_report(cases, discovery_entries())
         print(json.dumps(report, indent=2))
         return 0
     except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:

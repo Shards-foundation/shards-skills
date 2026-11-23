@@ -8,34 +8,22 @@ import os
 import tempfile
 from pathlib import Path
 
-from validate_skills import parse_frontmatter
+from validate_skills import catalogue_entry, catalogue_file, enrich_catalogue
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
     root = root.resolve()
-    catalogue_path = root / "catalogue/catalogue.json"
-    existing = json.loads(catalogue_path.read_text(encoding="utf-8"))
+    existing = json.loads(catalogue_file(root).read_text(encoding="utf-8"))
     entries = []
     errors = []
     for path in sorted((root / "skills").glob("*/SKILL.md")):
-        if path.is_symlink() or path.parent.is_symlink():
-            errors.append("Symlinked skill requires manual review: " + str(path.relative_to(root)))
-            continue
         try:
-            meta, _ = parse_frontmatter(path.read_text(encoding="utf-8"))
-            if meta.get("name") != path.parent.name:
-                raise ValueError("Name does not match directory")
-            entries.append({
-                "name": meta["name"],
-                "path": str(path.parent.relative_to(root)),
-                "description": meta.get("description", ""),
-                "category": meta.get("category", "uncategorised"),
-                "status": meta.get("status", "draft"),
-                "version": meta.get("version", "0.0.0"),
-            })
+            entries.append(catalogue_entry(path, root))
         except (ValueError, KeyError, UnicodeError, OSError) as exc:
             errors.append(str(path.relative_to(root)) + ": " + str(exc))
+    if not errors:
+        entries = enrich_catalogue(entries, root)
     expected = dict(existing)
     expected.update({
         "skill_count": len(entries),
@@ -55,7 +43,6 @@ def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
         errors.append("Catalogue skill_paths differ from discovered SKILL.md files")
     if missing or extra:
         errors.append("Catalogue entries missing or stale")
-    # Legacy imported metadata may be stale; report but do not misclassify an existing checked-out skill.
     report = {
         "workflow": "catalogue-sync", "observed_skills": len(entries),
         "declared_skills": existing.get("skill_count"),
@@ -70,7 +57,7 @@ def repair(root: Path = ROOT) -> dict:
     expected, report = inspect_catalogue(root)
     if report["errors"]:
         raise ValueError("Repair refused: invalid or inconsistent skill paths; fix errors first")
-    path = root.resolve() / "catalogue/catalogue.json"
+    path = catalogue_file(root.resolve())
     if report["would_change"]:
         data = json.dumps(expected, indent=2, ensure_ascii=False) + "\n"
         fd, temp = tempfile.mkstemp(prefix=".catalogue-", suffix=".tmp", dir=path.parent)

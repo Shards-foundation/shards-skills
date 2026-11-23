@@ -1,5 +1,7 @@
 # First-party Shards-Skills: applied-task evidence
 
+This record describes the historical mixed catalogue. Reproduce its retrieval observations from the [archived revision](https://github.com/Shards-foundation/shards-skills/tree/4f6f2376a403eb5ccfacbacf2adc1c7daa7a47bf).
+
 **Date:** 2026-11-12 (Europe/London)  
 **Repository:** [Shards-foundation/shards-skills](https://github.com/Shards-foundation/shards-skills)  
 **PR:** [#21](https://github.com/Shards-foundation/shards-skills/pull/21)  

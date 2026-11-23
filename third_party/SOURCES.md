@@ -1,6 +1,6 @@
-# Imported source index
+# Historical third-party source index
 
-This index summarizes the curated imports. Each imported package is marked `review`; see `catalogue/imported-skills.json` for package-level paths and `skills/*/UPSTREAM.md` for local provenance.
+These imports were retired from the active library. The [last mixed revision](https://github.com/Shards-foundation/shards-skills/tree/4f6f2376a403eb5ccfacbacf2adc1c7daa7a47bf) preserves each package and its `UPSTREAM.md`. The [historical package index](https://github.com/Shards-foundation/shards-skills/blob/4f6f2376a403eb5ccfacbacf2adc1c7daa7a47bf/catalogue/imported-skills.json) records source revisions and paths.
 
 ## addy-agent-skills
 
@@ -103,4 +103,4 @@ This index summarizes the curated imports. Each imported package is marked `revi
 - Imported packages: 11
 - Retrieved: 2026-11-12
 - Local status: review
-- File hashes and modifications: [manifest](day-trader-skill/manifest.json)
+- File hashes and modifications: [manifest](https://github.com/Shards-foundation/shards-skills/blob/4f6f2376a403eb5ccfacbacf2adc1c7daa7a47bf/third_party/day-trader-skill/manifest.json)

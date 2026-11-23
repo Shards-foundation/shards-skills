@@ -4,41 +4,33 @@
 portable `SKILL.md` package, not an authentication method, MCP server, remote tool
 executor, universal permissions model or guarantee that an agent will invoke it.
 
-Sources: [Agent Skills specification](https://agentskills.io/specification.md),
-[client integration](https://agentskills.io/client-implementation/adding-skills-support.md),
-and [Vercel Skills installer/agent paths](https://github.com/vercel-labs/skills/blob/main/docs/agents.md).
+The [Agent Skills specification](https://agentskills.io/specification.md)
+and the [Skills CLI agent list](https://github.com/vercel-labs/skills/blob/main/docs/agents.md)
+describe the shared format and supported installer destinations.
 
-## The quickest supported installation
+## Install from a trusted checkout
 
-Use the established `skills` installer (Node.js 22.20+, Git and network access).
-Select **one or a few Shards-authored packages**, not all 329 catalogue entries.
-The repository includes third-party imported/review-stage skills; listing a
-package never authorises execution of its scripts.
+Use the existing Skills CLI with Node.js 22.20 or later. The first `npx` use needs network access to fetch the pinned CLI. With the CLI already installed locally, replace `npx skills@1.8.1` with its binary path for an offline install from the checkout. Run these commands in
+the destination project. The examples list available skills, copy one skill, and
+copy a small PR-review collection into a Codex project.
 
 ```bash
-# List discoverable skills before trusting any of them.
-npx skills add Shards-foundation/shards-skills --list
-
-# Install a known instruction-only first-party skill into 11 supported agent
-# targets in the *current project*. Each name targets a specific agent product.
-npx skills add https://github.com/Shards-foundation/shards-skills/tree/main/skills/systematic-debugging \
-  -a codex -a claude-code -a cursor -a minimax-code -a mistral-vibe \
-  -a grok -a replit -a openclaw -a hermes-agent -a kimi-code-cli \
-  -a devin --copy -y
-
-# Confirm the actual installation and inspect the skill content.
-npx skills list
-npx skills check
+npx skills@1.8.1 add /path/to/shards-skills --list
+npx skills@1.8.1 add /path/to/shards-skills --skill systematic-debugging -a codex --copy -y
+npx skills@1.8.1 add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
+npx skills@1.8.1 list
 ```
 
-For a single client, e.g. Codex: `npx skills add Shards-foundation/shards-skills --skill problem-framing -a codex --copy -y`.
-The official CLI also supports `-g` for user-wide installation, `skills update`
-and lock-file content hashes. Prefer pinning the source to a reviewed commit
-when distributing into regulated or production environments. Native clients
-must still be restarted/refreshed where their skill discovery requires it.
+You can also copy only the selected directories into the host's project
+skills directory. Include companion files and keep a trusted full checkout
+available when the descriptor references repository-level scripts. Pin the
+source to a reviewed Git revision for reproducibility.
 
-**Important:** `npx skills add Shards-foundation/shards-skills --all` is intentionally **not** recommended for this
-repository; it can include unreviewed imported skill packages.
+Codex and OpenHands can read project skills from an existing `.agents/skills/`
+directory. Opening the Shards checkout exposes its four native candidates
+without a separate installation step. The rest of the catalogue can be indexed
+locally with the [finder](skill-discovery.md) before choosing what to copy.
+Curated Shards Core workflows have a [separate plugin and dispatcher](agent-runtime.md).
 
 ## Target compatibility and boundaries
 
@@ -50,6 +42,8 @@ has obtained real host execution evidence or access to that user's account.
 | User target | Supported distribution route | Actual boundary |
 | --- | --- | --- |
 | Codex | `-a codex`, project `.agents/skills/` | CLI/IDE/app local skills; not automatic ChatGPT account installation |
+| OpenHands | Project `.agents/skills/` using the [project loader](https://docs.openhands.dev/overview/skills) | SDK discovery verified offline; agent invocation untested |
+| OpenCode | `-a opencode`, project `.agents/skills/` | Installer destination checked; native discovery untested |
 | Claude Code | `-a claude-code`, project `.claude/skills/` | Claude Code, not the Claude web account |
 | Claude web/app | One skill ZIP, where custom skill uploads are available | Manual account UI upload; no automatic account access |
 | Cursor | `-a cursor`, project `.agents/skills/` | Project/workspace availability varies |
@@ -69,14 +63,24 @@ has obtained real host execution evidence or access to that user's account.
 | LangChain / LangGraph | App-defined loader implementing discovery/activation | Framework integration must be coded and tested |
 | CrewAI | App-defined skill wrapper/tool integration | Framework is not automatically a SKILL.md client |
 
-Do not manufacture platform-specific plugin manifests or claim a platform
-supports features that have not been observed. Hosts with no file import and no
-skills interface require a separate adapter; an MCP server can expose tools
-but does not itself install instruction skills into every model.
+## Observed compatibility
+
+Skills CLI 1.8.1 listed 60 catalogue skills and four native candidates from a
+local checkout with networking disabled. It copied a single descriptor to
+`.agents/skills/` for Codex, Cursor and OpenCode, and to `.claude/skills/`
+for Claude Code. The copies match the source bytes. It also installed the
+three selected PR-review skills in a separate Codex project.
+
+Codex CLI 0.172.0-alpha.2 listed the single skill and the three-skill collection
+through its native `skills/list` API. The OpenHands SDK 1.63.1 project loader
+found the same three-skill collection. Both checks ran offline. Claude Code,
+Cursor and OpenCode were checked at the installer level. Other rows above
+describe documented routes. Agent invocation and outcome improvements remain
+unverified for this migration.
 
 ## Mobile-friendly single-skill ZIP for upload-based clients
 
-Once the **Portable Agent Skills ZIP** Action is merged onto the default branch:
+The **Portable Agent Skills ZIP** Action is available for manually requested exports:
 
 1. Open **GitHub → Shards-foundation/shards-skills → Actions → Portable Agent Skills ZIP**.
 2. Choose **Run workflow**, select a permitted first-party skill, and run it.
@@ -130,5 +134,4 @@ is especially important for Manus and Claude upload workflows.
 A static ZIP receipt is only **PACKAGE**, not **INSTALLED** or **USEFUL**.
 Record platform, host/model version, skill commit, task fixture, actual output,
 negative controls, tool permissions and reviewer decision for each higher gate.
-Use existing `docs/agent-adoption.md` and pending A/B evaluation work for the
-evidence-gated host comparisons rather than duplicating their evaluators.
+Use the [adoption fixtures](agent-adoption.md) and the [paired host checker](host-ab-evaluation.md) to record higher stages.

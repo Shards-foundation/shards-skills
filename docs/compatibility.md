@@ -20,7 +20,7 @@ Where the host supports the Vercel Skills CLI, check its current usage and revie
 npx skills add Shards-foundation/shards-skills --skill test-driven-development
 ```
 
-The command requires the GitHub repository to exist and the runtime to have Node.js/npm available. This command has not been executed against the remote repository during bootstrap.
+The remote command needs Git, network access and Node.js/npm. The [installation guide](portable-agent-skills.md#observed-compatibility) records which installer destinations and native discovery APIs were tested from a local checkout.
 
 ## Compatibility report required for verified status
 

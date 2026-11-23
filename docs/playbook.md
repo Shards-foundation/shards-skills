@@ -2,6 +2,8 @@
 
 Operational sequences for applying Shards Skills to real work. The [cookbook](cookbook.md) supplies short commands; the [rulebook](rulebook.md) summarises stop conditions; [`agent-index.yaml`](../agent-index.yaml) is the advisory machine-routing view.
 
+For Python commands, substitute `python3` or `py -3.11` when the host does not expose Python 3.11+ as `python`.
+
 **Source of authority:** [`AGENTS.md`](../AGENTS.md), [`agent.md`](../agent.md), [`SECURITY.md`](../SECURITY.md), task-specific human permission and external host policy. This guide does not create permissions or supersede those sources.
 
 ## Default execution loop
@@ -64,7 +66,7 @@ Follow [the operating loop](operating-loop.md) for durable contracts and evidenc
 1. From a trusted full checkout, run `python scripts/dispatch_skills.py list`.
 2. Run `python scripts/dispatch_skills.py plan --skill shards-repository-health` and review the actual plan and `plan_sha256`.
 3. Obtain host permission for the **specific** planned effect. If not authorised, finish at **PLAN ONLY**.
-4. When authorised, use `run --execute --expect-plan-sha256 <reviewed-digest> --save-receipt` with the same options; observe process exit and receipt.
+4. When authorised, use `python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 <reviewed-digest> --save-receipt` with the same options; observe process exit and receipt.
 5. Record the distinction between local dispatcher success and any wider agent/production claims.
 
 The dispatcher is *not* a network A2A service, OS sandbox, cryptographic permit or independent policy engine. See [exact execution contract](skill-dispatch.md).

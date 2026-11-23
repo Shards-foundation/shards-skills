@@ -8,7 +8,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from validate_skills import catalogue_entry, catalogue_file, enrich_catalogue
+from validate_skills import (
+    catalogue_entry, catalogue_file, enrich_catalogue, validate_catalogue_entry_fields,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -33,6 +35,10 @@ def inspect_catalogue(root: Path = ROOT) -> tuple[dict, dict]:
             raise ValueError(f"Catalogue skills entry {index} is missing a string path")
         if path in actual_by_path:
             raise ValueError(f"Duplicate catalogue skill path: {path}")
+        try:
+            validate_catalogue_entry_fields(item)
+        except ValueError as exc:
+            raise ValueError(f"Catalogue skills entry {index}: {exc}") from exc
         actual_by_path[path] = item
 
     entries = []

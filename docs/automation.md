@@ -71,7 +71,7 @@ The success receipt should record all five planned commands with exit 0. The fai
 
 GitHub Actions scheduled-skill-automation.yml runs every Monday at 05:17 UTC and supports manual dispatch. Runs triggered by relevant PRs/pushes validate changes before merge. It has contents: read permission only; scheduled report artifacts are retained for 14 days. GitHub scheduling is best-effort and may run later than the configured cron time.
 
-The automation workflow tests PRs at the exact source-head SHA. Core plugin gates also test GitHub's merge checkout. The scheduled workflow saves the revision, plan, dated automation receipt, and portfolio JSON and Markdown under `reports/automation`. It validates the saved receipt against the plan and checkout before reporting success. The artifact name includes the checkout SHA and run attempt. If an earlier step fails, the workflow still attempts to collect portfolio evidence and upload available files.
+The automation workflow tests PRs at the exact source-head SHA. Core plugin gates also test GitHub's merge checkout. The scheduled workflow saves the revision, plan, dated automation receipt, and portfolio JSON and Markdown under `reports/automation`. It validates the saved receipt against the plan and checkout before reporting success. The artifact name includes the checkout SHA and run attempt. Once `Record checkout revision` succeeds, the workflow attempts to collect portfolio evidence and upload available files even if a later step fails. A failed revision-recording step or a cancelled run skips both evidence steps.
 
 ## Output status and limitations
 

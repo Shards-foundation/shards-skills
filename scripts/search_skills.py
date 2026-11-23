@@ -10,7 +10,12 @@ import sys
 from pathlib import Path
 
 from dispatch_skills import REGISTRY
-from validate_skills import catalogue_entry, catalogue_file, discovery_phrases
+from validate_skills import (
+    CATALOGUE_STATUSES as VALID_STATUSES,
+    NAME_RE as NAME,
+    catalogue_entry, catalogue_file, discovery_phrases,
+    validate_catalogue_entry_fields,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 TOKENS = re.compile(r"[a-z0-9]+")
@@ -25,8 +30,6 @@ NEGATED_CLAUSE = re.compile(
     r"[^,;.!?\n]*?(?=\b(?:but|and\s+then|instead|then)\b|[,;.!?\n]|$)",
     re.IGNORECASE,
 )
-NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-VALID_STATUSES = {"draft", "review", "verified", "deprecated"}
 MAX_DESCRIPTOR_BYTES = 256_000
 DISCOVERY_BOUNDARY = ("Discovery is metadata-only. Catalogue and native candidates are not "
                       "dispatchable. Curated results require a reviewed dispatcher plan, "
@@ -92,21 +95,16 @@ def catalogue_entries(root: Path = ROOT) -> list[dict]:
     for item in records:
         if not isinstance(item, dict):
             raise ValueError("Invalid skill entry")
-        name, path = item.get("name"), item.get("path")
-        description = item.get("description")
-        category, status = item.get("category"), item.get("status")
-        if (not isinstance(name, str) or not NAME.fullmatch(name) or name in seen or
-                path != "skills/" + name or
-                not isinstance(description, str) or not description.strip() or
-                not isinstance(category, str) or not category.strip() or
-                not isinstance(status, str) or status not in VALID_STATUSES):
-            raise ValueError("Malformed, duplicate or unsafe catalogue entry")
+        validate_catalogue_entry_fields(item)
+        name, path = item["name"], item["path"]
+        if name in seen:
+            raise ValueError("Duplicate catalogue skill name: " + name)
         seen.add(name)
         marker = root / path / "UPSTREAM.md"
         if marker.exists() or marker.is_symlink():
             raise ValueError("Catalogue contains external provenance: " + name)
-        row = {"name": name, "path": path, "description": description,
-               "category": category, "status": status,
+        row = {"name": name, "path": path, "description": item["description"],
+               "category": item["category"], "status": item["status"],
                "source": "catalogue", "execution": "not-dispatchable"}
         for field in ("signals", "exclude"):
             if field in item:

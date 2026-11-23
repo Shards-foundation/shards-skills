@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+CATALOGUE_STATUSES = frozenset({"draft", "review", "verified", "deprecated"})
 DISCOVERY_PHRASE = re.compile(r"[a-z0-9]+(?:[ -][a-z0-9]+){0,9}")
 # Heuristic flags for human review. These are not proof of maliciousness or safety.
 RISK_PATTERNS = [
@@ -71,6 +72,21 @@ def catalogue_entry(path: Path, root: Path) -> dict:
         if meta.get(key):
             entry[key] = meta[key]
     return entry
+
+
+def validate_catalogue_entry_fields(entry: dict) -> None:
+    name = entry.get("name")
+    if not isinstance(name, str) or not NAME_RE.fullmatch(name):
+        raise ValueError("Expected a kebab-case skill name")
+    if entry.get("path") != "skills/" + name:
+        raise ValueError("Skill path must match its name under skills/")
+    for field in ("description", "category"):
+        value = entry.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Expected a nonempty {field} string")
+    status = entry.get("status")
+    if not isinstance(status, str) or status not in CATALOGUE_STATUSES:
+        raise ValueError("Expected status draft, review, verified, or deprecated")
 
 
 def discovery_phrases(values: object, label: str) -> list[str]:

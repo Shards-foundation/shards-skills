@@ -85,7 +85,11 @@ def plan(workflow: str) -> dict:
         steps.append({"id": name, "argv": argv, "timeout_seconds": limit})
     return {"workflow": workflow, "mode": "plan", "steps": steps, "executed": False}
 
-def safe_tail(data: str) -> str:
+def safe_tail(data: str | bytes | None) -> str:
+    if data is None:
+        return ""
+    if isinstance(data, bytes):
+        data = data.decode("utf-8", errors="replace")
     return CREDENTIAL.sub("[REDACTED]", PRIVATE_KEY_BLOCK.sub("[REDACTED]", data))[-2400:]
 
 def run_workflow(workflow: str, *, execute: bool, fail_fast: bool = False,
@@ -114,7 +118,8 @@ def run_workflow(workflow: str, *, execute: bool, fail_fast: bool = False,
                          exit_code=proc.returncode, stdout_tail=safe_tail(proc.stdout),
                          stderr_tail=safe_tail(proc.stderr))
         except subprocess.TimeoutExpired as error:
-            entry.update(status="timeout", error=f"Timeout {error.timeout}s")
+            entry.update(status="timeout", error=f"Timeout {error.timeout}s",
+                         stdout_tail=safe_tail(error.stdout), stderr_tail=safe_tail(error.stderr))
         except (ValueError, OSError) as error:
             entry.update(status="error", error=safe_tail(str(error)))
         entry["finished_at"] = now()

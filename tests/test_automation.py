@@ -138,6 +138,29 @@ class AutomationTests(unittest.TestCase):
         self.assertEqual(result["steps"][0]["status"], "timeout")
         self.assertIsNone(result["steps"][0]["exit_code"])
 
+    def test_timeout_preserves_only_decoded_redacted_tails(self):
+        token = "ghp_" + "a" * 30
+        cases = (
+            (b"x" * 2500 + b"\xff " + token.encode(),
+             b"diagnostic\n-----BEGIN PRIVATE KEY-----\nunfinished",
+             "x" * 2388 + "\ufffd [REDACTED]", "diagnostic\n[REDACTED]"),
+            (None, "text " + token, "", "text [REDACTED]"),
+        )
+        for stdout, stderr, out_tail, err_tail in cases:
+            with self.subTest(stdout_type=type(stdout)):
+                def timeout(argv, **kwargs):
+                    raise subprocess.TimeoutExpired(argv, kwargs["timeout"], output=stdout, stderr=stderr)
+
+                result = automate.run_workflow("quick", execute=True, fail_fast=True,
+                                                run_command=timeout)
+                self.assertEqual(result["status"], "fail")
+                self.assertEqual(result["failed_steps"], ["catalogue-check"])
+                entry, = result["steps"]
+                self.assertEqual(entry["status"], "timeout")
+                self.assertIsNone(entry["exit_code"])
+                self.assertEqual(entry["stdout_tail"], out_tail)
+                self.assertEqual(entry["stderr_tail"], err_tail)
+
     def test_start_failure_is_recorded(self):
         with patch.object(automate.sys, "executable", str(ROOT / "absent-python")):
             result = automate.run_workflow("quick", execute=True, fail_fast=True)
@@ -272,6 +295,34 @@ class AutomationTests(unittest.TestCase):
                     report = json.loads(proc.stdout)
                     self.assertEqual(report["status"], "ERROR")
                     self.assertIn(diagnostic, report["error"])
+
+    def test_catalogue_check_rejects_invalid_required_metadata(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.make_catalogue(root)
+            self.fixture(root)
+            expected, _ = catalogue_sync.inspect_catalogue(root)
+            entry, = expected["skills"]
+            catalogue = root / "catalogue/catalogue.json"
+            for field, value in (
+                    ("name", None), ("name", 42), ("name", "Other"),
+                    ("name", "other"), ("description", None), ("description", " "),
+                    ("description", []), ("category", None), ("category", "\t"),
+                    ("category", 42), ("status", None), ("status", ["draft"]),
+                    ("status", "unknown")):
+                with self.subTest(field=field, value=value):
+                    invalid = dict(entry)
+                    if value is None:
+                        del invalid[field]
+                    else:
+                        invalid[field] = value
+                    catalogue.write_text(json.dumps(dict(expected, skills=[invalid])),
+                                         encoding="utf-8")
+                    proc = subprocess.run(
+                        [sys.executable, str(ROOT / "scripts/catalogue_sync.py"),
+                         "--check", "--root", temp], capture_output=True, text=True, timeout=15)
+                    self.assertEqual(proc.returncode, 2, proc.stderr or proc.stdout)
+                    self.assertEqual(json.loads(proc.stdout)["status"], "ERROR")
 
     def test_catalogue_drift_can_be_read_without_changes(self):
         with tempfile.TemporaryDirectory() as temp:

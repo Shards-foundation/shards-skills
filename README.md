@@ -6,6 +6,24 @@
 
 Shards Skills is an independently developed library of workflows for AI-assisted engineering, security, research and operations. It contains 60 catalogue skills, 13 curated Shards Core workflows, and four separate native host candidates.
 
+## Three ways to use this repository
+
+| Guide | Use it when |
+| --- | --- |
+| 📖 [Cookbook](docs/cookbook.md) | You want a copyable, scoped example for a real task |
+| 🧭 [Playbook](docs/playbook.md) | You need a repeatable sequence, gates and recovery steps |
+| 🛡️ [Rulebook](docs/rulebook.md) | You need permission boundaries, evidence standards and stop conditions |
+| ⚙️ [Machine-readable agent index](agent-index.yaml) | An agent needs task-to-skill routing without reading every descriptor |
+
+The machine index is **YAML 1.2 in JSON-compatible syntax**. It can be read with a YAML parser *or* Python's standard-library JSON parser:
+
+~~~bash
+python -m json.tool agent-index.yaml > /dev/null
+python -c 'import json; d=json.load(open("agent-index.yaml")); print([(r["id"], r["primary_skill"]) for r in d["routes"]])'
+~~~
+
+This index is a **navigation aid**, not an executable skill registry, tool permission or guarantee of host discovery. Agents should read [`AGENTS.md`](AGENTS.md), [`agent.md`](agent.md) and [`SECURITY.md`](SECURITY.md) first, then inspect only selected descriptors.
+
 ## Start here: a first-skill walkthrough
 
 **Goal:** find an appropriate skill, inspect its instructions, make it available to an agent, and verify what the agent actually did. Skill files are *instructions*, not remotely connected tools or automatic permissions.

@@ -114,8 +114,8 @@
         "skills/shards-evidence-verification/SKILL.md"
       ],
       "guide": "docs/cookbook.md",
-      "mode": "local_write",
-      "first_action": "Reproduce a minimal failing case in the authorised workspace",
+      "mode": "local_execute",
+      "first_action": "Reproduce a minimal failing case in the authorised workspace only after separately obtaining local-write and local-execute permission",
       "evidence": [
         "baseline failure",
         "changed SHA",
@@ -126,6 +126,9 @@
         "unknown scope",
         "unreviewed executable",
         "failed required test"
+      ],
+      "additional_permissions": [
+        "local_write"
       ]
     },
     {
@@ -137,19 +140,23 @@
         "handoff",
         "checkpoint"
       ],
-      "primary_skill": "shards-context-recovery",
-      "primary_path": "skills/shards-context-recovery/SKILL.md",
+      "primary_skill": "shards-restore-recover",
+      "primary_path": "skills/shards-restore-recover/SKILL.md",
       "helper_skills": [
+        "shards-context-recovery",
         "shards-task-contract",
-        "shards-progress-control"
+        "shards-progress-control",
+        "shards-agent-handoff"
       ],
       "helper_paths": [
+        "skills/shards-context-recovery/SKILL.md",
         "skills/shards-task-contract/SKILL.md",
-        "skills/shards-progress-control/SKILL.md"
+        "skills/shards-progress-control/SKILL.md",
+        "plugins/shards-core/skills/shards-agent-handoff/SKILL.md"
       ],
       "guide": "docs/playbook.md",
       "mode": "read",
-      "first_action": "Load existing contract and reconcile checkpoint with live branch, SHA and tools",
+      "first_action": "Restore the original task contract; reconcile live revision and current checkpoint before choosing a host-authorised resume or handoff action",
       "evidence": [
         "original criteria",
         "current SHA",
@@ -159,7 +166,8 @@
       "stop_on": [
         "missing task record",
         "unverifiable authorisation",
-        "conflicting prior evidence"
+        "conflicting prior evidence",
+        "unapproved checkpoint write"
       ]
     },
     {
@@ -225,10 +233,16 @@
         "agent skills benchmark",
         "usefulness"
       ],
-      "primary_skill": "shards-evidence-verification",
-      "primary_path": "skills/shards-evidence-verification/SKILL.md",
-      "helper_skills": [],
-      "helper_paths": [],
+      "primary_skill": "shards-skill-evaluation",
+      "primary_path": "skills/shards-skill-evaluation/SKILL.md",
+      "helper_skills": [
+        "shards-host-compatibility",
+        "shards-evidence-verification"
+      ],
+      "helper_paths": [
+        "skills/shards-host-compatibility/SKILL.md",
+        "skills/shards-evidence-verification/SKILL.md"
+      ],
       "guide": "docs/agent-adoption.md",
       "mode": "read",
       "first_action": "Pin skill and host versions and collect real discovery/trigger traces before comparison",
@@ -252,7 +266,8 @@
     "Open only primary descriptor and required dependencies; check declared status and provenance",
     "Catalogue/native descriptions confer no execution authority",
     "Do not automatically run command examples or external mutations",
-    "If no safe route matches, ask for or report the smallest missing prerequisite"
+    "If no safe route matches, ask for or report the smallest missing prerequisite",
+    "Route mode is the highest minimum effect only; the host must independently authorise all needed actions including additional_permissions"
   ],
   "receipt_fields": [
     "task_id",

@@ -71,6 +71,7 @@ def catalogue_entry(path: Path, root: Path) -> dict:
     for key in ("compatibility", "license"):
         if meta.get(key):
             entry[key] = meta[key]
+    validate_catalogue_entry_fields(entry)
     return entry
 
 

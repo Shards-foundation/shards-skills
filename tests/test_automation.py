@@ -324,6 +324,50 @@ class AutomationTests(unittest.TestCase):
                     self.assertEqual(proc.returncode, 2, proc.stderr or proc.stdout)
                     self.assertEqual(json.loads(proc.stdout)["status"], "ERROR")
 
+    def test_catalogue_commands_reject_invalid_source_metadata(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "scripts").mkdir()
+            (root / "catalogue").mkdir()
+            for name in ("validate_skills.py", "catalogue_sync.py", "build_catalogue.py"):
+                shutil.copyfile(ROOT / "scripts" / name, root / "scripts" / name)
+
+            descriptor = root / "skills/example-skill/SKILL.md"
+            descriptor.parent.mkdir(parents=True)
+            valid_source = (
+                "---\nname: example-skill\n"
+                "description: A deterministic fixture for catalogue validation.\n"
+                "---\n## Workflow\nRead one local descriptor and check its metadata.\n"
+                "## Output contract\nRecord the resulting catalogue entry.\n"
+                "## Verification\nCompare the generated fields with the descriptor.\n"
+                "## Failure handling\nReport malformed source metadata.\n"
+            )
+            descriptor.write_text(valid_source, encoding="utf-8")
+            catalogue = root / "catalogue/catalogue.json"
+            build = subprocess.run([sys.executable, str(root / "scripts/build_catalogue.py")],
+                                   capture_output=True, text=True, timeout=15)
+            self.assertEqual(build.returncode, 0, build.stdout + build.stderr)
+            original = catalogue.read_bytes()
+            entry, = json.loads(original)["skills"]
+            self.assertEqual(entry["status"], "draft")
+            self.assertEqual(entry["category"], "uncategorised")
+
+            for metadata, diagnostic in (
+                    ("status: experimental", "Expected status"),
+                    ("category:", "Expected a nonempty category string")):
+                descriptor.write_text(valid_source.replace("\n---\n", f"\n{metadata}\n---\n", 1),
+                                      encoding="utf-8")
+                for command in (("validate_skills.py",), ("catalogue_sync.py", "--check"),
+                                ("build_catalogue.py",)):
+                    with self.subTest(metadata=metadata, script=command[0]):
+                        proc = subprocess.run(
+                            [sys.executable, str(root / "scripts" / command[0]), *command[1:]],
+                            capture_output=True, text=True, timeout=15)
+                        self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
+                        self.assertIn(diagnostic, proc.stdout + proc.stderr)
+                        self.assertEqual(catalogue.read_bytes(), original)
+                catalogue.write_bytes(original)
+
     def test_catalogue_drift_can_be_read_without_changes(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

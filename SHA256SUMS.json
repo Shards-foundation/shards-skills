@@ -481,8 +481,8 @@
   },
   {
     "path": "scripts/validate_skills.py",
-    "sha256": "4b3aef7553895c832dc6416ad00d88b0a2bfbc818575372af3ac479f4dc2fbe0",
-    "bytes": 9874
+    "sha256": "fa25ca3f0585620c13a1339b0c91acfaef543bd010a871e93d123fb2d5bc6876",
+    "bytes": 9917
   },
   {
     "path": "scripts/verify_plugins.py",
@@ -861,8 +861,8 @@
   },
   {
     "path": "tests/test_automation.py",
-    "sha256": "91639553ff57b695d12164ce648828344c98927c0bbaab94f7861061f9d5e59f",
-    "bytes": 22991
+    "sha256": "21e2bfc1c6f9b1b45b0be84ece61222783fe8cba99920d29bcfc40ee4af9a481",
+    "bytes": 25672
   },
   {
     "path": "tests/test_dispatch.py",

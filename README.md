@@ -1,6 +1,100 @@
+<p align="center">
+  <img src="assets/shards-skills-banner.webp" alt="Shards Skills — faceted silver S with violet accents" width="800">
+</p>
+
 # Shards Skills
 
 Shards Skills is an independently developed library of workflows for AI-assisted engineering, security, research and operations. It contains 60 catalogue skills, 13 curated Shards Core workflows, and four separate native host candidates.
+
+## Start here: a first-skill walkthrough
+
+**Goal:** find an appropriate skill, inspect its instructions, make it available to an agent, and verify what the agent actually did. Skill files are *instructions*, not remotely connected tools or automatic permissions.
+
+**Choose a route:** [Terminal walkthrough](#1-get-the-library) · [GitHub/mobile walkthrough](#github-and-mobile-no-local-setup) · [Skill directory](#find-the-right-skill) · [Full host guide](docs/portable-agent-skills.md).
+
+### 1. Get the library
+
+Use a trusted checkout. **Python 3.11+** is sufficient for searching and the local read-only demonstrations; **Node.js 22.20+** is only needed for the optional pinned Skills CLI installer.
+
+```bash
+git clone https://github.com/Shards-foundation/shards-skills.git
+cd shards-skills
+python --version
+```
+
+For reproducible work, record the Git revision (for example, with `git rev-parse HEAD`) before copying skills into another project. Review unfamiliar files before running repository scripts.
+
+### 2. Describe your task, then discover the skill
+
+Example: you want an agent to review a pull request without merging it.
+
+```bash
+python scripts/search_skills.py --query "Review a GitHub PR, verify evidence and report blockers without merging" --limit 5
+python scripts/search_skills.py --skill shards-review-resolution
+```
+
+The first command returns a **ranked JSON shortlist and match rationale**; the second returns one exact skill descriptor. Open the indicated `skills/<name>/SKILL.md` and check its prerequisites, inputs, boundaries, expected output and failure handling. Search does **not** install or execute a skill. A search hit does not establish that the skill is useful for your task.
+
+### 3. Install only what the agent needs
+
+In the **destination project** where you use Codex, point the pinned Skills CLI at your trusted Shards Skills checkout:
+
+```bash
+npx skills@1.8.1 add /path/to/shards-skills --skill code-review shards-review-resolution shards-evidence-verification -a codex --copy -y
+npx skills@1.8.1 list
+```
+
+Replace `/path/to/shards-skills` with the real checkout path. The initial `npx` invocation downloads the specified installer version; inspect and trust the installer before using it. For Claude Code, OpenHands, Cursor, OpenCode and other clients, use the [host-by-host installation guide](docs/portable-agent-skills.md); an installer target is **not** proof of real agent invocation.
+
+### 4. Give the agent a bounded test task
+
+Try this example request in a host that actually discovers the installed skills:
+
+> Review the current pull request using the available code-review and evidence-verification skills. Inspect the changed files, identify regressions and security concerns, and distinguish tests actually run from unverified claims. Return APPROVE, REQUEST CHANGES or BLOCKED, with supporting evidence. Do not modify files, merge, deploy or publish.
+
+This is a **sample prompt**, not a claim that an agent has been tested here. Check the host's own skill list and trace: **discovered → selected → instructions opened → procedure applied → outcome independently checked**. If any step lacks evidence, record it as *unverified*. See [agent adoption and evaluation](docs/agent-adoption.md).
+
+### 5. Try a governed, local Shards Core workflow
+
+Catalogue skills and curated executable workflows are separate. The latter can be planned through a reviewed local dispatcher:
+
+```bash
+python scripts/dispatch_skills.py list
+python scripts/dispatch_skills.py plan --skill shards-repository-health
+```
+
+The plan is read-only. To execute **only after reviewing the plan and confirming host permission**, use its actual `plan_sha256`:
+
+```bash
+python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 <digest-from-reviewed-plan> --save-receipt
+```
+
+The digest detects changed execution inputs; it does **not** replace authorisation, a sandbox or an independent security gate. Read the [dispatcher execution contract](docs/skill-dispatch.md).
+
+### 6. Validate what you can prove
+
+```bash
+python scripts/validate_skills.py
+python scripts/security_lint.py
+python scripts/agent_adoption_eval.py
+python -m unittest discover -s tests -v
+```
+
+These commands check local structure, linting, retrieval fixtures and tests. They do not demonstrate that a particular AI host used a skill correctly. For that, preserve a redacted host trace, the exact skill revision, the task result and an independent assessment.
+
+### GitHub and mobile: no local setup
+
+If you are working from a phone or do not want to set up a checkout, use the repository's **Actions** tab (subject to GitHub workflow-dispatch permissions):
+
+| Objective | GitHub Action | What to do |
+| --- | --- | --- |
+| Find relevant skills | **Search Shards Skill Catalogue** | Run with ordinary task terms; read the summary and exact-revision links |
+| Export one uploadable skill | **Portable Agent Skills ZIP** | Choose a permitted first-party skill; download the artifact and extract the **inner** skill ZIP for a compatible host |
+| Run a bounded repository check | **Run Curated Shards Skill** | Select one of seven reviewed, read-only workflows; inspect the summary and receipt artifact |
+
+The portable ZIP option intentionally supports only **seven** self-contained instruction-only skills. Other catalogue and curated skills can require the full checkout. The Actions runner cannot give a consumer chat account remote skills access or grant new permissions. Follow the [portable ZIP instructions](docs/portable-agent-skills.md#mobile-friendly-single-skill-zip-for-upload-based-clients) and [manual workflow guide](docs/manual-skill-runs.md).
+
+---
 
 ## Find the right skill
 

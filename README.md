@@ -20,6 +20,7 @@ The machine index is **YAML 1.2 in JSON-compatible syntax**. It can be read with
 ~~~bash
 python -m json.tool agent-index.yaml > /dev/null
 python -c 'import json; d=json.load(open("agent-index.yaml")); print([(r["id"], r["primary_skill"]) for r in d["routes"]])'
+python -m unittest discover -s tests -p 'test_agent_index.py' -v
 ~~~
 
 This index is a **navigation aid**, not an executable skill registry, tool permission or guarantee of host discovery. Agents should read [`AGENTS.md`](AGENTS.md), [`agent.md`](agent.md) and [`SECURITY.md`](SECURITY.md) first, then inspect only selected descriptors.

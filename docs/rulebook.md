@@ -27,7 +27,7 @@ For examples see [the cookbook](cookbook.md), for sequencing [the playbook](play
 | --- | --- | --- |
 | `READ` | Metadata search, file inspection, dispatcher plan | Host read permission |
 | `LOCAL-WRITE` | Scoped file edits on a feature branch | User-approved scope, respect current tree |
-| `LOCAL-EXECUTE` | Tests or first-party scripts | Trusted source and host-approved execution |
+| `LOCAL-EXECUTE` | Tests or first-party scripts | Trusted checkout, known reviewed command, dependency/effect review and host-approved execution |
 | `EXTERNAL-WRITE` | New PR, formal review, merge, publish, deploy, notification | Explicit scope-specific approval and live host permission |
 | `SENSITIVE/IRREVERSIBLE` | Live signing, transfers, key rotation, destructive migration, production secrets | Narrow independent approval and external enforcement |
 
@@ -46,7 +46,7 @@ A `plan_sha256`, YAML route, test receipt or descriptive skill frontmatter is **
 - **FAIL** — observed check or criterion failed.
 - **HOLD** — a higher acceptance/authorisation gate remains pending.
 
-These terms are reporting labels, not automatically assigned states by the YAML file. For the ledger's actual allowed evidence statuses and verifier boundaries, consult [the operating loop](operating-loop.md).
+These are **reporting and gate labels**, not interchangeable ledger evidence statuses. The [operating ledger](operating-loop.md) accepts typed evidence (`implemented`, `tested`, `reviewed`, `deployed`, `production-verified`) and separately records failed or blocked observations using its documented schema. Do **not** submit `HOLD` or `UNVERIFIED` as evidence-type statuses. For verifier details, consult [the operating loop](operating-loop.md).
 
 ## Conflict resolution
 

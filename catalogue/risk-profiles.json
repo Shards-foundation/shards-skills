@@ -1,0 +1,61 @@
+{
+  "policy_version": 1,
+  "precedence": ["host-policy", "hold-on-uncertainty", "highest-floor", "raise-only-override"],
+  "profiles": {
+    "L0_MINIMAL": {
+      "purpose": "Reversible changes to ordinary prose",
+      "required_evidence": ["scope", "authority-reference", "relevant-change-verification", "failure-report"],
+      "effect_classes": {
+        "prose-only": "EF-01"
+      }
+    },
+    "L1_STANDARD": {
+      "purpose": "Routine maintenance and bounded read-only execution",
+      "required_evidence": ["revision", "relevant-checks", "receipts"],
+      "effect_classes": {
+        "routine-maintenance": "EF-02",
+        "read-only": "EF-03",
+        "external-read": "EF-04"
+      }
+    },
+    "L2_ENGINEERING": {
+      "purpose": "Behaviour changes, executable local writes and agent instructions",
+      "required_evidence": ["regression-evidence", "security-consideration", "review-where-required"],
+      "effect_classes": {
+        "behavior-change": "EF-05",
+        "local-write": "EF-06",
+        "agent-instructions": "EF-07",
+        "costly-rollback": "EF-08"
+      }
+    },
+    "L3_CRITICAL": {
+      "purpose": "Enforcement changes and privileged, sensitive or irreversible effects",
+      "required_evidence": ["strict-approval", "independent-assurance", "operational-gates"],
+      "effect_classes": {
+        "policy-change": "EF-09",
+        "privileged": "EF-10",
+        "sensitive": "EF-11",
+        "external-write": "EF-12",
+        "production": "EF-13",
+        "irreversible": "EF-14",
+        "destructive": "EF-15",
+        "paid": "EF-16",
+        "merge": "EF-17"
+      }
+    }
+  },
+  "path_escalations": {
+    "AGENTS.md": "agent-instructions",
+    "agent.md": "agent-instructions",
+    "CLAUDE.md": "agent-instructions",
+    "SKILL.md": "agent-instructions",
+    "CODEOWNERS": "policy-change",
+    ".github/workflows/*": "policy-change",
+    "catalogue/risk-profiles.json": "policy-change",
+    "scripts/classify_risk_profile.py": "policy-change",
+    "scripts/validate_execution_contract.py": "policy-change",
+    "scripts/dispatch_skills.py": "policy-change",
+    "scripts/operating_ledger.py": "policy-change",
+    "plugins/shards-core/skills/shards-a2a-authority-preflight/*": "policy-change"
+  }
+}

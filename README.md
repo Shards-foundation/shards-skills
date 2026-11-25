@@ -6,10 +6,11 @@
 
 Shards Skills is an independently developed library of workflows for AI-assisted engineering, security, research and operations. It contains 60 catalogue skills, 13 curated Shards Core workflows, and four separate native host candidates.
 
-## Four ways to use this repository
+## Guides and agent navigation
 
 | Guide | Use it when |
 | --- | --- |
+| 🚀 [User guide](docs/user-guide.md) | You want to import, upload, install, update or verify skills for your AI platform |
 | 📖 [Cookbook](docs/cookbook.md) | You want a copyable, scoped example for a real task |
 | 🧭 [Playbook](docs/playbook.md) | You need a repeatable sequence, gates and recovery steps |
 | 🛡️ [Rulebook](docs/rulebook.md) | You need permission boundaries, evidence standards and stop conditions |
@@ -29,7 +30,7 @@ This index is a **navigation aid**, not an executable skill registry, tool permi
 
 **Goal:** find an appropriate skill, inspect its instructions, make it available to an agent, and verify what the agent actually did. Skill files are *instructions*, not remotely connected tools or automatic permissions.
 
-**Choose a route:** [Terminal walkthrough](#1-get-the-library) · [GitHub/mobile walkthrough](#github-and-mobile-no-local-setup) · [Skill directory](#find-the-right-skill) · [Full host guide](docs/portable-agent-skills.md).
+**Choose a route:** [User installation guide](docs/user-guide.md) · [Terminal walkthrough](#1-get-the-library) · [GitHub/mobile walkthrough](#github-and-mobile-no-local-setup) · [Skill directory](#find-the-right-skill) · [Full host guide](docs/portable-agent-skills.md).
 
 ### 1. Get the library
 

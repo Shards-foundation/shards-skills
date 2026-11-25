@@ -1,6 +1,6 @@
 # Shards Skills Cookbook
 
-Practical, small recipes for operators and agents. Begin with the [README walkthrough](../README.md#start-here-a-first-skill-walkthrough), use [the playbook](playbook.md) for sequencing, and check [the rulebook](rulebook.md) before any action. [`agent-index.yaml`](../agent-index.yaml) provides machine-readable route hints.
+Practical, small recipes for operators and agents. New or updating users should start with the [user guide](user-guide.md) to choose a host and installation route. Begin with the [README walkthrough](../README.md#start-here-a-first-skill-walkthrough), use [the playbook](playbook.md) for sequencing, and check [the rulebook](rulebook.md) before any action. [`agent-index.yaml`](../agent-index.yaml) provides machine-readable route hints.
 
 **All shell commands below assume a trusted repository checkout and Python 3.11+.** They are *examples to run*, not evidence that they were run in your environment. The `skills/` catalogue contains instructions; it does not itself execute scripts or grant tools.
 
@@ -100,12 +100,28 @@ See [installation and portability](portable-agent-skills.md) and [manual Action 
 
 ## Verify local repository quality
 
+From a parent directory, clone and enter the repository if you do not already have a checkout:
+
 ~~~bash
-python scripts/validate_skills.py
-python scripts/security_lint.py
-python scripts/agent_adoption_eval.py
-python -m unittest discover -s tests -v
+git clone https://github.com/Shards-foundation/shards-skills.git && cd shards-skills
 ~~~
+
+Existing users should navigate to the root of their existing checkout instead. Do not clone inside it. Record the revision and Python version:
+
+~~~bash
+git rev-parse HEAD; git status --short; python --version;
+~~~
+
+Run each check from the repository root in a compatible Python 3.11+ environment:
+
+~~~bash
+python scripts/validate_skills.py;
+python scripts/security_lint.py;
+python scripts/agent_adoption_eval.py;
+python -m unittest discover -s tests -v;
+~~~
+
+Some restricted environments (including Android/Termux) lack required filesystem operations. Report those limitations rather than bypassing safeguards. See the [user guide](user-guide.md#9-optional-verify-the-repository-locally).
 
 Record **which** commands really ran, their exit status, the checkout revision and unverified areas. Synthetic retrieval success is not real host performance. For tested adoption, use [host evidence stages](agent-adoption.md).
 

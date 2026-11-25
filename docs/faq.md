@@ -20,6 +20,20 @@ Platforms that can load the Agent Skills format, accept instruction files, or pr
 
 Yes, where the host supports the repository or individual skill format. Use the host's native importer and select the relevant source. Some hosts require a marketplace manifest rather than a plain skills directory. An import route being available does not mean this repository's layout has been verified with that importer.
 
+**Example — Manus:** Open **Skills → Import from GitHub**, paste the public repository URL into the URL field and select **Import**:
+
+```text
+https://github.com/Shards-foundation/shards-skills
+```
+
+If your host accepts individual skill-directory URLs, you can also try a specific skill, such as:
+
+```text
+https://github.com/Shards-foundation/shards-skills/tree/main/skills/systematic-debugging
+```
+
+Select the intended skill if prompted and check that it appears in your skills list. These are real source URLs; successful import depends on the host's supported layout and has not been verified for every importer.
+
 ## Can I upload individual skills or ZIP files?
 
 Yes, where the host supports those formats. Use a standalone SKILL.md only when no companion resources are required. Use a compatible ZIP when the skill needs additional files. Some hosts accept one skill per upload; others support collections. The repository's general-purpose exporter currently permits a limited selection of self-contained skills. See the [user guide](user-guide.md#4-upload-a-zip-or-markdown-skill).

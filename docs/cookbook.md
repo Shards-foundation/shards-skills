@@ -83,10 +83,10 @@ python scripts/dispatch_skills.py plan --skill shards-repository-health
 **Expected:** a reviewed, read-only plan with an actual `plan_sha256`. If execution is separately authorised in the real host, the operator may pass the *digest from that plan*:
 
 ~~~bash
-python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 <digest-from-reviewed-plan> --save-receipt
+python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 'REPLACE_WITH_REVIEWED_PLAN_SHA256' --save-receipt
 ~~~
 
-The placeholder is not a valid digest. The hash is an integrity check, **not** an identity-bound approval or sandbox. Check [dispatcher guidance](skill-dispatch.md).
+Replace the quoted placeholder with the actual digest from the reviewed plan; the placeholder itself is not valid. The hash is an integrity check, **not** an identity-bound approval or sandbox. Check [dispatcher guidance](skill-dispatch.md).
 
 ## 7. Use GitHub Actions from a phone
 
@@ -100,7 +100,7 @@ See [installation and portability](portable-agent-skills.md) and [manual Action 
 
 ## Verify local repository quality
 
-From a parent directory, clone and enter the repository if you do not already have a checkout:
+Already have a checkout? Navigate to its root and skip the clone step. For a new checkout only, run from a parent directory:
 
 ~~~bash
 git clone https://github.com/Shards-foundation/shards-skills.git && cd shards-skills
@@ -112,13 +112,13 @@ Existing users should navigate to the root of their existing checkout instead. D
 git rev-parse HEAD; git status --short; python --version;
 ~~~
 
-Run each check from the repository root in a compatible Python 3.11+ environment:
+Run each check from the repository root in a compatible Python 3.11+ environment. These POSIX shell examples print each exit status immediately; record every result, not just the final shell status. Substitute your Python executable if needed:
 
 ~~~bash
-python scripts/validate_skills.py;
-python scripts/security_lint.py;
-python scripts/agent_adoption_eval.py;
-python -m unittest discover -s tests -v;
+python scripts/validate_skills.py; printf 'check 1 exit: %s\n' "$?";
+python scripts/security_lint.py; printf 'check 2 exit: %s\n' "$?";
+python scripts/agent_adoption_eval.py; printf 'check 3 exit: %s\n' "$?";
+python -m unittest discover -s tests -v; printf 'check 4 exit: %s\n' "$?";
 ~~~
 
 Some restricted environments (including Android/Termux) lack required filesystem operations. Report those limitations rather than bypassing safeguards. See the [user guide](user-guide.md#9-optional-verify-the-repository-locally).

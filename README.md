@@ -11,6 +11,7 @@ Shards Skills is an independently developed library of workflows for AI-assisted
 | Guide | Use it when |
 | --- | --- |
 | 🚀 [User guide](docs/user-guide.md) | You want to import, upload, install, update or verify skills for your AI platform |
+| ❓ [FAQ](docs/faq.md) | You have questions about compatibility, permissions, skill use or licensing |
 | 📖 [Cookbook](docs/cookbook.md) | You want a copyable, scoped example for a real task |
 | 🧭 [Playbook](docs/playbook.md) | You need a repeatable sequence, gates and recovery steps |
 | 🛡️ [Rulebook](docs/rulebook.md) | You need permission boundaries, evidence standards and stop conditions |

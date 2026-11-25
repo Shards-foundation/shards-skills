@@ -6,10 +6,12 @@
 
 Shards Skills is an independently developed library of workflows for AI-assisted engineering, security, research and operations. It contains 60 catalogue skills, 13 curated Shards Core workflows, and four separate native host candidates.
 
-## Four ways to use this repository
+## Guides and agent navigation
 
 | Guide | Use it when |
 | --- | --- |
+| 🚀 [User guide](docs/user-guide.md) | You want to import, upload, install, update or verify skills for your AI platform |
+| ❓ [FAQ](docs/faq.md) | You have questions about compatibility, permissions, skill use or licensing |
 | 📖 [Cookbook](docs/cookbook.md) | You want a copyable, scoped example for a real task |
 | 🧭 [Playbook](docs/playbook.md) | You need a repeatable sequence, gates and recovery steps |
 | 🛡️ [Rulebook](docs/rulebook.md) | You need permission boundaries, evidence standards and stop conditions |
@@ -29,17 +31,20 @@ This index is a **navigation aid**, not an executable skill registry, tool permi
 
 **Goal:** find an appropriate skill, inspect its instructions, make it available to an agent, and verify what the agent actually did. Skill files are *instructions*, not remotely connected tools or automatic permissions.
 
-**Choose a route:** [Terminal walkthrough](#1-get-the-library) · [GitHub/mobile walkthrough](#github-and-mobile-no-local-setup) · [Skill directory](#find-the-right-skill) · [Full host guide](docs/portable-agent-skills.md).
+**Choose a route:** [User installation guide](docs/user-guide.md) · [Terminal walkthrough](#1-get-the-library) · [GitHub/mobile walkthrough](#github-and-mobile-no-local-setup) · [Skill directory](#find-the-right-skill) · [Full host guide](docs/portable-agent-skills.md).
 
 ### 1. Get the library
+
+If you already have a checkout, do not clone inside it. For a new checkout, run the clone command from a parent directory.
 
 In commands below, replace `python` with `python3` (or `py -3.11` on Windows) wherever your environment provides Python 3.11+ under that executable. Use a trusted checkout. **Python 3.11+** is sufficient for searching and the local read-only demonstrations; **Node.js 22.20+** is only needed for the optional pinned Skills CLI installer.
 
 ```bash
-git clone https://github.com/Shards-foundation/shards-skills.git
-cd shards-skills
-python --version
+git clone https://github.com/Shards-foundation/shards-skills.git && cd shards-skills;
+python --version;
 ```
+
+If you already have a checkout, skip cloning and navigate to its root instead.
 
 For reproducible work, record the Git revision (for example, with `git rev-parse HEAD`) before copying skills into another project. Review unfamiliar files before running repository scripts.
 
@@ -87,21 +92,21 @@ python scripts/dispatch_skills.py plan --skill shards-repository-health
 The plan is read-only. To execute **only after reviewing the plan and confirming host permission**, use its actual `plan_sha256`:
 
 ```bash
-python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 <digest-from-reviewed-plan> --save-receipt
+python scripts/dispatch_skills.py run --skill shards-repository-health --execute --expect-plan-sha256 'REPLACE_WITH_REVIEWED_PLAN_SHA256' --save-receipt
 ```
 
-The digest detects changed execution inputs; it does **not** replace authorisation, a sandbox or an independent security gate. Read the [dispatcher execution contract](docs/skill-dispatch.md).
+Replace the quoted placeholder with the exact digest from the reviewed plan. The digest detects changed execution inputs; it does **not** replace authorisation, a sandbox or an independent security gate. Read the [dispatcher execution contract](docs/skill-dispatch.md).
 
 ### 6. Validate what you can prove
 
 ```bash
-python scripts/validate_skills.py
-python scripts/security_lint.py
-python scripts/agent_adoption_eval.py
-python -m unittest discover -s tests -v
+python scripts/validate_skills.py; printf 'check 1 exit: %s\n' "$?";
+python scripts/security_lint.py; printf 'check 2 exit: %s\n' "$?";
+python scripts/agent_adoption_eval.py; printf 'check 3 exit: %s\n' "$?";
+python -m unittest discover -s tests -v; printf 'check 4 exit: %s\n' "$?";
 ```
 
-These commands check local structure, linting, retrieval fixtures and tests. They do not demonstrate that a particular AI host used a skill correctly. For that, preserve a redacted host trace, the exact skill revision, the task result and an independent assessment.
+These POSIX shell examples print each check's exit status separately. These commands check local structure, linting, retrieval fixtures and tests. They do not demonstrate that a particular AI host used a skill correctly. For that, preserve a redacted host trace, the exact skill revision, the task result and an independent assessment.
 
 ### GitHub and mobile: no local setup
 

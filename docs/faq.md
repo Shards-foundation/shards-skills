@@ -20,19 +20,19 @@ Platforms that can load the Agent Skills format, accept instruction files, or pr
 
 Yes, where the host supports the repository or individual skill format. Use the host's native importer and select the relevant source. Some hosts require a marketplace manifest rather than a plain skills directory. An import route being available does not mean this repository's layout has been verified with that importer.
 
-**Example — Manus:** Open **Skills → Import from GitHub**, paste the public repository URL into the URL field and select **Import**:
+**Example — Manus:** Open **Skills → Import from GitHub**. For an exploratory repository import, paste the public URL below and select **Import**. This URL follows the default branch and the collection has no root SKILL.md; a single-skill importer may reject it:
 
 ```text
 https://github.com/Shards-foundation/shards-skills
 ```
 
-If your host accepts individual skill-directory URLs, you can also try a specific skill, such as:
+If your host accepts individual skill-directory URLs, try this revision-pinned example instead:
 
 ```text
-https://github.com/Shards-foundation/shards-skills/tree/main/skills/systematic-debugging
+https://github.com/Shards-foundation/shards-skills/tree/e843a6ac8cc77f5e726caf35d1f6a6d0db391d62/skills/systematic-debugging
 ```
 
-Select the intended skill if prompted and check that it appears in your skills list. These are real source URLs; successful import depends on the host's supported layout and has not been verified for every importer.
+Select the intended skill if prompted and check that it appears in your skills list. If the importer rejects either layout, use a compatible ZIP from the [user guide](user-guide.md#4-upload-a-zip-or-markdown-skill). These are real source URLs, not verified Manus installation results.
 
 ## Can I upload individual skills or ZIP files?
 
@@ -52,7 +52,7 @@ Possibly, if its host supports native discovery and selection. Other hosts requi
 
 ## Can I use multiple skills together?
 
-Yes, where the host supports it. Select the smallest relevant combination, such as systematic debugging and test-driven development. Resolve conflicting instructions against the authorised task, host policies and existing evidence. More skills do not necessarily improve an outcome.
+Yes, where the host supports it. Select the smallest relevant combination, such as systematic debugging and test-driven development. Resolve conflicting instructions against applicable system, host and repository security policies, the authorised task and existing evidence. Stop if authority is unclear. More skills do not necessarily improve an outcome.
 
 ## Can skills execute commands or access my credentials?
 

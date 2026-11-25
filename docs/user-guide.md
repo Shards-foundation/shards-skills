@@ -4,6 +4,8 @@ Start here if you want to use Shards Skills in an AI platform, whether you are n
 
 For common questions about compatibility, permissions and licensing, see the [FAQ](faq.md).
 
+For local examples, substitute your Python 3.11+ executable (such as `python3` or `py -3.11` on Windows) wherever `python` is shown. Shell examples using `printf` and `$?` assume a POSIX-compatible shell.
+
 ## 1. Choose your route
 
 | Your environment | Recommended route |
@@ -22,6 +24,8 @@ A skill describes a procedure. It is not a model, remote tool, credential or per
 
 Start with [systematic debugging](../skills/systematic-debugging/SKILL.md), [problem framing](../skills/problem-framing/SKILL.md), [test-driven development](../skills/test-driven-development/SKILL.md) or [code review](../skills/code-review/SKILL.md). Browse the [catalogue](../catalogue/catalogue.json) or [search guide](skill-discovery.md) for more.
 
+For agents working from a checkout, read [AGENTS.md](../AGENTS.md), [agent.md](../agent.md) and [SECURITY.md](../SECURITY.md) before selecting or opening descriptors.
+
 Inspect the description, status, workflow, verification rules and any referenced files. Start with one relevant skill, not the entire catalogue. A draft skill is not a verified workflow. Use a reviewed revision where possible.
 
 ## 3. Import directly from GitHub
@@ -30,16 +34,16 @@ Inspect the description, status, workflow, verification rules and any referenced
 
 In a host that offers **Import from GitHub**, open Skills, choose the import option and supply the source requested by the UI. For Manus, see the [official sharing guide](https://help.manus.im/en/articles/14753565-how-to-share-and-use-skills-in-manus).
 
-Repository URL:
+Repository URL (exploratory, follows the default branch; this collection has no root SKILL.md, so a single-skill importer may reject it):
 
 ~~~text
 https://github.com/Shards-foundation/shards-skills
 ~~~
 
-If the importer accepts individual skill-directory URLs, start with:
+If the importer accepts individual skill-directory URLs, try the following revision-pinned example instead (folder import support is unverified):
 
 ~~~text
-https://github.com/Shards-foundation/shards-skills/tree/main/skills/systematic-debugging
+https://github.com/Shards-foundation/shards-skills/tree/e843a6ac8cc77f5e726caf35d1f6a6d0db391d62/skills/systematic-debugging
 ~~~
 
 Select the intended skill if the host presents a list. Inspect the imported files and confirm the skill appears in your personal skills list. Enable it if required. If directory URLs or repository layout are rejected, use the ZIP route below instead. Do not assume a successful repository import includes all dependencies or automatically stays up to date.
@@ -68,13 +72,13 @@ python scripts/package_agent_skill.py --skill systematic-debugging --check
 python scripts/package_agent_skill.py --skill systematic-debugging
 ~~~
 
-The default output directory is `dist/portable-skills/`. Inspect the generated ZIP and receipt. The exporter permits seven self-contained instruction-only skills; consult the [portable skill guide](portable-agent-skills.md#mobile-friendly-single-skill-zip-for-upload-based-clients) for the exact allowlist and packaging constraints. Do not bypass an export refusal.
+The default output directory is `dist/portable-skills/`. Inspect the generated ZIP and receipt. The exporter permits seven self-contained instruction-only skills, including systematic-debugging; consult the [portable skill guide](portable-agent-skills.md#mobile-friendly-single-skill-zip-for-upload-based-clients) for the exact allowlist and packaging constraints. Do not bypass an export refusal.
 
 ### In the AI platform
 
 | Host | What to do if the feature is available |
 | --- | --- |
-| ChatGPT | Open Skills, select +, choose the upload option and select the inner ZIP or supported standalone SKILL.md. See [OpenAI's skills guide](https://openai.com/academy/skills/). |
+| ChatGPT | Open Skills, select Create, then Upload from your computer (labels may vary by interface) and select the inner ZIP or supported standalone SKILL.md. See [OpenAI's skills guide](https://help.openai.com/en/articles/20001066-skills-in-chatgpt). |
 | Claude web/app | Open the host's skills management interface and use its custom skill upload option. |
 | Manus | Open Skills, choose Upload a skill, and select the compatible package. |
 | Other upload-based hosts | Choose Upload in the host's skill management interface and follow its required archive layout. |
@@ -87,7 +91,11 @@ Use the [host-by-host guide](portable-agent-skills.md#target-compatibility-and-b
 
 ~~~bash
 mkdir -p .agents/skills
-cp -R /path/to/shards-skills/skills/systematic-debugging .agents/skills/
+if [ -e .agents/skills/systematic-debugging ] || [ -L .agents/skills/systematic-debugging ]; then
+  echo 'Skill already exists; review it before updating.'
+else
+  cp -R /path/to/shards-skills/skills/systematic-debugging .agents/skills/
+fi
 ~~~
 
 For Claude Code, use `.claude/skills/` instead. Inspect the destination before copying; do not overwrite an existing skill without reviewing its version and local changes. Preserve companion files. Skills referencing repository-root resources require the full checkout to remain accessible. For a pinned Skills CLI installation, follow the [README installer walkthrough](../README.md#3-install-only-what-the-agent-needs).
@@ -114,7 +122,7 @@ Record the installed version or source commit. Compare the new descriptor and re
 
 This is for repository health checks, not a prerequisite for using a skill in an AI platform. Use Git, Python 3.11+ and a compatible environment. Review the source before running scripts.
 
-For a new checkout, run from a parent directory, not inside an existing Shards Skills checkout:
+Already have a checkout? Navigate to its root and skip the clone step. For a new checkout, run from a parent directory, not inside an existing Shards Skills checkout:
 
 ~~~bash
 git clone https://github.com/Shards-foundation/shards-skills.git && cd shards-skills
@@ -126,13 +134,13 @@ For an existing checkout, navigate to its root instead. Confirm the expected rep
 git remote get-url origin; git rev-parse HEAD; git status --short; python --version;
 ~~~
 
-Run the following commands individually from the repository root. Semicolons also separate commands when pasted; record each exit status independently.
+Run the following commands from the repository root. Each check prints its own exit status immediately; record every result, not just the final shell status.
 
 ~~~bash
-python scripts/validate_skills.py;
-python scripts/security_lint.py;
-python scripts/agent_adoption_eval.py;
-python -m unittest discover -s tests -v;
+python scripts/validate_skills.py; printf 'check 1 exit: %s\n' "$?";
+python scripts/security_lint.py; printf 'check 2 exit: %s\n' "$?";
+python scripts/agent_adoption_eval.py; printf 'check 3 exit: %s\n' "$?";
+python -m unittest discover -s tests -v; printf 'check 4 exit: %s\n' "$?";
 ~~~
 
 Restricted hosts may lack required filesystem operations. In one Android/Termux Python 3.13.13 run, missing `os.link` prevented secure artifact publication and native recovery test discovery. That is a partial compatibility observation, not full platform support. Do not weaken create-only or atomic publication safeguards or suppress tests. Report warnings, failures, skipped tests and unverified areas separately. Synthetic metadata retrieval is not agent invocation.

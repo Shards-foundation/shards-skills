@@ -2,6 +2,8 @@
 
 Start here if you want to use Shards Skills in an AI platform, whether you are new to the library or updating an existing installation. **You do not need a terminal, Python or an MCP connection just to import an instruction-only skill.**
 
+For common questions about compatibility, permissions and licensing, see the [FAQ](faq.md).
+
 ## 1. Choose your route
 
 | Your environment | Recommended route |
